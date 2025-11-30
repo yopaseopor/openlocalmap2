@@ -197,11 +197,60 @@ if (uri.hasQuery('pois')) {
     setting_changed();
 }
 
+// Global variables for dynamic base location
+var baseLocation = {
+    name: "Vilanova i la Geltrú",
+    type: "city",
+    lat: 41.2214,
+    lng: 1.7169,
+    bounds: null,
+    osm_id: null,
+    osm_type: null
+};
+
 // Local search functions
 
 var feature2
 
-function chooseAddr(lat1, lng1, lat2, lng2, osm_type) {
+function getLocationType(display_name, osm_type, class_type) {
+    // Determine location type based on OSM data
+    if (class_type) {
+        switch(class_type) {
+            case 'boundary':
+                return 'region';
+            case 'place':
+                return osm_type === 'node' ? 'city' : 'region';
+            case 'highway':
+                return 'road';
+            case 'natural':
+                return 'natural_feature';
+            case 'waterway':
+                return 'waterway';
+            case 'landuse':
+                return 'landuse';
+            default:
+                return 'location';
+        }
+    }
+
+    // Fallback based on display name keywords
+    var name_lower = display_name.toLowerCase();
+    if (name_lower.includes('county') || name_lower.includes('comarca') || name_lower.includes('provincia')) {
+        return 'county';
+    } else if (name_lower.includes('city') || name_lower.includes('ciudad') || name_lower.includes('municipio')) {
+        return 'city';
+    } else if (name_lower.includes('state') || name_lower.includes('estado') || name_lower.includes('comunidad')) {
+        return 'state';
+    } else if (name_lower.includes('country') || name_lower.includes('país') || name_lower.includes('nation')) {
+        return 'country';
+    } else if (name_lower.includes('region') || name_lower.includes('región')) {
+        return 'region';
+    } else {
+        return osm_type === 'node' ? 'point' : 'area';
+    }
+}
+
+function chooseAddr(lat1, lng1, lat2, lng2, osm_type, display_name, class_type, osm_id, osm_type_full) {
 	var loc1 = new L.LatLng(lat1, lng1);
 	var loc2 = new L.LatLng(lat2, lng2);
 	var bounds = new L.LatLngBounds(loc1, loc2);
@@ -209,6 +258,26 @@ function chooseAddr(lat1, lng1, lat2, lng2, osm_type) {
 	if (feature2) {
 		map.removeLayer(feature2);
 	}
+
+	// Update base location
+	baseLocation = {
+	    name: display_name,
+	    type: getLocationType(display_name, osm_type, class_type),
+	    lat: (lat1 + lat2) / 2,
+	    lng: (lng1 + lng2) / 2,
+	    bounds: bounds,
+	    osm_id: osm_id,
+	    osm_type: osm_type_full
+	};
+
+	// Update UI to show current base location
+	updateBaseLocationDisplay();
+
+	// Update routes for new location
+	if (typeof updateRoutesForNewLocation === 'function') {
+		updateRoutesForNewLocation();
+	}
+
 	if (osm_type == "node") {
 		feature2 = L.circle( loc1, 15, {color: 'green', fill: false}).addTo(map);
 		map.fitBounds(bounds);
@@ -219,33 +288,55 @@ function chooseAddr(lat1, lng1, lat2, lng2, osm_type) {
 		var loc4 = new L.LatLng(lat2, lng1);
 		feature2 = L.polyline( [loc1, loc4, loc2, loc3, loc1], {color: 'red'}).addTo(map);
 		map.fitBounds(bounds);
-		sidebar.close();	
+		sidebar.close();
 	}
+}
+
+function updateBaseLocationDisplay() {
+    // Update the subtitle to show current base location
+    var subtitleElement = document.querySelector('#search h1 small');
+    if (subtitleElement) {
+        subtitleElement.textContent = getTranslation('search_local_subtitle_dynamic')
+            .replace('{location}', baseLocation.name)
+            .replace('{type}', getTranslation('location_type_' + baseLocation.type));
+    }
+
+    // Update Wikipedia content based on new base location
+    if (typeof updateWikipediaContent === 'function') {
+        updateWikipediaContent();
+    }
+
+    // Do NOT automatically reload POIs - user must click button
+    // Removed: setting_changed();
 }
 
 function addr_search() {
     var inp = document.getElementById("addr");
 
-// +++++ &viewbox=1.9341,41.4200,1.9886,41.3993&bounded=1 --> Coordinates (lat,long) for search box +++++
-// +++++++++ MODIFICAR AQUÍ +++++++++++
-    $.getJSON('https://nominatim.openstreetmap.org/search?format=json&viewbox=1.68434,41.23761,1.76502,41.20533&bounded=1&limit=5&q=' + inp.value, function(data) {
+    // Get current language for localized search results
+    var currentLang = currentLanguage || 'ca';
+
+    // Search globally without viewbox restriction, with language preference
+    $.getJSON('https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=' + currentLang + '&q=' + encodeURIComponent(inp.value), function(data) {
         var items = [];
 
         $.each(data, function(key, val) {
             bb = val.boundingbox;
-            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' onclick='chooseAddr(" + bb[0] + ", " + bb[2] + ", " + bb[1] + ", " + bb[3]  + ", \"" + val.osm_type + "\");return false;'>" + val.display_name + '</a></li>');
+            var locationType = getLocationType(val.display_name, val.osm_type, val.class);
+            var typeTranslation = getTranslation('location_type_' + locationType);
+            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' onclick='chooseAddr(" + bb[0] + ", " + bb[2] + ", " + bb[1] + ", " + bb[3]  + ", \"" + val.osm_type + "\", \"" + val.display_name.replace(/"/g, '\\"') + "\", \"" + (val.class || '') + "\", " + (val.osm_id || 0) + ", \"" + (val.osm_type || '') + "\");return false;'>" + val.display_name + ' <small>(' + typeTranslation + ')</small></a></li>');
         });
 
 		$('#results').empty();
         if (items.length != 0) {
-            $('<p>', { html: "Resultats de la cerca:" }).appendTo('#results');
+            $('<p>', { html: getTranslation('search_results') }).appendTo('#results');
             $('<ul/>', {
                 'class': 'my-new-list',
                 html: items.join('')
             }).appendTo('#results');
-	    $('<p>', { html: "Seleccioneu la vostra cerca per visualitzar-la al mapa."}).appendTo('#results');
+	    $('<p>', { html: getTranslation('search_select') }).appendTo('#results');
         } else {
-            $('<p>', { html: "No s'han trobat resultats" }).appendTo('#results');
+            $('<p>', { html: getTranslation('search_no_results') }).appendTo('#results');
         }
     });
 }
@@ -262,6 +353,23 @@ function chooseAddr2(lat1, lng1, lat2, lng2, osm_type) {
 	if (feature3) {
 		map.removeLayer(feature3);
 	}
+
+	// Update base location for global search too
+	baseLocation = {
+	    name: "Àrea seleccionada",
+	    type: "area",
+	    lat: (lat1 + lat2) / 2,
+	    lng: (lng1 + lng2) / 2,
+	    bounds: bounds,
+	    osm_id: null,
+	    osm_type: null
+	};
+
+	// Update routes for new location
+	if (typeof updateRoutesForNewLocation === 'function') {
+		updateRoutesForNewLocation();
+	}
+
 	if (osm_type == "node") {
 		feature3 = L.circle( loc1, 15, {color: 'blue', fill: false}).addTo(map);
 		map.fitBounds(bounds);
@@ -279,7 +387,10 @@ function chooseAddr2(lat1, lng1, lat2, lng2, osm_type) {
 function addr_search2() {
     var inp = document.getElementById("addr2");
 
-    $.getJSON('http://nominatim.openstreetmap.org/search?format=json&limit=10&q=' + inp.value, function(data) {
+    // Get current language for localized search results
+    var currentLang = currentLanguage || 'ca';
+
+    $.getJSON('https://nominatim.openstreetmap.org/search?format=json&limit=10&accept-language=' + currentLang + '&q=' + encodeURIComponent(inp.value), function(data) {
         var items = [];
 
         $.each(data, function(key, val) {
@@ -289,14 +400,14 @@ function addr_search2() {
 
 		$('#results2').empty();
         if (items.length != 0) {
-            $('<p>', { html: "Resultats de la cerca:" }).appendTo('#results2');
+            $('<p>', { html: getTranslation('search_results') }).appendTo('#results2');
             $('<ul/>', {
                 'class': 'my-new-list',
                 html: items.join('')
             }).appendTo('#results2');
-	    $('<p>', { html: "Seleccioneu la vostra cerca per visualitzar-la al mapa."}).appendTo('#results2');
+	    $('<p>', { html: getTranslation('search_select') }).appendTo('#results2');
         } else {
-            $('<p>', { html: "No s'han trobat resultats" }).appendTo('#results2');
+            $('<p>', { html: getTranslation('search_no_results') }).appendTo('#results2');
         }
     });
 }
@@ -331,18 +442,21 @@ function clear_layer()
 }
 
 function refreshMapillary() {
+    // Use base location bounds instead of current map view
+    var bounds = baseLocation.bounds || map.getBounds();
+
  $.ajax({
- 
+
     dataType: "json",
     url: "http://api.mapillary.com/v1/im/search?",
              url: "http://api.mapillary.com/v1/im/search?",
             data: {
                 'max-results': 10,
                 'geojson': true,
-                'min-lat': map.getBounds().getSouth(),
-                'max-lat': map.getBounds().getNorth(),
-                'min-lon': map.getBounds().getWest(),
-                'max-lon': map.getBounds().getEast()
+                'min-lat': bounds.getSouth(),
+                'max-lat': bounds.getNorth(),
+                'min-lon': bounds.getWest(),
+                'max-lon': bounds.getEast()
             },
             success: function(data) {
                     clear_layer();
@@ -416,3 +530,4 @@ function cleargpx() {
 }
 
 expert_mode_init();
+updateQueryButton(); // Initialize button states

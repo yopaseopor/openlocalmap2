@@ -114,14 +114,16 @@ function phone_parser(element) {
     return markerPopup;
 }
 
-function generic_tag_parser(element, tag, tagName, iconName) {
+function generic_tag_parser(element, tag, tagName, iconName, customValue) {
     var tags = element.tags;
     var markerPopup = '';
 
-    if (tags[tag]) {
+    var value = customValue !== undefined ? customValue : tags[tag];
+
+    if (value) {
 	markerPopup += Mustache.render(
 	    tagTmpl,
-	    {tag: tagName, value: tags[tag], iconName: iconName}
+	    {tag: tagName, value: value, iconName: iconName}
 	);
     }
     return markerPopup;
@@ -270,8 +272,16 @@ function parse_tags(element, titlePopup, functions) {
 	{title: titlePopup}
     );
 
-    functions = [
-	{callback: generic_tag_parser, tag: 'name', label: 'Nom'},
+    // Use localized name for the main name display
+    var localizedName = getLocalizedName(element.tags);
+    var nameFunctions = [];
+    if (localizedName) {
+        nameFunctions = [{callback: generic_tag_parser, tag: 'localized_name', label: 'Nom', iconName: 'info-circle', customValue: localizedName}];
+    } else {
+        nameFunctions = [{callback: generic_tag_parser, tag: 'name', label: 'Nom'}];
+    }
+
+    functions = nameFunctions.concat([
 	{callback: address_parser},
 	{callback: phone_parser},
 	{callback: generic_tag_parser, tag: 'contact:fax', label: 'Fax', iconName: 'fax'},
@@ -281,13 +291,17 @@ function parse_tags(element, titlePopup, functions) {
 	{callback: opening_tag_parser},
 	{callback: parse_osm_times},
 	{callback: generic_tag_parser, tag: 'description', label: 'Descripció'},
-    ].concat(functions)
+    ]).concat(functions)
 
     for (var i = 0; i < functions.length; i++) {
 	var data = functions[i]
 	if (data.tag && data.label) {
 	    var iconName = data.iconName ? data.iconName : 'info-circle';
-	    markerPopup += data.callback(element, data.tag, data.label, iconName);
+	    if (data.customValue !== undefined) {
+		markerPopup += data.callback(element, data.tag, data.label, iconName, data.customValue);
+	    } else {
+		markerPopup += data.callback(element, data.tag, data.label, iconName);
+	    }
 	}
 	else {
 	    markerPopup += data.callback(element);

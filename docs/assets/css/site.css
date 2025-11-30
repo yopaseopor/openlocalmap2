@@ -127,3 +127,184 @@ ul {
     padding: 10px;
     text-align:justify;
     margin-right:5px;
+}
+
+.manual-query-btn {
+    background: #2a2a2a;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.manual-query-btn:hover {
+    background: #444;
+}
+
+.manual-query-note {
+    color: #666;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+}
+
+.manual-stop-btn {
+    background: #cc0000;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.manual-stop-btn:hover {
+    background: #aa0000;
+}
+
+/* Routes styling */
+.routes-list {
+    margin-bottom: 20px;
+}
+
+.route-item {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.route-item:hover {
+    background-color: #f5f5f5;
+}
+
+.route-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.route-header i {
+    margin-right: 8px;
+    font-size: 16px;
+    color: #666;
+}
+
+.route-name {
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.route-type {
+    font-size: 12px;
+    color: #666;
+    background-color: #eee;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.route-summary {
+    display: flex;
+    gap: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.route-summary span {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.route-info {
+    margin: 15px 0;
+}
+
+.route-info-item {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.route-info-item strong {
+    display: inline-block;
+    width: 120px;
+}
+
+.route-actions {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.route-actions button {
+    background: #2a2a2a;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0 5px;
+}
+
+.route-actions button:hover {
+    background: #444;
+}
+
+#route-download-link {
+    text-align: center;
+    margin-top: 10px;
+}
+
+#route-download-link a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+#route-download-link a:hover {
+    text-decoration: underline;
+}
+
+#route-stops ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+#route-stops li {
+    margin-bottom: 3px;
+    font-size: 14px;
+}
+
+/* No location message styling */
+.no-location-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.no-location-message i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+.no-location-message p {
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+/* Search input styling */
+.search-input {
+    width: 100%;
+    padding: 5px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}

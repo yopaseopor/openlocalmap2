@@ -101,6 +101,8 @@ L.OverPassLayer = L.FeatureGroup.extend({
     minzoom: 15,
     endpoint: "https://overpass-api.de/api/",
     query: "(node(BBOX)[organic];node(BBOX)[second_hand];);out qt;",
+    autoQuery: false, // Whether to query automatically on map move
+    queryTimeout: 1000, // Minimum time between queries in milliseconds
     callback: function(data) {
       for(var i = 0; i < data.elements.length; i++) {
         var e = data.elements[i];
@@ -126,6 +128,7 @@ L.OverPassLayer = L.FeatureGroup.extend({
     // save position of the layer or any options from the constructor
     this._ids = {};
     this._requested = {};
+    this._activeRequests = {}; // Track active XMLHttpRequests for cancellation
   },
 
   _poiInfo: function(tags,id) {
@@ -198,14 +201,34 @@ L.OverPassLayer = L.FeatureGroup.extend({
 
   onMoveEnd: function () {
     console.log("load Pois");
+
+    // Check timeout to avoid too many requests
+    var currentTime = Date.now();
+    if (currentTime - this._lastQueryTime < this.options.queryTimeout) {
+      console.log("Query timeout active, skipping request");
+      return;
+    }
+    this._lastQueryTime = currentTime;
+
     //console.log(this._map.getBounds());
     if (this._map.getZoom() >= this.options.minzoom) {
+      // Check if baseLocation is set (global variable from site.js)
+      var boundsToUse;
+      if (typeof baseLocation !== 'undefined' && baseLocation.bounds) {
+        // Use base location bounds instead of current map view
+        boundsToUse = baseLocation.bounds;
+        console.log("Using base location bounds for POI loading");
+      } else {
+        // Use current map view bounds
+        boundsToUse = this._map.getBounds();
+      }
+
       //var bboxList = new Array(this._map.getBounds());
       var bboxList = this._view2BBoxes(
-        this._map.getBounds()._southWest.lng,
-        this._map.getBounds()._southWest.lat,
-        this._map.getBounds()._northEast.lng,
-        this._map.getBounds()._northEast.lat);
+        boundsToUse._southWest.lng,
+        boundsToUse._southWest.lat,
+        boundsToUse._northEast.lng,
+        boundsToUse._northEast.lat);
 
         for (var i = 0; i < bboxList.length; i++) {
           var bbox = bboxList[i];
@@ -230,9 +253,18 @@ L.OverPassLayer = L.FeatureGroup.extend({
 
           var self = this;
           var request = new XMLHttpRequest();
+          var requestId = x + '_' + y; // Unique ID for this request
+
+          // Track active request
+          if (!self._activeRequests) self._activeRequests = {};
+          self._activeRequests[requestId] = request;
+
           request.open("GET", url, true);
 
           request.onload = function() {
+            // Remove from active requests when complete
+            delete self._activeRequests[requestId];
+
             if (this.status >= 200 && this.status < 400) {
               var reference = {instance: self};
               self.options.callback.call(reference, JSON.parse(this.response));
@@ -244,6 +276,11 @@ L.OverPassLayer = L.FeatureGroup.extend({
             }
           };
 
+          request.onerror = function() {
+            // Remove from active requests on error
+            delete self._activeRequests[requestId];
+          };
+
           request.send();
 
 
@@ -253,6 +290,8 @@ L.OverPassLayer = L.FeatureGroup.extend({
 
   onAdd: function (map) {
     this._map = map;
+    this._lastQueryTime = 0;
+
     if (map.zoomIndecator) {
       this._zoomControl = map.zoomIndecator;
       this._zoomControl._addLayer(this);
@@ -262,15 +301,32 @@ L.OverPassLayer = L.FeatureGroup.extend({
       this._zoomControl._addLayer(this);
     }
 
-    this.onMoveEnd();
-    if (this.options.query.indexOf("(BBOX)") != -1) {
-      map.on('moveend', this.onMoveEnd, this);
+    // Only query automatically if autoQuery is enabled
+    if (this.options.autoQuery) {
+      this.onMoveEnd();
+      if (this.options.query.indexOf("(BBOX)") != -1) {
+        map.on('moveend', this.onMoveEnd, this);
+      }
     }
     console.log("add layer");
   },
 
+  // Abort all active requests
+  abortActiveRequests: function() {
+    if (this._activeRequests) {
+      for (var requestId in this._activeRequests) {
+        if (this._activeRequests[requestId]) {
+          this._activeRequests[requestId].abort();
+        }
+      }
+      this._activeRequests = {};
+    }
+  },
+
   onRemove: function (map) {
     console.log("remove layer");
+    // Abort any active requests when removing the layer
+    this.abortActiveRequests();
     L.LayerGroup.prototype.onRemove.call(this, map);
     this._ids = {};
     this._requested = {};

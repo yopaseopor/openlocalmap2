@@ -1,11 +1,11 @@
   <head>
   <!--MODIFICAR AQUÍ-->
-    <title>OpenStreetMap - Vilanova i la Geltrú</title>
+    <title>OpenLocalMap</title>
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!--MODIFICAR AQUÍ-->
-	<meta property="og:title" content="OpenStreetMap - Vilanova i la Geltrú" />
+	<meta property="og:title" content="OpenLocalMap" />
     <meta property="og:type" content="website" />
 	<!--MODIFICAR AQUÍ-->
     <meta property="og:url" content="https://osm-catalan.github.io/openlocalmap" />
@@ -43,9 +43,10 @@
 		<!--MODIFICAR AQUÍ-->
 	<li><a href="#comments" role="tab"><i class="fa fa-comments-o"></i></a></li>
 	<li><a href="#parking" role="tab"><i class="fa fa-car"></i></a></li>
-	<!--<li><a href="#mapillary" role="tab"><i class="fa fa-road"></i></a></li>-->
+	<li><a href="#mapillary" role="tab"><i class="fa fa-road"></i></a></li>
 	<li><a href="#links" role="tab"><i class="fa fa-link"></i></a></li>
 	<li><a href="#developer" role="tab"><i class="fa fa-code"></i></a></li>
+	<li><a href="#language" role="tab"><i class="fa fa-language"></i></a></li>
 	<li><a href="#about" role="tab"><i class="fa fa-info-circle"></i></a></li>
       </ul>
 
@@ -59,66 +60,54 @@
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
           onClick="location.href='#help_home'"> Ajuda (PDI)</button></center>
-	  <h1>Punts d'interès</h1>
-	  <p>Seleccioneu els punts que voleu visualitzar al mapa i després tanqueu aquest panell fent clic a
+	  <h1 data-i18n="home_title">Punts d'interès</h1>
+	  <p data-i18n="home_description">Seleccioneu els punts que voleu visualitzar al mapa i després tanqueu aquest panell fent clic a
            la <b>«X»</b> per poder visualitzar-lo més bé.</p>
 	  <p class="permalink">
 	  <span class="fa fa-link"></span>
-	  <a id="permalink" href="#">Comparteix aquest mapa (enllaç)</a>
+	  <a id="permalink" href="#" data-i18n="home_permalink">Comparteix aquest mapa (enllaç)</a>
 	  </p>
-	  <!-- Tag searchers: key and value search UI (adds new features, does not replace existing app) -->
-	  <div id="tag-searchers" style="margin:8px 6px;">
-	    <h2 style="font-size:16px; margin:6px 0;">Cerca per etiquetes</h2>
-	    <div id="key-search-container" style="margin-bottom:6px;">
-	      <label for="key-search">Clau (key):</label><br>
-	      <input type="text" id="key-search" style="width:92%; padding:6px; margin-top:4px;" placeholder="Ex: amenity, highway" />
-	      <div id="key-search-dropdown" class="search-dropdown" style="display:none; max-height:160px; overflow:auto; background:#fff; border:1px solid #ccc; margin-top:4px;"></div>
-	      <div style="margin-top:6px;">
-			<button id="execute-key-query-btn" style="display:inline-block; margin-right:6px;">Execute Key Query</button>
-			<button id="clear-key-search-btn" style="display:inline-block;">Clear</button>
-	      </div>
-	    </div>
-	    <div id="value-search-container">
-	      <label for="value-search">Valor (value):</label><br>
-	      <input type="text" id="value-search" style="width:92%; padding:6px; margin-top:4px;" placeholder="Ex: restaurant, yes" />
-	      <div id="value-search-dropdown" class="search-dropdown" style="display:none; max-height:160px; overflow:auto; background:#fff; border:1px solid #ccc; margin-top:4px;"></div>
-	      <div style="margin-top:6px;">
-			<button id="execute-query-btn" style="display:inline-block; margin-right:6px;">Execute Query</button>
-			<button id="clear-search-btn" style="display:inline-block;">Clear</button>
-	      </div>
-	    </div>
-	  </div>
+	  <center>
+	    <button id="start-query-btn" class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();">Carrega punts d'interès</button>
+	    <button id="stop-query-btn" class="fa fa-stop manual-stop-btn" type="button" onclick="stopQuery();">Atura consulta</button>
+	    <br><small class="manual-query-note" data-i18n="poi_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
+	  </center>
 	  <div id="pois"></div>
+	  <center>
+	    <button class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();">Carrega punts d'interès</button>
+	    <button class="fa fa-stop manual-stop-btn" type="button" onclick="stopQuery();">Atura consulta</button>
+	    <br><small class="manual-query-note" data-i18n="poi_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
+	  </center>
 	  <!--Home - ajuda -->
 	  <br><hr width="90%">
 	  <A NAME="help_home"></A>
-	  <h1><span class="fa fa-support"></span> Ajuda</h1>
-	  <p style="text-align:justify; margin-right:5px;">Des d'aquesta secció podeu seleccionar els punts 
+	  <h1 data-i18n="home_help_title"><span class="fa fa-support"></span> Ajuda</h1>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text1">Des d'aquesta secció podeu seleccionar els punts
 	  d'interès que voleu visualitzar al mapa. Cal que seleccioneu tots aquells punts que desitgeu,
 	  marcant-ne la casella corresponent:</p>
 	  <center><img src="assets/img/help/pdis.png" width="80%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Quan els hàgiu seleccionat podeu tancar el panell
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text2">Quan els hàgiu seleccionat podeu tancar el panell
            fent clic sobre la <b>«X»</b> que hi ha al capdamunt a l'esquerra, i en uns segons (en funció de la
            connexió a Internet) us apareixeran els punts d'interès sobre el mapa:</p>
 	  <center><img src="assets/img/help/pdis2.png" width="90%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Ara podreu seleccionar la icona de qualsevol dels
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text3">Ara podreu seleccionar la icona de qualsevol dels
 	   punts d'interès per veure'n més informació (de la base de dades d'OSM). Alguns camps com
 	   el correu electrònic o el lloc web són enllaços que es poden seguir, i podreu trucar directament al
 	   telèfon de contacte si utilitzeu el mapa des d'un telèfon mòbil:</p>
 	  <center><img src="assets/img/help/popup.png" width="90%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Si us aparegués un missatge com aquest:</p>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text4">Si us aparegués un missatge com aquest:</p>
 	  <center><img src="assets/img/help/zoom.png" width="100%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Significa que no s'ha arribat al nivell mínim
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text5">Significa que no s'ha arribat al nivell mínim
 	   d'apropament per visualitzar les icones, i per tant cal que us acosteu més al mapa (amb el botó
             <b>«+»</b> del mapa, per exemple).</p>
-	  <p style="text-align:justify; margin-right:5px;">Si seguiu l'enllaç <b>«Informació al detall
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="home_help_text6">Si seguiu l'enllaç <b>«Informació al detall
            (expert)»</b> que tenen tots els punts d'interès, s'obrirà automàticament el panell «Expert» amb la
            informació de les etiquetes del punt d'interès a OpenStreetMap, i també enllaços per visualitzar
             el punt d'interès a OSM o inclús per editar-lo:</p>
 	  <center><img src="assets/img/help/expert.png" width="90%"></center>
 	  <br>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
-          onClick="location.href='#home_init'"> Inici</button></center>
+          onClick="location.href='#home_init'" data-i18n="home_help_back"> Inici</button></center>
 	</div>
 
 	<!--CERCA-->
@@ -128,43 +117,52 @@
           </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
           onClick="location.href='#help_search'"> Ajuda (cerca)</button></center>
-		  <!--Cerca global-->	
-	  <h1>Cerca global<br><small>a tot el Món</small></h1>
-	  <center><p><font style="font-family: verdana; font:size: 8px;">Cerqueu una població, una adreça, un
+	  <!--Cerca local-->
+	  <!--MODIFICAR AQUÍ-->
+	  <h1 data-i18n="search_local_title">Cerca local<br><small data-i18n="search_local_subtitle">a Vilanova i la Geltrú</small></h1>
+	  <center><p><font style="font-family: verdana; font-size: 8px;" data-i18n="search_local_description">Cerqueu una adreça, un comerç, un nom
+           de casa, una masia, una font...</font></p>
+          <p><input type="text" name="addr" value="" id="addr" class="search-input" placeholder="Introduïu la vostra cerca..." /></p>
+          <p><button class="fa fa-search" type="button" onclick="addr_search();" data-i18n="search_button"> Cerca</button> <button class="fa fa-trash" type="button" onclick="clear_layer2();" data-i18n="search_clear_button"> Neteja</button></p></center>
+	  <div id="results"/>
+	  </div>
+
+          <br><hr width="90%">
+
+	  <!--Cerca global-->
+	  <h1 data-i18n="search_global_title">Cerca global<br><small data-i18n="search_global_subtitle">a tot el Món</small></h1>
+	  <center><p><font style="font-family: verdana; font:size: 8px;" data-i18n="search_global_description">Cerqueu una població, una adreça, un
            comerç...</font><br><br>
-	  <input type="text" name="addr2" value="" id="addr2" width="100%" /><br>
-	  <button class="fa fa-search" type="button" onclick="addr_search2();"> Cerca</button> <button class="fa
-           fa-trash" type="button" onclick="clear_layer3();"> Neteja</button></p></center>
+	  <input type="text" name="addr2" value="" id="addr2" class="search-input" placeholder="Introduïu la vostra cerca..." /><br>
+	  <button class="fa fa-search" type="button" onclick="addr_search2();" data-i18n="search_button"> Cerca</button> <button class="fa
+           fa-trash" type="button" onclick="clear_layer3();" data-i18n="search_clear_button"> Neteja</button></p></center>
 	  <div id="results2"/>
 	  </div>
 
      	  <br><hr width="90%">
-	  
-		
-	  
 
 	  <!--Cerca - ajuda -->
 	  <A NAME="help_search"></A>
-	  <h1><span class="fa fa-support"></span> Ajuda</h1>
+	  <h1 data-i18n="search_help_title"><span class="fa fa-support"></span> Ajuda</h1>
 	  <!--MODIFICAR AQUÍ-->
-	  <p style="text-align:justify; margin-right:5px;">Des d'aquesta secció podeu fer cerques tan
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="search_help_text1">Des d'aquesta secció podeu fer cerques tan
           limitades a la zona de Vilanova i la Geltrú (cerca local) com a qualsevol lloc del Món. Per fer-ho
            cal introduir la vostra cerca a la caixa:</p>
 	  <center><img src="assets/img/help/cerca.png" width="60%"></center>
-	  <p style="text-align:justify; margin-right:5px;">A continuació cal prémer el botó «Cerca» i
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="search_help_text2">A continuació cal prémer el botó «Cerca» i
           apareixeran un màxim de cinc resultats (a la cerca global en seran deu), com es mostra en aquesta
            imatge:</p>
 	  <center><img src="assets/img/help/cerca1.png" width="90%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Finalment només cal que seleccioneu el resultat que
-	  voleu visualitzar al mapa, i si no us agrada, podeu tornar a obrir aquesta secció per seleccionar-ne 
-	  altre. Els resultats es mostraran a la cerca global en cercles verds els nodes i en caixes vermelles 
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="search_help_text3">Finalment només cal que seleccioneu el resultat que
+	  voleu visualitzar al mapa, i si no us agrada, podeu tornar a obrir aquesta secció per seleccionar-ne
+	  altre. Els resultats es mostraran a la cerca global en cercles verds els nodes i en caixes vermelles
           les vies, i a la cerca global en cercles i caixes blaves.</p>
 	  <center><img src="assets/img/help/cerca2.png" width="90%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Les caixes i els cercles que es dibuixen al mapa es 
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="search_help_text4">Les caixes i els cercles que es dibuixen al mapa es
 	  poden fer desaparèixer prement el botó «Neteja».</p>
 	  <br>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
-          onClick="location.href='#search_init'"> Inici</button></center>
+          onClick="location.href='#search_init'" data-i18n="search_help_back"> Inici</button></center>
 	</div>
 
 	<!--MAPILLARY-->
@@ -174,15 +172,15 @@
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
           onClick="location.href='#help_mapillary'"> Ajuda (Mapillary)</button></center>
-	  <h1>Mapillary</h1>
+	  <h1 data-i18n="mapillary_title">Mapillary</h1>
 	  <center><img src="assets/img/mapillary.png" width="50" height="50">
-	  <p><b>Mapillary</b> és l'Street View lliure, està realitzat per voluntaris i les imatges es
+	  <p data-i18n="mapillary_description"><b>Mapillary</b> és l'Street View lliure, està realitzat per voluntaris i les imatges es
            distribueixen sota una llicència <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ca"
            target="_blank">CC BY-SA 4.0</a>.</p>
-	  <p><button type="button" onclick="refreshMapillary();">Troba 10 llocs a l'atzar a Mapillary</button>
+	  <p><button type="button" onclick="refreshMapillary();" data-i18n="mapillary_random">Troba 10 llocs a l'atzar a Mapillary</button>
           </p>
 	  <p>Per trobar nous llocs a Mapillary, canvieu la vista del mapa i torneu a fer clic al botó.</p>
-	  <p><button type="button" onclick="clear_layer();">Neteja els marcadors de Mapillary</button></p>
+	  <p><button type="button" onclick="clear_layer();" data-i18n="mapillary_clear">Neteja els marcadors de Mapillary</button></p>
 	  </center>
 
 	  <br><hr width="90%">
@@ -192,23 +190,23 @@
 
 	  <!--Mapillary - ajuda -->
 	  <A NAME="help_mapillary"></A>
-	  <h1><span class="fa fa-support"></span> Ajuda</h1>
-	  <p style="text-align:justify; margin-right:5px;">Des d'aquesta secció podeu trobar deu punts a
+	  <h1 data-i18n="mapillary_help_title"><span class="fa fa-support"></span> Ajuda</h1>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="mapillary_help_text1">Des d'aquesta secció podeu trobar deu punts a
 	   l'atzar de la vostra vista del mapa, en els que es disposa de fotografia a Mapillary. Si us
 	   interessa localitzar fotografies en una zona concreta, és recomanable apropar-vos el màxim a
 	   aquella zona abans de fer clic a «Troba 10 llocs a l'atzar a Mapillary». Després de fer-ho us
 	   apareixeran 10 marcadors blaus al mapa:</p>
 	  <center><img src="assets/img/help/mapillary1.png" width="70%"></center>
-	  <p style="text-align:justify; margin-right:5px;">En seleccionar un dels marcadors us apareixerà una
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="mapillary_help_text2">En seleccionar un dels marcadors us apareixerà una
 	   bafarada amb la fotografia a Mapillary de la zona:</p>
 	  <center><img src="assets/img/help/mapillary2.png" width="70%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Si seguiu l'enllaç <b>«Continua la seqüència a
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="mapillary_help_text3">Si seguiu l'enllaç <b>«Continua la seqüència a
 	   Mapillary»</b> s'obrirà la pàgina de Mapillary en una altra pestanya, en el punt exacte on éreu. I
 	   des d'allà podreu resseguir tota la ruta:</p>
 	  <center><img src="assets/img/help/mapillary_web.png" width="90%"></center>
 	  <br>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
-          onClick="location.href='#mapillary_init'"> Inici</button></center>
+          onClick="location.href='#mapillary_init'" data-i18n="mapillary_help_back"> Inici</button></center>
 	</div>
 	
 	<!--RUTES-->
@@ -217,66 +215,63 @@
 	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
-          onClick="location.href='#help_rutes'"> Ajuda (rutes a peu)</button></center>
-	  <h1>Rutes a peu</h1>
+          onClick="location.href='#help_rutes'"> Ajuda (rutes)</button></center>
+	  <h1 id="routes-title">Rutes a Vilanova i la Geltrú</h1>
 	  <p style="text-align:justify; margin-right:5px;">Les rutes han estat creades a partir de les dades
-           d'OpenStreetMap amb 
+           d'OpenStreetMap amb
 	  <a href="https://graphhopper.com/maps/">GraphHopper</a>.</p>
-	  <p style="text-align:justify; margin-right:5px;">Seleccioneu la ruta que voleu visualitzar:</p>
-	  <center>
-	  <script>
-	  function urlgpx() {
-		url=document.select.gpx2.options[document.select.gpx2.selectedIndex].value;
-		}
-	  </script>
-		<form id="select" name="select">
-		<select id="gpx2" name="gpx2" onchange="cleargpx(); urlgpx();">
-		<!--MODIFICAR AQUÍ-->
-		<option value='assets/gpx/track001.gpx' select>La Talaia</option>
-		<option value='assets/gpx/track002.gpx' select>Puig de l'Àliga</option>
-		<option value='assets/gpx/track003.gpx'>El Montgrós</option>
-		<option value='assets/gpx/track003.gpx'>Camí de Ronda de VNG a Sitges</option>
 
-		</select>
-		<p><button class="fa fa-search" type="button" onclick="urlgpx(); addgpx(); link();"> Mostra</button> <button
-                class="fa fa-trash" type="button" onclick="cleargpx();"> Neteja</button></p></center>
-	  </center>
+	  <!-- Manual reload button -->
 	  <center>
-	  <div id="info"></div>
-	  <div id="nom"></div>
-	  <div id="desc"></div>
-	  <div id="lev"></div>
-	  <div id="distance"></div>
-	  <div id="alt"></div>
-	  <div id="baix"></div>
-	  <div id="desni"></div>
-	  <div id="link"></div>
-	  <script >
-	  function link() {
-	 	if (url != 0) {
-		var link2 = '<a href=' +url+ ' target="_blank">fitxer GPX</a>';
-		document.getElementById("link").innerHTML="Enllaç: "+link2;}}
-	  </script>
+	    <button class="fa fa-refresh" type="button" onclick="reloadRoutes()" style="background:#2a2a2a; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; margin-bottom:10px;"> Recarrega rutes</button>
 	  </center>
+
+	  <!-- Route categories -->
+	  <div id="routes-content">
+	    <!-- Content will be populated dynamically -->
+	  </div>
+
+	  <!-- Route details -->
+	  <div id="route-details" style="display: none;">
+	    <hr>
+	    <h3 id="route-detail-title"></h3>
+	    <p id="route-detail-description"></p>
+	    <div class="route-info">
+	      <div class="route-info-item"><strong>Distància:</strong> <span id="route-distance"></span></div>
+	      <div class="route-info-item"><strong>Desnivell:</strong> <span id="route-elevation"></span></div>
+	      <div class="route-info-item"><strong>Dificultat:</strong> <span id="route-difficulty"></span></div>
+	      <div class="route-info-item"><strong>Durada estimada:</strong> <span id="route-duration"></span></div>
+	      <div class="route-info-item"><strong>Freqüència:</strong> <span id="route-frequency"></span></div>
+	      <div class="route-info-item"><strong>Primer servei:</strong> <span id="route-first-service"></span></div>
+	      <div class="route-info-item"><strong>Últim servei:</strong> <span id="route-last-service"></span></div>
+	    </div>
+	    <div id="route-stops" style="display: none;">
+	      <h4>Parades:</h4>
+	      <ul id="route-stops-list"></ul>
+	    </div>
+	    <div class="route-actions">
+	      <button id="show-route-btn" class="fa fa-search" onclick="showSelectedRoute()"> Mostra ruta</button>
+	      <button id="clear-route-btn" class="fa fa-trash" onclick="clearRoute()"> Neteja</button>
+	      <div id="route-download-link" style="margin-top: 10px;"></div>
+	    </div>
+	    <button onclick="hideRouteDetails()" style="margin-top: 10px;">← Tornar al llistat</button>
+	  </div>
 
 	  <br><hr width="90%">
 
 	  <!-- Rutes - ajuda -->
 	  <A NAME="help_rutes"></A>
-	  <h1><span class="fa fa-support"></span> Ajuda</h1>
-	  <p style="text-align:justify; margin-right:5px;">Per poder visualitzar una ruta només cal que en
-	   seleccioneu una del llistat:</p>
-	  <center><img src="assets/img/help/ruta1.png" width="70%"></center>
-	  <p style="text-align:justify; margin-right:5px;">A continuació només cal seleccionar l'opció
-	  <b>«Mostra»</b> i us apareixerà la ruta centrada al mapa:</p>
-	  <center><img src="assets/img/help/ruta.png" width="70%"></center>
-	  <p style="text-align:justify; margin-right:5px;">Quan hàgiu obert la ruta, en aquest panell hi
-	   trobareu informacions diverses: la distància del recorregut, el guany d'alçada acumulat, etc.
-	   També hi trobareu un enllaç per poder baixar-vos el fitxer GPX de la ruta:</p>
-	  <center><img src="assets/img/help/info-ruta.png" width="80%"></center>
+	  <h1 data-i18n="routes_help_title"><span class="fa fa-support"></span> Ajuda</h1>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="routes_help_text1">Des d'aquesta secció podeu explorar les diferents rutes disponibles a la vostra ubicació actual. Les rutes es divideixen en categories:</p>
+	  <ul style="text-align:left; margin-left:20px;">
+	    <li><strong>Rutes a peu:</strong> Caminades i senderisme</li>
+	    <li><strong>Rutes en bicicleta:</strong> Recorreguts per bicicleta</li>
+	    <li><strong>Transport públic:</strong> Línies d'autobús i metro</li>
+	  </ul>
+	  <p style="text-align:justify; margin-right:5px;">Feu clic en qualsevol ruta per veure'n els detalls, parades (si s'escau) i opcions per visualitzar-la al mapa.</p>
 	  <br>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
-          onClick="location.href='#rutes_init'"> Inici</button></center>
+          onClick="location.href='#rutes_init'" data-i18n="routes_help_back"> Inici</button></center>
 	</div>
 
 
@@ -286,16 +281,38 @@
 	  </div>
 	  <A NAME="IniciWiki"></A>
 	  <!--MODIFICAR AQUÍ-->
-	  <h1>Vilanova i la Geltrú a la Viquipèdia</h1>
-	  <center><p><button onclick="refreshIframe();">Torna a les categories</button></p></center>
+	  <h1 id="wikipedia_title">Vilanova i la Geltrú a la Viquipèdia</h1>
+	  <center><p><button onclick="refreshIframe();" id="wikipedia_reload">Torna a les categories</button></p></center>
 	  <!--MODIFICAR AQUÍ-->
-	  <p><iframe name="Wikiciutat" width="100%" height="25000px" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://ca.m.wikipedia.org/w/index.php?title=Categoria:Vilanova_i_la_Geltrú&mobileaction=toggle_view_mobile"></iframe>
+	  <p><iframe name="Wikiciutat" id="wikipedia_iframe" width="100%" height="25000px" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://ca.m.wikipedia.org/w/index.php?title=Categoria:Vilanova_i_la_Geltrú&mobileaction=toggle_view_mobile"></iframe>
 	  <center><a href="#IniciWiki">Torna a l'inici</a></p></center></p>
 	  <script>
+		function updateWikipediaContent() {
+			var titleElement = document.getElementById('wikipedia_title');
+			var reloadButton = document.getElementById('wikipedia_reload');
+			var iframe = document.getElementById('wikipedia_iframe');
+
+			if (baseLocation.name !== "Vilanova i la Geltrú") {
+				// For locations other than default, try to find Wikipedia category
+				var wikiTitle = "Categoria:" + baseLocation.name.replace(/ /g, "_");
+				iframe.src = "https://ca.m.wikipedia.org/w/index.php?title=" + encodeURIComponent(wikiTitle) + "&mobileaction=toggle_view_mobile";
+				titleElement.textContent = baseLocation.name + " a la Viquipèdia";
+				reloadButton.textContent = "Torna a les categories";
+			} else {
+				// Default Vilanova i la Geltrú
+				iframe.src = "https://ca.m.wikipedia.org/w/index.php?title=Categoria:Vilanova_i_la_Geltrú&mobileaction=toggle_view_mobile";
+				titleElement.textContent = "Vilanova i la Geltrú a la Viquipèdia";
+				reloadButton.textContent = "Torna a les categories";
+			}
+		}
+
 		function refreshIframe() {
    	 	var ifr = document.getElementsByName('Wikiciutat')[0];
    	 	ifr.src = ifr.src;
 		}
+
+		// Update Wikipedia content when base location changes
+		// This will be called when baseLocation is updated
 	  </script>
 	  </div>
 	  
@@ -433,6 +450,19 @@ s.setAttribute('data-timestamp', +new Date());
 	<p><button type="button" onclick="clearnotes();">Oculta notes d'OSM al mapa</button></p>
 	</div>
 
+	<!--LANGUAGE-->
+	<div class="sidebar-pane" id="language">
+	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
+	  </div>
+	  <h1 data-i18n="language_title">Idioma</h1>
+	  <p data-i18n="language_select">Seleccionar idioma:</p>
+	  <center>
+	    <button onclick="setLanguage('en')" data-i18n="language_english">English</button>
+	    <button onclick="setLanguage('es')" data-i18n="language_spanish">Español</button>
+	    <button onclick="setLanguage('ca')" data-i18n="language_catalan">Català</button>
+	  </center>
+	</div>
+
 	<!--QUANT A-->
 	<div class="sidebar-pane" id="about">
 	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
@@ -514,13 +544,10 @@ s.setAttribute('data-timestamp', +new Date());
     <script src="assets/js/mustache.js"></script>
     <script src="assets/js/tags-parsers.js"></script>
     <script src="assets/js/pois-type.js"></script>
-	<!-- Taginfo and searchers (added) -->
-	<script src="assets/js/taginfo_api.js"></script>
-	<script src="assets/js/key_search.js"></script>
-	<script src="assets/js/value_search.js"></script>
-	<script src="assets/js/site.functions.js"></script>
-	<script src="assets/js/site.js"></script>
-	<script src="assets/js/tag_search_init.js"></script>
+    <script src="assets/js/routes-manager.js"></script>
+    <script src="assets/js/site.functions.js"></script>
+    <script src="assets/js/translations.js"></script>
+    <script src="assets/js/site.js"></script>
 
   </body>
 </html>
