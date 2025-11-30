@@ -8,13 +8,9 @@ var routeLayer = null; // Layer to display route geometry on map
 function initializeRoutes() {
     // Check if a location has been selected
     if (typeof baseLocation === 'undefined' || !baseLocation.name) {
-        // No location selected - show message
+        // No location selected - hide routes completely
         document.getElementById('routes-title').textContent = 'Rutes';
-        document.getElementById('routes-content').innerHTML =
-            '<div class="no-location-message">' +
-            '<p><i class="fa fa-map-marker"></i> Selecciona una ubicació al mapa per veure les rutes disponibles.</p>' +
-            '<p>Utilitza la barra de cerca per trobar una ciutat o fes clic al mapa per seleccionar una zona.</p>' +
-            '</div>';
+        document.getElementById('routes-content').innerHTML = '';
         return;
     }
 
@@ -365,6 +361,7 @@ function processTransportRoutes(data) {
     var routes = [];
 
     if (data && data.elements) {
+        // Process routes synchronously first
         data.elements.forEach(function(element) {
             if (element.type === 'relation') {
                 var route = {
@@ -386,6 +383,16 @@ function processTransportRoutes(data) {
                     routes.push(route);
                 }
             }
+        });
+
+        // Now asynchronously fetch stops for all routes (but don't wait for them)
+        routes.forEach(function(route) {
+            fetchRouteStops(route.id, route.osm_id).then(function(stops) {
+                route.stops = stops;
+                console.log('Loaded', stops.length, 'stops for route:', route.name);
+            }).catch(function(error) {
+                console.error('Failed to load stops for route:', route.name, error);
+            });
         });
     }
 
@@ -1395,6 +1402,7 @@ function showPublicTransportRoute(route) {
     if (!route) return;
 
     console.log('Showing public transport route:', route.name, 'ID:', route.id);
+    console.log('Route has', route.stops ? route.stops.length : 0, 'stops');
 
     // Initialize route layer if needed
     initializeRouteLayer();
@@ -1415,13 +1423,30 @@ function showPublicTransportRoute(route) {
         console.log('No stops available for route:', route.name);
     }
 
-    // Then try to show the route geometry
-    console.log('Fetching geometry for public transport route:', route.name);
-    fetchAndDisplayRouteGeometry(route).then(function(success) {
-        console.log('Route geometry display completed for:', route.name);
-    }).catch(function(error) {
-        console.error('Error displaying route geometry:', error);
-    });
+    // For public transport routes, directly create geometry from stops
+    if (route.stops && route.stops.length >= 2) {
+        console.log('Creating route geometry directly from', route.stops.length, 'stops');
+
+        // Extract coordinates from stops in order
+        var stopCoords = route.stops.map(function(stop) {
+            return [stop.lat, stop.lon];
+        });
+
+        console.log('Stop coordinates for route:', stopCoords);
+
+        // Display the route geometry directly
+        displayRouteGeometry([stopCoords], route);
+        console.log('Route geometry displayed from stops');
+    } else {
+        console.log('Not enough stops to create route geometry, trying Overpass query');
+
+        // Fallback to Overpass query method
+        fetchAndDisplayRouteGeometry(route).then(function(success) {
+            console.log('Route geometry display completed via Overpass for:', route.name);
+        }).catch(function(error) {
+            console.error('Error displaying route geometry via Overpass:', error);
+        });
+    }
 
     // Close sidebar
     if (typeof sidebar !== 'undefined') {
@@ -1518,10 +1543,7 @@ function parseOsmcSymbol(symbol) {
         // Create visual representation
         var visualHtml = createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText);
 
-        // Create text interpretation
-        var interpretation = createOsmcSymbolText(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText);
-
-        return visualHtml + '<br/>' + interpretation;
+        return visualHtml;
 
     } catch (error) {
         console.error('Error parsing OSMC symbol:', symbol, error);
@@ -1535,7 +1557,7 @@ function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLo
     var textHex = getOsmcHexColor(textColor);
     var lowerHex = backgroundLower.includes('_lower') ? getOsmcHexColor(backgroundLower.replace('_lower', '')) : bgHex;
 
-    var visualHtml = '<div style="display: inline-block; margin-right: 10px; vertical-align: middle;">';
+    var visualHtml = '<div style="display: inline-block; margin-right: 10px; vertical-align: middle;" title="' + symbol + '">';
     visualHtml += '<svg width="60" height="30" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">';
 
     // Background rectangle (upper part)
@@ -1543,6 +1565,11 @@ function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLo
 
     // Lower background rectangle
     visualHtml += '<rect x="0" y="15" width="60" height="15" fill="' + lowerHex + '" stroke="#000" stroke-width="1"/>';
+
+    // Add rotation angle text if present
+    if (textRotation && textRotation !== '') {
+        visualHtml += '<text x="55" y="12" font-family="Arial" font-size="6" fill="#000" text-anchor="end">' + textRotation + '°</text>';
+    }
 
     // Text/symbol (simplified as a symbol)
     if (additionalText && additionalText !== '') {
@@ -1701,10 +1728,4 @@ function showRouteExpertInfo(routeId) {
     console.log('Displayed expert info for route:', route.name, 'with OSM ID:', route.osm_id);
 }
 
-// Initialize routes when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize routes after a short delay to ensure other scripts are loaded
-    setTimeout(function() {
-        initializeRoutes();
-    }, 500);
-});
+// Routes will be initialized when a location is selected via updateRoutesForNewLocation()
