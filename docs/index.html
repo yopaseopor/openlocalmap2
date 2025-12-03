@@ -216,20 +216,25 @@
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
           onClick="location.href='#help_rutes'"> Ajuda (rutes)</button></center>
-	  <h1 id="routes-title">Rutes a Vilanova i la Geltrú</h1>
-	  <p style="text-align:justify; margin-right:5px;">Les rutes han estat creades a partir de les dades
-           d'OpenStreetMap amb
-	  <a href="https://graphhopper.com/maps/">GraphHopper</a>.</p>
+  <h1 id="routes-title">Rutes a Vilanova i la Geltrú</h1>
+  <p style="text-align:justify; margin-right:5px;">Les rutes han estat creades a partir de les dades
+   d'OpenStreetMap amb
+  <a href="https://graphhopper.com/maps/">GraphHopper</a>.</p>
 
-	  <!-- Manual reload button -->
-	  <center>
-	    <button class="fa fa-refresh" type="button" onclick="reloadRoutes()" style="background:#2a2a2a; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; margin-bottom:10px;"> Recarrega rutes</button>
-	  </center>
+  <!-- Route type buttons -->
+  <center style="margin-bottom: 15px;">
+    <div style="text-align: center;">
+      <button class="route-type-btn fa fa-walking" type="button" onclick="loadWalkingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes a peu</button>
+      <button class="route-type-btn fa fa-bicycle" type="button" onclick="loadBikingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes en bicicleta</button>
+      <button class="route-type-btn fa fa-bus" type="button" onclick="loadPublicTransportRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Transport públic</button>
+    </div>
+    <small style="color: #666; font-size: 11px;">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
+  </center>
 
-	  <!-- Route categories -->
-	  <div id="routes-content">
-	    <!-- Content will be populated dynamically -->
-	  </div>
+  <!-- Route categories -->
+  <div id="routes-content">
+    <!-- Content will be populated dynamically -->
+  </div>
 
 	  <!-- Route details -->
 	  <div id="route-details" style="display: none;">

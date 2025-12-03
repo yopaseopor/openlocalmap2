@@ -375,7 +375,7 @@ function processTransportRoutes(data) {
                     osm_type: element.type,
                     from: element.tags.from || '',
                     to: element.tags.to || '',
-                    stops: [] // Will be populated later if we fetch stops
+                    stops: null // Will be populated lazily when needed
                 };
 
                 // Add to routes if it has a name
@@ -385,15 +385,8 @@ function processTransportRoutes(data) {
             }
         });
 
-        // Now asynchronously fetch stops for all routes (but don't wait for them)
-        routes.forEach(function(route) {
-            fetchRouteStops(route.id, route.osm_id).then(function(stops) {
-                route.stops = stops;
-                console.log('Loaded', stops.length, 'stops for route:', route.name);
-            }).catch(function(error) {
-                console.error('Failed to load stops for route:', route.name, error);
-            });
-        });
+        // Don't fetch stops automatically - they will be loaded lazily when needed
+        console.log('Found', routes.length, 'public transport routes - stops will be loaded on demand');
     }
 
     return routes;
@@ -590,23 +583,102 @@ function showRouteDetails(routeId) {
 
     currentSelectedRoute = route;
 
-    // For public transport routes, show stops if available
-    if (route.type === 'public_transport' && route.stops && route.stops.length > 0) {
-        // Show stops that were already loaded during route creation
+    // For public transport routes, always try to show stops
+    if (route.type === 'public_transport') {
         document.getElementById('route-stops').style.display = 'block';
-        updateRouteStopsDisplay(route);
-    } else if (route.type === 'public_transport' && route.osm_type !== 'generated') {
-        // For real OSM routes, try to fetch stops dynamically
-        document.getElementById('route-stops').style.display = 'block';
-        document.getElementById('route-stops-list').innerHTML = '<li><i class="fa fa-spinner fa-spin"></i> Carregant parades...</li>';
-
-        fetchRouteStops(route.id, route.osm_id).then(function(stops) {
-            route.stops = stops;
+        if (route.stops && route.stops.length > 0) {
+            // Show stops that were already loaded
             updateRouteStopsDisplay(route);
-        }).catch(function(error) {
-            console.error('Error loading stops:', error);
-            document.getElementById('route-stops-list').innerHTML = '<li>Error carregant parades</li>';
-        });
+        } else if (route.osm_type !== 'generated') {
+            // For real OSM routes, fetch stops synchronously
+            document.getElementById('route-stops-list').innerHTML = '<li><i class="fa fa-spinner fa-spin"></i> Carregant parades...</li>';
+
+            // Fetch stops synchronously (don't use async here)
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://overpass-api.de/api/interpreter', false); // Synchronous request
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            try {
+                var stopsQuery = '[out:json][timeout:20];' +
+                    'relation(' + route.osm_id + ');' +
+                    'out;>;out;';
+
+                xhr.send('data=' + encodeURIComponent(stopsQuery));
+
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    console.log('Route stops response for', route.osm_id, ':', data);
+
+                    var stops = [];
+                    if (data && data.elements) {
+                        var stopNodes = {};
+                        data.elements.forEach(function(element) {
+                            if (element.type === 'node') {
+                                stopNodes[element.id] = element;
+                            }
+                        });
+
+                        var relation = data.elements.find(function(element) {
+                            return element.type === 'relation' && element.id == route.osm_id;
+                        });
+
+                        if (relation && relation.members) {
+                            relation.members.forEach(function(member, index) {
+                                if (member.type === 'node' &&
+                                    (member.role === 'stop' ||
+                                     member.role === 'stop_entry_only' ||
+                                     member.role === 'stop_exit_only' ||
+                                     member.role === 'platform' ||
+                                     member.role === 'platform_entry_only' ||
+                                     member.role === 'platform_exit_only')) {
+
+                                    var node = stopNodes[member.ref];
+                                    if (node) {
+                                        stops.push({
+                                            name: getLocalizedName(node.tags) || 'Parada ' + (index + 1),
+                                            lat: node.lat,
+                                            lon: node.lon,
+                                            order: index + 1,
+                                            role: member.role,
+                                            tags: node.tags
+                                        });
+                                    }
+                                }
+                            });
+                        }
+
+                        // Fallback if no ordered stops found
+                        if (stops.length === 0) {
+                            data.elements.forEach(function(element) {
+                                if (element.type === 'node' &&
+                                    (element.tags.public_transport === 'stop_position' ||
+                                     element.tags.highway === 'bus_stop' ||
+                                     element.tags.railway === 'tram_stop')) {
+                                    stops.push({
+                                        name: getLocalizedName(element.tags) || 'Parada sense nom',
+                                        lat: element.lat,
+                                        lon: element.lon,
+                                        tags: element.tags
+                                    });
+                                }
+                            });
+                        }
+                    }
+
+                    route.stops = stops;
+                    console.log('Loaded', stops.length, 'stops for route:', route.name);
+                    updateRouteStopsDisplay(route);
+                } else {
+                    console.error('HTTP error fetching stops:', xhr.status);
+                    document.getElementById('route-stops-list').innerHTML = '<li>Error carregant parades</li>';
+                }
+            } catch (error) {
+                console.error('Error loading stops:', error);
+                document.getElementById('route-stops-list').innerHTML = '<li>Error carregant parades</li>';
+            }
+        } else {
+            document.getElementById('route-stops-list').innerHTML = '<li>No hi ha parades disponibles</li>';
+        }
     }
 
     // Update route details
@@ -705,9 +777,14 @@ function updateRouteStopsDisplay(route) {
 function showPublicTransportStops(route) {
     if (!route.stops || route.stops.length === 0) return;
 
-    // Clear existing markers
-    if (typeof iconLayer !== 'undefined') {
-        iconLayer.clearLayers();
+    console.log('Showing public transport stops on map for route:', route.name);
+    console.log('Stops data:', route.stops);
+
+    // Clear existing route markers (use a separate layer for route stops)
+    if (typeof window.routeStopsLayer === 'undefined') {
+        window.routeStopsLayer = L.layerGroup().addTo(map);
+    } else {
+        window.routeStopsLayer.clearLayers();
     }
 
     // Filter stops with valid coordinates
@@ -715,21 +792,27 @@ function showPublicTransportStops(route) {
         return stop && typeof stop.lat === 'number' && typeof stop.lon === 'number' && !isNaN(stop.lat) && !isNaN(stop.lon);
     });
 
+    console.log('Valid stops found:', validStops.length);
+
     if (validStops.length === 0) {
         alert('No hi ha parades amb coordenades vàlides per mostrar al mapa.');
         return;
     }
 
     // Add markers for each valid stop
-    validStops.forEach(function(stop) {
-        var marker = L.marker([stop.lat, stop.lon]).addTo(iconLayer);
-        marker.bindPopup('<b>' + stop.name + '</b><br/>Parada de ' + route.name);
+    validStops.forEach(function(stop, index) {
+        console.log('Adding marker for stop:', stop.name, 'at coordinates:', [stop.lat, stop.lon]);
+        var marker = L.marker([stop.lat, stop.lon]).addTo(window.routeStopsLayer);
+        marker.bindPopup('<b>' + stop.name + '</b><br/>Parada de ' + route.name + '<br/>Posició: ' + (index + 1));
     });
+
+    console.log('Added', validStops.length, 'stop markers to map');
 
     // Fit map to show all valid stops
     var bounds = L.latLngBounds(validStops.map(stop => [stop.lat, stop.lon]));
     if (typeof map !== 'undefined') {
         map.fitBounds(bounds, { padding: [20, 20] });
+        console.log('Fitted map bounds to show all stops');
     }
 
     // Close sidebar
@@ -1515,12 +1598,126 @@ function reloadRoutes() {
     initializeRoutes();
 }
 
-// Function to update routes when location changes
+// Function to load walking routes manually
+function loadWalkingRoutes() {
+    console.log('Loading walking routes manually...');
+    loadSpecificRouteType('walking');
+}
+
+// Function to load biking routes manually
+function loadBikingRoutes() {
+    console.log('Loading biking routes manually...');
+    loadSpecificRouteType('biking');
+}
+
+// Function to load public transport routes manually
+function loadPublicTransportRoutes() {
+    console.log('Loading public transport routes manually...');
+    loadSpecificRouteType('public_transport');
+}
+
+// Function to load a specific route type
+function loadSpecificRouteType(routeType) {
+    // Check if a location has been selected
+    if (typeof baseLocation === 'undefined' || !baseLocation.name) {
+        alert('Seleccioneu primer una ubicació al mapa.');
+        return;
+    }
+
+    var locationBounds = baseLocation.bounds;
+
+    // Show loading message
+    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> Carregant rutes de ' + getRouteTypeName(routeType).toLowerCase() + '...</p>';
+
+    // Build query based on route type
+    var bbox = locationBounds.getSouth() + ',' + locationBounds.getWest() + ',' + locationBounds.getNorth() + ',' + locationBounds.getEast();
+
+    var query;
+    if (routeType === 'walking') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=hiking];' +
+            'relation(' + bbox + ')[type=route][route=foot];' +
+            'way(' + bbox + ')[highway=path];' +
+            'way(' + bbox + ')[highway=footway];' +
+            'way(' + bbox + ')[highway=track][tracktype=grade1];' +
+            'way(' + bbox + ')[highway=steps];);' +
+            'out tags;';
+    } else if (routeType === 'biking') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=bicycle];' +
+            'relation(' + bbox + ')[type=route][route=mtb];' +
+            'way(' + bbox + ')[highway=cycleway];' +
+            'way(' + bbox + ')[cycleway];' +
+            'way(' + bbox + ')[highway=path][bicycle=yes];);' +
+            'out tags;';
+    } else if (routeType === 'public_transport') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=bus];' +
+            'relation(' + bbox + ')[type=route][route=tram];' +
+            'relation(' + bbox + ')[type=route][route=subway];' +
+            'relation(' + bbox + ')[type=route][route=train];' +
+            'relation(' + bbox + ')[type=route][route=light_rail];);' +
+            'out tags;';
+    }
+
+    // Execute query
+    fetchOverpassData(query).then(function(data) {
+        var routes = [];
+        if (routeType === 'walking') {
+            routes = processWalkingRoutes(data);
+        } else if (routeType === 'biking') {
+            routes = processBikingRoutes(data);
+        } else if (routeType === 'public_transport') {
+            routes = processTransportRoutes(data);
+        }
+
+        console.log('Loaded', routes.length, routeType, 'routes');
+
+        // Update current routes data
+        currentRoutesData[routeType] = routes;
+
+        // Display only the requested route type
+        var contentHtml = '';
+        if (routes && routes.length > 0) {
+            contentHtml += '<h3><i class="fa ' + getRouteIcon(routeType) + '"></i> ' + getRouteTypeName(routeType) + ' (' + routes.length + ')</h3>';
+            contentHtml += '<div class="routes-list">';
+            routes.slice(0, 20).forEach(function(route) { // Show more routes when loading specific type
+                contentHtml += createRouteItem(route);
+            });
+            contentHtml += '</div>';
+        } else {
+            contentHtml = '<div class="no-routes-message">' +
+                '<p><i class="fa fa-info-circle"></i> No s\'han trobat rutes de ' + getRouteTypeName(routeType).toLowerCase() + ' per aquesta ubicació.</p>' +
+                '<p>Proveu amb una zona més gran o amb àrees turístiques.</p>' +
+                '</div>';
+        }
+
+        document.getElementById('routes-content').innerHTML = contentHtml;
+
+    }).catch(function(error) {
+        console.error('Error loading', routeType, 'routes:', error);
+
+        var errorMessage = '<p>Error carregant les rutes de ' + getRouteTypeName(routeType).toLowerCase() + '. ';
+
+        if (error.message && error.message.includes('504')) {
+            errorMessage += 'El servidor d\'OpenStreetMap està sobrecarregat. Proveu-ho més tard.</p>';
+        } else if (error.message && error.message.includes('429')) {
+            errorMessage += 'Massa consultes. Espereu uns minuts abans de tornar-ho a intentar.</p>';
+        } else {
+            errorMessage += 'Torneu-ho a intentar.</p>';
+        }
+
+        errorMessage += '<p><button onclick="load' + routeType.charAt(0).toUpperCase() + routeType.slice(1) + 'Routes()" style="background:#2a2a2a; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer;">Reintentar</button></p>';
+
+        document.getElementById('routes-content').innerHTML = errorMessage;
+    });
+}
+
+// Function to update routes when location changes (disabled for manual loading)
 function updateRoutesForNewLocation() {
-    // This will be called when baseLocation changes
-    setTimeout(function() {
-        initializeRoutes();
-    }, 100); // Small delay to ensure location is set
+    // Automatic route loading disabled to prevent Overpass bans
+    // Routes are now loaded manually via buttons
+    console.log('Automatic route loading disabled - use buttons instead');
 }
 
 // Function to parse OSMC symbol format
@@ -1566,16 +1763,17 @@ function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLo
     // Lower background rectangle
     visualHtml += '<rect x="0" y="15" width="60" height="15" fill="' + lowerHex + '" stroke="#000" stroke-width="1"/>';
 
-    // Add rotation angle text if present
-    if (textRotation && textRotation !== '') {
+    // Add rotation angle text if present and not zero
+    if (textRotation && textRotation !== '' && textRotation !== '0') {
         visualHtml += '<text x="55" y="12" font-family="Arial" font-size="6" fill="#000" text-anchor="end">' + textRotation + '°</text>';
     }
 
-    // Text/symbol (simplified as a symbol)
+    // Text/symbol
     if (additionalText && additionalText !== '') {
-        // Add rotated text
+        // Add rotated text - show full text, not just first character
         var rotation = textRotation ? parseFloat(textRotation) : 0;
-        visualHtml += '<text x="30" y="22" font-family="Arial" font-size="8" fill="' + textHex + '" text-anchor="middle" transform="rotate(' + rotation + ' 30 22)">' + additionalText.charAt(0).toUpperCase() + '</text>';
+        var fontSize = additionalText.length > 3 ? '6' : '8'; // Smaller font for longer text
+        visualHtml += '<text x="30" y="22" font-family="Arial" font-size="' + fontSize + '" fill="' + textHex + '" text-anchor="middle" transform="rotate(' + rotation + ' 30 22)">' + additionalText.toUpperCase() + '</text>';
     } else {
         // Default symbol (arrow or similar)
         visualHtml += '<polygon points="25,8 35,15 25,22" fill="' + textHex + '"/>';
