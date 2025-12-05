@@ -3,6 +3,8 @@ var currentSelectedRoute = null;
 var routesCache = {}; // Cache for routes data
 var currentRoutesData = { walking: [], biking: [], public_transport: [] }; // Store current routes
 var routeLayer = null; // Layer to display route geometry on map
+var activeRoutes = {}; // Store which routes are currently displayed on map
+var routeCheckboxes = {}; // Store checkbox states for routes
 
 // Function to initialize routes for current location
 function initializeRoutes() {
@@ -375,7 +377,8 @@ function processTransportRoutes(data) {
                     osm_type: element.type,
                     from: element.tags.from || '',
                     to: element.tags.to || '',
-                    stops: null // Will be populated lazily when needed
+                    stops: null, // Will be populated lazily when needed
+                    tags: element.tags // Store tags for expert mode
                 };
 
                 // Add to routes if it has a name
@@ -551,16 +554,21 @@ function displayRoutes(walkingRoutes, bikingRoutes, transportRoutes) {
 
 // Function to create HTML for a single route item
 function createRouteItem(route) {
-    var iconClass = getRouteIcon(route.type);
-    var typeName = getRouteTypeName(route.type);
+    var iconClass = getRouteIcon(route.type, route.route_type);
+    var typeName = getRouteTypeName(route.type, route.route_type);
+    var isChecked = routeCheckboxes[route.id] || false;
 
-    var html = '<div class="route-item" onclick="showRouteDetails(\'' + route.id + '\')">';
-    html += '<div class="route-header">';
+    var html = '<div class="route-item">';
+    html += '<div class="route-checkbox">';
+    html += '<input type="checkbox" id="route_' + route.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="toggleRouteDisplay(\'' + route.id + '\')">';
+    html += '<label for="route_' + route.id + '"></label>';
+    html += '</div>';
+    html += '<div class="route-header" onclick="showRouteDetails(\'' + route.id + '\')">';
     html += '<i class="fa ' + iconClass + '"></i>';
     html += '<span class="route-name">' + route.name + '</span>';
     html += '<span class="route-type">' + typeName + '</span>';
     html += '</div>';
-    html += '<div class="route-summary">';
+    html += '<div class="route-summary" onclick="showRouteDetails(\'' + route.id + '\')">';
     html += '<span class="route-distance"><i class="fa fa-route"></i> ' + route.distance + '</span>';
     if (route.elevation) {
         html += '<span class="route-elevation"><i class="fa fa-mountain"></i> ' + route.elevation + '</span>';
@@ -568,6 +576,10 @@ function createRouteItem(route) {
     if (route.frequency) {
         html += '<span class="route-frequency"><i class="fa fa-clock-o"></i> ' + route.frequency + '</span>';
     }
+    html += '</div>';
+    html += '<div class="route-actions">';
+    html += '<button class="route-details-btn" onclick="showRouteDetails(\'' + route.id + '\')">Detalls</button>';
+    html += '<button class="route-remove-btn" onclick="removeRoute(\'' + route.id + '\')">Eliminar</button>';
     html += '</div>';
     html += '</div>';
 
@@ -990,13 +1002,13 @@ function fetchPublicTransportGeometryAlternative(osmId) {
     return new Promise(function(resolve, reject) {
         console.log('Trying alternative geometry fetch for public transport route:', osmId);
 
-        // For public transport routes, get the stops and create a route connecting them
-        var altQuery = '[out:json][timeout:25];' +
+        // First, get the stops from the relation
+        var stopsQuery = '[out:json][timeout:20];' +
             'relation(' + osmId + ');' +
             'node(r);' +
             'out;';
 
-        console.log('Alternative query for PT route:', altQuery);
+        console.log('Fetching stops for PT route geometry:', stopsQuery);
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://overpass-api.de/api/interpreter', true);
@@ -1006,7 +1018,7 @@ function fetchPublicTransportGeometryAlternative(osmId) {
                 if (xhr.status === 200) {
                     try {
                         var data = JSON.parse(xhr.responseText);
-                        console.log('Alternative PT geometry response:', data);
+                        console.log('Stops data for PT route geometry:', data);
 
                         if (data && data.elements) {
                             // Find the relation and its stop nodes
@@ -1038,18 +1050,25 @@ function fetchPublicTransportGeometryAlternative(osmId) {
                                     }
                                 });
 
-                                console.log('Found', stopCoords.length, 'ordered stop coordinates for route', osmId);
+                                console.log('Found', stopCoords.length, 'stop coordinates for route', osmId);
 
                                 if (stopCoords.length >= 2) {
-                                    // Create a route connecting the stops in order
-                                    console.log('Creating route from stop coordinates:', stopCoords);
-                                    resolve([stopCoords]);
-                                } else if (stopCoords.length === 1) {
-                                    // Only one stop, can't create a route
-                                    console.log('Only one stop found, cannot create route');
-                                    resolve([]);
+                                    // Now try to find actual transport infrastructure connecting these stops
+                                    findTransportWaysBetweenStops(stopCoords).then(function(wayCoordinates) {
+                                        if (wayCoordinates && wayCoordinates.length > 0) {
+                                            console.log('Found actual transport ways:', wayCoordinates.length, 'segments');
+                                            resolve(wayCoordinates);
+                                        } else {
+                                            console.log('No transport ways found, falling back to straight lines');
+                                            resolve([stopCoords]);
+                                        }
+                                    }).catch(function(error) {
+                                        console.error('Error finding transport ways:', error);
+                                        console.log('Falling back to straight lines');
+                                        resolve([stopCoords]);
+                                    });
                                 } else {
-                                    console.log('No valid stop coordinates found for route', osmId);
+                                    console.log('Not enough stops to create route geometry');
                                     resolve([]);
                                 }
                             } else {
@@ -1061,16 +1080,113 @@ function fetchPublicTransportGeometryAlternative(osmId) {
                             resolve([]);
                         }
                     } catch (e) {
-                        console.error('Error in alternative PT geometry:', e);
+                        console.error('Error parsing stops data:', e);
                         reject(e);
                     }
                 } else {
-                    console.error('HTTP error in PT geometry fetch:', xhr.status);
+                    console.error('HTTP error fetching stops:', xhr.status);
                     reject(new Error('HTTP ' + xhr.status));
                 }
             }
         };
-        xhr.send('data=' + encodeURIComponent(altQuery));
+        xhr.send('data=' + encodeURIComponent(stopsQuery));
+    });
+}
+
+// Function to find actual transport ways connecting stops
+function findTransportWaysBetweenStops(stopCoords) {
+    return new Promise(function(resolve, reject) {
+        if (!stopCoords || stopCoords.length < 2) {
+            resolve([]);
+            return;
+        }
+
+        console.log('Finding transport ways between', stopCoords.length, 'stops');
+
+        // Calculate bounding box around all stops with some padding
+        var lats = stopCoords.map(coord => coord[0]);
+        var lons = stopCoords.map(coord => coord[1]);
+        var minLat = Math.min(...lats) - 0.005; // ~500m padding
+        var maxLat = Math.max(...lats) + 0.005;
+        var minLon = Math.min(...lons) - 0.005;
+        var maxLon = Math.max(...lons) + 0.005;
+
+        var bbox = minLat + ',' + minLon + ',' + maxLat + ',' + maxLon;
+
+        // Query for transport ways in the area around stops
+        var waysQuery = '[out:json][timeout:25];' +
+            '(way(' + bbox + ')[highway=motorway];' +
+            'way(' + bbox + ')[highway=trunk];' +
+            'way(' + bbox + ')[highway=primary];' +
+            'way(' + bbox + ')[highway=secondary];' +
+            'way(' + bbox + ')[highway=tertiary];' +
+            'way(' + bbox + ')[highway=unclassified];' +
+            'way(' + bbox + ')[highway=residential];' +
+            'way(' + bbox + ')[railway=rail];' +
+            'way(' + bbox + ')[railway=tram];' +
+            'way(' + bbox + ')[railway=subway];' +
+            'way(' + bbox + ')[railway=light_rail];);' +
+            'node(w);' +
+            'out geom;';
+
+        console.log('Querying transport ways in bbox:', bbox);
+        console.log('Ways query:', waysQuery);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://overpass-api.de/api/interpreter', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        console.log('Transport ways response:', data);
+
+                        if (data && data.elements) {
+                            var coordinates = [];
+                            var nodes = {};
+
+                            // Extract all nodes
+                            data.elements.forEach(function(element) {
+                                if (element.type === 'node') {
+                                    nodes[element.id] = [element.lat, element.lon];
+                                }
+                            });
+
+                            console.log('Found', Object.keys(nodes).length, 'nodes from transport ways');
+
+                            // Extract way coordinates
+                            data.elements.forEach(function(element) {
+                                if (element.type === 'way' && element.nodes) {
+                                    var wayCoords = [];
+                                    element.nodes.forEach(function(nodeId) {
+                                        if (nodes[nodeId]) {
+                                            wayCoords.push(nodes[nodeId]);
+                                        }
+                                    });
+                                    if (wayCoords.length > 1) {
+                                        coordinates.push(wayCoords);
+                                    }
+                                }
+                            });
+
+                            console.log('Extracted', coordinates.length, 'transport way segments');
+                            resolve(coordinates);
+                        } else {
+                            console.log('No transport ways data found');
+                            resolve([]);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing transport ways:', e);
+                        reject(e);
+                    }
+                } else {
+                    console.error('HTTP error fetching transport ways:', xhr.status);
+                    reject(new Error('HTTP ' + xhr.status));
+                }
+            }
+        };
+        xhr.send('data=' + encodeURIComponent(waysQuery));
     });
 }
 
@@ -1480,6 +1596,18 @@ function getRouteColor(type, route) {
     }
 }
 
+// Function to get stop color based on transport type
+function getTransportStopColor(route_type) {
+    switch(route_type) {
+        case 'bus': return '#FF4444'; // Red for buses
+        case 'tram': return '#44FF44'; // Green for trams
+        case 'subway': return '#4444FF'; // Blue for subway
+        case 'train': return '#FFFF44'; // Yellow for trains
+        case 'light_rail': return '#FF44FF'; // Magenta for light rail
+        default: return '#45B7D1'; // Default blue
+    }
+}
+
 // Function to show public transport route (stops + geometry)
 function showPublicTransportRoute(route) {
     if (!route) return;
@@ -1506,30 +1634,30 @@ function showPublicTransportRoute(route) {
         console.log('No stops available for route:', route.name);
     }
 
-    // For public transport routes, directly create geometry from stops
-    if (route.stops && route.stops.length >= 2) {
-        console.log('Creating route geometry directly from', route.stops.length, 'stops');
+    // For public transport routes, first try to fetch the actual route geometry like walking routes
+    console.log('Fetching actual route geometry for public transport route:', route.name);
+    fetchAndDisplayRouteGeometry(route).then(function(success) {
+        console.log('Route geometry display completed for public transport:', route.name);
+    }).catch(function(error) {
+        console.error('Error displaying route geometry for public transport:', error);
+        // Fallback: create straight-line geometry from stops
+        if (route.stops && route.stops.length >= 2) {
+            console.log('Falling back to straight-line geometry from stops');
 
-        // Extract coordinates from stops in order
-        var stopCoords = route.stops.map(function(stop) {
-            return [stop.lat, stop.lon];
-        });
+            // Extract coordinates from stops in order
+            var stopCoords = route.stops.map(function(stop) {
+                return [stop.lat, stop.lon];
+            });
 
-        console.log('Stop coordinates for route:', stopCoords);
+            console.log('Stop coordinates for route:', stopCoords);
 
-        // Display the route geometry directly
-        displayRouteGeometry([stopCoords], route);
-        console.log('Route geometry displayed from stops');
-    } else {
-        console.log('Not enough stops to create route geometry, trying Overpass query');
-
-        // Fallback to Overpass query method
-        fetchAndDisplayRouteGeometry(route).then(function(success) {
-            console.log('Route geometry display completed via Overpass for:', route.name);
-        }).catch(function(error) {
-            console.error('Error displaying route geometry via Overpass:', error);
-        });
-    }
+            // Display the route geometry as straight lines between stops
+            displayRouteGeometry([stopCoords], route);
+            console.log('Route geometry displayed as straight lines from stops');
+        } else {
+            console.log('No geometry available for public transport route');
+        }
+    });
 
     // Close sidebar
     if (typeof sidebar !== 'undefined') {
@@ -1598,6 +1726,11 @@ function reloadRoutes() {
     initializeRoutes();
 }
 
+// Global variables for pagination
+var currentPage = 1;
+var routesPerPage = 10;
+var currentRouteType = 'all';
+
 // Function to load walking routes manually
 function loadWalkingRoutes() {
     console.log('Loading walking routes manually...');
@@ -1614,6 +1747,88 @@ function loadBikingRoutes() {
 function loadPublicTransportRoutes() {
     console.log('Loading public transport routes manually...');
     loadSpecificRouteType('public_transport');
+}
+
+// Function to load specific transport routes
+function loadSpecificTransportRoutes(transportType) {
+    console.log('Loading specific transport routes:', transportType);
+
+    // Check if a location has been selected
+    if (typeof baseLocation === 'undefined' || !baseLocation.name) {
+        alert('Seleccioneu primer una ubicació al mapa.');
+        return;
+    }
+
+    var locationBounds = baseLocation.bounds;
+
+    // Show loading message
+    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> Carregant rutes de transport públic (' + transportType + ')...</p>';
+
+    // Build query for specific transport type
+    var bbox = locationBounds.getSouth() + ',' + locationBounds.getWest() + ',' + locationBounds.getNorth() + ',' + locationBounds.getEast();
+
+    var query;
+    if (transportType === 'bus') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=bus];);' +
+            'out tags;';
+    } else if (transportType === 'tram') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=tram];);' +
+            'out tags;';
+    } else if (transportType === 'subway') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=subway];);' +
+            'out tags;';
+    } else if (transportType === 'train') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=train];);' +
+            'out tags;';
+    } else if (transportType === 'light_rail') {
+        query = '[out:json][timeout:30];' +
+            '(relation(' + bbox + ')[type=route][route=light_rail];);' +
+            'out tags;';
+    }
+
+    // Execute query
+    fetchOverpassData(query).then(function(data) {
+        var routes = processTransportRoutes(data);
+        console.log('Loaded', routes.length, transportType, 'routes');
+
+        // Filter routes by the specific transport type
+        var filteredRoutes = routes.filter(function(route) {
+            return route.route_type === transportType;
+        });
+
+        console.log('Filtered to', filteredRoutes.length, transportType, 'routes');
+
+        // Update current routes data
+        currentRoutesData.public_transport = filteredRoutes;
+        currentRouteType = transportType;
+
+        // Reset pagination
+        currentPage = 1;
+
+        // Display routes with pagination
+        displayRoutesWithPagination(filteredRoutes, transportType);
+
+    }).catch(function(error) {
+        console.error('Error loading', transportType, 'routes:', error);
+
+        var errorMessage = '<p>Error carregant les rutes de ' + transportType + '. ';
+
+        if (error.message && error.message.includes('504')) {
+            errorMessage += 'El servidor d\'OpenStreetMap està sobrecarregat. Proveu-ho més tard.</p>';
+        } else if (error.message && error.message.includes('429')) {
+            errorMessage += 'Massa consultes. Espereu uns minuts abans de tornar-ho a intentar.</p>';
+        } else {
+            errorMessage += 'Torneu-ho a intentar.</p>';
+        }
+
+        errorMessage += '<p><button onclick="loadSpecificTransportRoutes(\'' + transportType + '\')" style="background:#2a2a2a; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer;">Reintentar</button></p>';
+
+        document.getElementById('routes-content').innerHTML = errorMessage;
+    });
 }
 
 // Function to load a specific route type
@@ -1721,13 +1936,14 @@ function updateRoutesForNewLocation() {
 }
 
 // Function to parse OSMC symbol format
-function parseOsmcSymbol(symbol) {
+function parseOsmcSymbol(symbol, routeRef) {
     if (!symbol || typeof symbol !== 'string') {
         return symbol;
     }
 
     // OSMC symbol format: background:text:text_rotation:additional_text
     // Example: yellow:white:yellow_lower:143.1:black
+    // Or: white:red::0:REF (background:text::rotation:text)
     var parts = symbol.split(':');
 
     try {
@@ -1737,8 +1953,18 @@ function parseOsmcSymbol(symbol) {
         var textRotation = parts[3] || '';
         var additionalText = parts[4] || '';
 
+        // Special handling: if backgroundLower is empty but we have 5 parts,
+        // it might be background:text::rotation:text format
+        if (!backgroundLower && parts.length >= 5 && parts[2] === '' && parts[3]) {
+            // Format like "white:red::0:REF" - upper_background:lower_background::rotation:text
+            backgroundLower = textColor; // Second color is lower background
+            textColor = 'black'; // Default text color for symbols
+            textRotation = parts[3];
+            additionalText = parts[4];
+        }
+
         // Create visual representation
-        var visualHtml = createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText);
+        var visualHtml = createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText, routeRef);
 
         return visualHtml;
 
@@ -1749,10 +1975,14 @@ function parseOsmcSymbol(symbol) {
 }
 
 // Function to create visual representation of OSMC symbol
-function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText) {
+function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLower, textRotation, additionalText, routeRef) {
     var bgHex = getOsmcHexColor(backgroundColor);
     var textHex = getOsmcHexColor(textColor);
-    var lowerHex = backgroundLower.includes('_lower') ? getOsmcHexColor(backgroundLower.replace('_lower', '')) : bgHex;
+
+    // For the corrected format: upper_color:lower_color:other:text_color
+    // Use textColor as lower background, additionalText as text color
+    var lowerHex = textHex; // Second parameter becomes lower stripe color
+    var finalTextColor = getOsmcHexColor(additionalText) !== '#FFFFFF' ? getOsmcHexColor(additionalText) : textHex;
 
     var visualHtml = '<div style="display: inline-block; margin-right: 10px; vertical-align: middle;" title="' + symbol + '">';
     visualHtml += '<svg width="60" height="30" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">';
@@ -1763,20 +1993,19 @@ function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLo
     // Lower background rectangle
     visualHtml += '<rect x="0" y="15" width="60" height="15" fill="' + lowerHex + '" stroke="#000" stroke-width="1"/>';
 
-    // Add rotation angle text if present and not zero
-    if (textRotation && textRotation !== '' && textRotation !== '0') {
-        visualHtml += '<text x="55" y="12" font-family="Arial" font-size="6" fill="#000" text-anchor="end">' + textRotation + '°</text>';
+    // Text/symbol - show route reference in the specified text color, no rotation
+    var textToShow = '';
+    if (routeRef && routeRef !== '') {
+        textToShow = routeRef;
     }
 
-    // Text/symbol
-    if (additionalText && additionalText !== '') {
-        // Add rotated text - show full text, not just first character
-        var rotation = textRotation ? parseFloat(textRotation) : 0;
-        var fontSize = additionalText.length > 3 ? '6' : '8'; // Smaller font for longer text
-        visualHtml += '<text x="30" y="22" font-family="Arial" font-size="' + fontSize + '" fill="' + textHex + '" text-anchor="middle" transform="rotate(' + rotation + ' 30 22)">' + additionalText.toUpperCase() + '</text>';
+    if (textToShow) {
+        // Show text centered, no rotation
+        var fontSize = textToShow.length > 3 ? '6' : '8'; // Smaller font for longer text
+        visualHtml += '<text x="30" y="22" font-family="Arial" font-size="' + fontSize + '" fill="' + finalTextColor + '" text-anchor="middle">' + textToShow.toUpperCase() + '</text>';
     } else {
         // Default symbol (arrow or similar)
-        visualHtml += '<polygon points="25,8 35,15 25,22" fill="' + textHex + '"/>';
+        visualHtml += '<polygon points="25,8 35,15 25,22" fill="' + finalTextColor + '"/>';
     }
 
     visualHtml += '</svg>';
@@ -1892,7 +2121,7 @@ function showRouteExpertInfo(routeId) {
 
                 // Special handling for osmc:symbol
                 if (tag === 'osmc:symbol') {
-                    displayValue = parseOsmcSymbol(tagValue);
+                    displayValue = parseOsmcSymbol(tagValue, route.tags.ref);
                 }
 
                 expertContent += '<tr><td><strong>' + tag + '</strong></td><td>' + displayValue + '</td></tr>';
@@ -1924,6 +2153,359 @@ function showRouteExpertInfo(routeId) {
     }
 
     console.log('Displayed expert info for route:', route.name, 'with OSM ID:', route.osm_id);
+}
+
+// Function to display routes with pagination
+function displayRoutesWithPagination(routes, transportType) {
+    var totalRoutes = routes.length;
+    var totalPages = Math.ceil(totalRoutes / routesPerPage);
+    var startIndex = (currentPage - 1) * routesPerPage;
+    var endIndex = Math.min(startIndex + routesPerPage, totalRoutes);
+    var routesToShow = routes.slice(startIndex, endIndex);
+
+    var transportTypeName = getTransportTypeDisplayName(transportType);
+
+    var contentHtml = '<h3><i class="fa fa-' + getTransportTypeIcon(transportType) + '"></i> ' + transportTypeName + ' (' + totalRoutes + ')</h3>';
+
+    // Pagination info
+    if (totalRoutes > routesPerPage) {
+        contentHtml += '<div class="pagination-info">';
+        contentHtml += 'Mostrant ' + (startIndex + 1) + '-' + endIndex + ' de ' + totalRoutes + ' rutes';
+        contentHtml += '</div>';
+    }
+
+    // Routes list
+    if (routesToShow.length > 0) {
+        contentHtml += '<div class="routes-list">';
+        routesToShow.forEach(function(route) {
+            contentHtml += createRouteItem(route);
+        });
+        contentHtml += '</div>';
+    } else {
+        contentHtml += '<div class="no-routes-message">';
+        contentHtml += '<p><i class="fa fa-info-circle"></i> No s\'han trobat rutes de ' + transportTypeName.toLowerCase() + ' per aquesta ubicació.</p>';
+        contentHtml += '<p>Proveu amb una zona més gran o amb àrees turístiques.</p>';
+        contentHtml += '</div>';
+    }
+
+    // Pagination controls
+    if (totalPages > 1) {
+        contentHtml += '<div class="pagination">';
+        // Previous button
+        if (currentPage > 1) {
+            contentHtml += '<button onclick="changePage(' + (currentPage - 1) + ', \'' + transportType + '\')">&laquo; Anterior</button>';
+        } else {
+            contentHtml += '<button disabled>&laquo; Anterior</button>';
+        }
+
+        // Page numbers (show max 5 pages around current)
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            contentHtml += '<button onclick="changePage(1, \'' + transportType + '\')">1</button>';
+            if (startPage > 2) {
+                contentHtml += '<span>...</span>';
+            }
+        }
+
+        for (var i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                contentHtml += '<button class="active" onclick="changePage(' + i + ', \'' + transportType + '\')">' + i + '</button>';
+            } else {
+                contentHtml += '<button onclick="changePage(' + i + ', \'' + transportType + '\')">' + i + '</button>';
+            }
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                contentHtml += '<span>...</span>';
+            }
+            contentHtml += '<button onclick="changePage(' + totalPages + ', \'' + transportType + '\')">' + totalPages + '</button>';
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            contentHtml += '<button onclick="changePage(' + (currentPage + 1) + ', \'' + transportType + '\')">Següent &raquo;</button>';
+        } else {
+            contentHtml += '<button disabled>Següent &raquo;</button>';
+        }
+
+        contentHtml += '</div>';
+    }
+
+    document.getElementById('routes-content').innerHTML = contentHtml;
+}
+
+// Function to change page
+function changePage(page, transportType) {
+    currentPage = page;
+    var routes = currentRoutesData.public_transport || [];
+    displayRoutesWithPagination(routes, transportType);
+}
+
+// Function to get transport type display name
+function getTransportTypeDisplayName(transportType) {
+    var names = {
+        'bus': 'Autobusos',
+        'tram': 'Tramvies',
+        'subway': 'Metro',
+        'train': 'Trens',
+        'light_rail': 'Tramvia lleuger'
+    };
+    return names[transportType] || transportType;
+}
+
+// Function to get transport type icon
+function getTransportTypeIcon(transportType) {
+    var icons = {
+        'bus': 'bus',
+        'tram': 'train',
+        'subway': 'subway',
+        'train': 'train',
+        'light_rail': 'train'
+    };
+    return icons[transportType] || 'bus';
+}
+
+// Function to get route icon based on type and route_type
+function getRouteIcon(type, route_type) {
+    switch(type) {
+        case 'walking': return 'fa-walking';
+        case 'biking': return 'fa-bicycle';
+        case 'public_transport':
+            switch(route_type) {
+                case 'bus': return 'fa-bus';
+                case 'tram': return 'fa-train';
+                case 'subway': return 'fa-subway';
+                case 'train': return 'fa-train';
+                case 'light_rail': return 'fa-train';
+                default: return 'fa-bus';
+            }
+        default: return 'fa-route';
+    }
+}
+
+// Function to get route type name
+function getRouteTypeName(type, route_type) {
+    switch(type) {
+        case 'walking': return 'Ruta a peu';
+        case 'biking': return 'Ruta en bicicleta';
+        case 'public_transport':
+            switch(route_type) {
+                case 'bus': return 'Autobús';
+                case 'tram': return 'Tramvia';
+                case 'subway': return 'Metro';
+                case 'train': return 'Tren';
+                case 'light_rail': return 'Tramvia lleuger';
+                default: return 'Transport públic';
+            }
+        default: return 'Ruta';
+    }
+}
+
+// Function to toggle route display on map
+function toggleRouteDisplay(routeId) {
+    var allRoutes = [...currentRoutesData.walking, ...currentRoutesData.biking, ...currentRoutesData.public_transport];
+    var route = allRoutes.find(r => r.id === routeId);
+
+    if (!route) return;
+
+    // Toggle checkbox state
+    var isChecked = routeCheckboxes[routeId] || false;
+    routeCheckboxes[routeId] = !isChecked;
+
+    if (!isChecked) {
+        // Show route on map
+        console.log('Showing route on map:', route.name);
+        showRouteOnMap(route);
+    } else {
+        // Hide route from map
+        console.log('Hiding route from map:', route.name);
+        hideRouteFromMap(routeId);
+    }
+}
+
+// Function to remove route from the list
+function removeRoute(routeId) {
+    // Hide from map if displayed
+    hideRouteFromMap(routeId);
+
+    // Remove from checkboxes
+    delete routeCheckboxes[routeId];
+
+    // Find and remove from currentRoutesData
+    var allRoutes = [...currentRoutesData.walking, ...currentRoutesData.biking, ...currentRoutesData.public_transport];
+    var routeIndex = allRoutes.findIndex(r => r.id === routeId);
+
+    if (routeIndex !== -1) {
+        var route = allRoutes[routeIndex];
+        var routeType = route.type;
+
+        // Remove from the appropriate array
+        var typeArray = currentRoutesData[routeType];
+        if (typeArray) {
+            var typeIndex = typeArray.findIndex(r => r.id === routeId);
+            if (typeIndex !== -1) {
+                typeArray.splice(typeIndex, 1);
+            }
+        }
+
+        // Refresh the display
+        displayRoutes(currentRoutesData.walking, currentRoutesData.biking, currentRoutesData.public_transport);
+    }
+}
+
+// Function to show route on map (for multiple routes)
+function showRouteOnMap(route) {
+    if (!route) return;
+
+    initializeRouteLayer();
+
+    // Create a unique layer for this route if it doesn't exist
+    if (!activeRoutes[route.id]) {
+        activeRoutes[route.id] = L.layerGroup().addTo(map);
+    }
+
+    var routeLayerGroup = activeRoutes[route.id];
+
+    // Clear existing content for this route
+    routeLayerGroup.clearLayers();
+
+    // For walking/biking routes, fetch and display geometry
+    if (route.type !== 'public_transport') {
+        fetchAndDisplayRouteGeometryForLayer(route, routeLayerGroup);
+    } else {
+        // For public transport, show stops
+        if (route.stops && route.stops.length > 0) {
+            showPublicTransportStopsForLayer(route, routeLayerGroup);
+        }
+        // Also try to show geometry if available
+        fetchAndDisplayRouteGeometryForLayer(route, routeLayerGroup);
+    }
+}
+
+// Function to hide route from map (but keep stops visible)
+function hideRouteFromMap(routeId) {
+    if (activeRoutes[routeId]) {
+        // Get the route object to check if it has stops
+        var allRoutes = [...currentRoutesData.walking, ...currentRoutesData.biking, ...currentRoutesData.public_transport];
+        var route = allRoutes.find(r => r.id === routeId);
+
+        if (route && route.type === 'public_transport' && route.stops && route.stops.length > 0) {
+            // For public transport routes, only hide the route line, keep stops
+            var routeLayerGroup = activeRoutes[routeId];
+            // Remove polylines but keep markers
+            routeLayerGroup.eachLayer(function(layer) {
+                if (layer instanceof L.Polyline) {
+                    routeLayerGroup.removeLayer(layer);
+                }
+                // Keep markers (stop icons)
+            });
+        } else {
+            // For other routes, clear everything
+            activeRoutes[routeId].clearLayers();
+            delete activeRoutes[routeId];
+        }
+    }
+}
+
+// Function to fetch and display route geometry for a specific layer
+function fetchAndDisplayRouteGeometryForLayer(route, routeLayerGroup) {
+    if (!route) return;
+
+    // For relations, fetch the geometry of all ways in the relation
+    if (route.osm_type === 'relation') {
+        fetchRouteGeometry(route.osm_id).then(function(geometry) {
+            if (geometry && geometry.length > 0) {
+                displayRouteGeometryForLayer(geometry, route, routeLayerGroup);
+            }
+        }).catch(function(error) {
+            console.error('Error fetching route geometry for layer:', error);
+        });
+    } else if (route.osm_type === 'way') {
+        // For direct ways, fetch the way geometry
+        fetchWayGeometry(route.osm_id).then(function(geometry) {
+            if (geometry && geometry.length > 0) {
+                displayRouteGeometryForLayer([geometry], route, routeLayerGroup);
+            }
+        }).catch(function(error) {
+            console.error('Error fetching way geometry for layer:', error);
+        });
+    } else {
+        // For synthetic routes, try to find ways with matching tags
+        if (route.type === 'walking' || route.type === 'biking') {
+            fetchSyntheticRouteGeometry(route).then(function(geometry) {
+                if (geometry && geometry.length > 0) {
+                    displayRouteGeometryForLayer(geometry, route, routeLayerGroup);
+                }
+            }).catch(function(error) {
+                console.error('Error fetching synthetic route geometry for layer:', error);
+            });
+        }
+    }
+}
+
+// Function to display route geometry for a specific layer
+function displayRouteGeometryForLayer(coordinates, route, routeLayerGroup) {
+    if (!coordinates || coordinates.length === 0 || !routeLayerGroup) return;
+
+    console.log('Displaying route geometry for layer:', route.name);
+
+    // Add polylines for each way in the route
+    coordinates.forEach(function(wayCoords, index) {
+        if (wayCoords.length > 1) {
+            var color = getRouteColor(route.type, route);
+            var polyline = L.polyline(wayCoords, {
+                color: color,
+                weight: 4,
+                opacity: 0.7
+            }).addTo(routeLayerGroup);
+
+            // Create popup with route information
+            var popupContent = '<b>' + route.name + '</b><br/>';
+            popupContent += '<small>' + getRouteTypeName(route.type, route.route_type) + '</small><br/>';
+
+            if (route.tags) {
+                if (route.tags.ref) {
+                    popupContent += '<small>Ref: ' + route.tags.ref + '</small><br/>';
+                }
+            }
+
+            polyline.bindPopup(popupContent);
+        }
+    });
+}
+
+// Function to show public transport stops for a specific layer
+function showPublicTransportStopsForLayer(route, routeLayerGroup) {
+    if (!route.stops || route.stops.length === 0 || !routeLayerGroup) return;
+
+    console.log('Showing public transport stops for layer:', route.name);
+
+    // Filter stops with valid coordinates
+    var validStops = route.stops.filter(function(stop) {
+        return stop && typeof stop.lat === 'number' && typeof stop.lon === 'number' && !isNaN(stop.lat) && !isNaN(stop.lon);
+    });
+
+    if (validStops.length === 0) return;
+
+    // Get the stop color based on transport type
+    var stopColor = getTransportStopColor(route.route_type);
+
+    // Create a custom icon with the transport-specific color
+    var stopIcon = L.divIcon({
+        className: 'custom-stop-icon',
+        html: '<div style="background-color: ' + stopColor + '; border: 2px solid white; border-radius: 50%; width: 12px; height: 12px; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+    });
+
+    // Add markers for each valid stop
+    validStops.forEach(function(stop, index) {
+        var marker = L.marker([stop.lat, stop.lon], { icon: stopIcon }).addTo(routeLayerGroup);
+        marker.bindPopup('<b>' + stop.name + '</b><br/>Parada de ' + route.name + '<br/><small style="color: ' + stopColor + ';">●</small> ' + getRouteTypeName(route.type, route.route_type));
+    });
 }
 
 // Routes will be initialized when a location is selected via updateRoutesForNewLocation()

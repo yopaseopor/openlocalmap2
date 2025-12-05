@@ -226,8 +226,19 @@
     <div style="text-align: center;">
       <button class="route-type-btn fa fa-walking" type="button" onclick="loadWalkingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes a peu</button>
       <button class="route-type-btn fa fa-bicycle" type="button" onclick="loadBikingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes en bicicleta</button>
-      <button class="route-type-btn fa fa-bus" type="button" onclick="loadPublicTransportRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Transport públic</button>
     </div>
+
+    <!-- Public transport type buttons -->
+    <div style="text-align: center; margin-top: 10px;">
+      <h4 style="margin: 5px 0; color: #666; font-size: 14px;">Transport públic:</h4>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('bus')" title="Autobusos" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-bus"></i> Bus</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('tram')" title="Tramvies" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-subway"></i> Tram</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('subway')" title="Metro" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-train"></i> Metro</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('train')" title="Trens" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-train"></i> Tren</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('light_rail')" title="Tramvia lleuger" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-subway"></i> Tram lleuger</button>
+      <button class="transport-type-btn fa fa-bus" type="button" onclick="loadPublicTransportRoutes()" title="Tots els transports públics" style="background:#007acc; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"> Tots</button>
+    </div>
+
     <small style="color: #666; font-size: 11px;">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
   </center>
 
@@ -301,7 +312,7 @@
 				// For locations other than default, try to find Wikipedia category
 				var wikiTitle = "Categoria:" + baseLocation.name.replace(/ /g, "_");
 				iframe.src = "https://ca.m.wikipedia.org/w/index.php?title=" + encodeURIComponent(wikiTitle) + "&mobileaction=toggle_view_mobile";
-				titleElement.textContent = baseLocation.name + " a la Viquipèdia";
+				titleElement.textContent = baseLocation.name.replace(/'/g, "\\'") + " a la Viquipèdia";
 				reloadButton.textContent = "Torna a les categories";
 			} else {
 				// Default Vilanova i la Geltrú

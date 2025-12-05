@@ -296,8 +296,10 @@ function updateBaseLocationDisplay() {
     // Update the subtitle to show current base location
     var subtitleElement = document.querySelector('#search h1 small');
     if (subtitleElement) {
+        // Escape apostrophes in location name to prevent JavaScript errors
+        var escapedLocationName = baseLocation.name.replace(/'/g, "\\'");
         subtitleElement.textContent = getTranslation('search_local_subtitle_dynamic')
-            .replace('{location}', baseLocation.name)
+            .replace('{location}', escapedLocationName)
             .replace('{type}', getTranslation('location_type_' + baseLocation.type));
     }
 

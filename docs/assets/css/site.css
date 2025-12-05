@@ -175,7 +175,6 @@ ul {
     border-radius: 5px;
     padding: 10px;
     margin-bottom: 10px;
-    cursor: pointer;
     transition: background-color 0.2s;
 }
 
@@ -183,10 +182,27 @@ ul {
     background-color: #f5f5f5;
 }
 
+.route-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.route-checkbox input[type="checkbox"] {
+    margin: 0;
+    margin-right: 8px;
+}
+
+.route-checkbox label {
+    cursor: pointer;
+    font-weight: normal;
+}
+
 .route-header {
     display: flex;
     align-items: center;
     margin-bottom: 5px;
+    cursor: pointer;
 }
 
 .route-header i {
@@ -213,6 +229,7 @@ ul {
     gap: 15px;
     font-size: 14px;
     color: #666;
+    cursor: pointer;
 }
 
 .route-summary span {
@@ -234,26 +251,6 @@ ul {
 .route-info-item strong {
     display: inline-block;
     width: 120px;
-}
-
-.route-actions {
-    margin-top: 15px;
-    text-align: center;
-}
-
-.route-actions button {
-    background: #2a2a2a;
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 14px;
-    margin: 0 5px;
-}
-
-.route-actions button:hover {
-    background: #444;
 }
 
 #route-download-link {
@@ -297,6 +294,55 @@ ul {
     margin: 10px 0;
     font-size: 16px;
     line-height: 1.4;
+}
+
+/* Transport type buttons */
+.transport-type-btn {
+    transition: background-color 0.2s;
+}
+
+.transport-type-btn:hover {
+    background: #444 !important;
+}
+
+/* Pagination styling */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
+    gap: 5px;
+}
+
+.pagination button {
+    background: #2a2a2a;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0 2px;
+}
+
+.pagination button:hover {
+    background: #444;
+}
+
+.pagination button.active {
+    background: #007acc;
+}
+
+.pagination button:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: #666;
+    margin: 5px 0;
+    text-align: center;
 }
 
 /* Search input styling */
