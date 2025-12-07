@@ -11,7 +11,7 @@ function initializeRoutes() {
     // Check if a location has been selected
     if (typeof baseLocation === 'undefined' || !baseLocation.name) {
         // No location selected - hide routes completely
-        document.getElementById('routes-title').textContent = 'Rutes';
+        document.getElementById('routes-title').textContent = getTranslation('routes_title');
         document.getElementById('routes-content').innerHTML = '';
         return;
     }
@@ -20,7 +20,7 @@ function initializeRoutes() {
     var locationBounds = baseLocation.bounds;
 
     // Update title
-    document.getElementById('routes-title').textContent = 'Rutes a ' + locationName;
+    document.getElementById('routes-title').textContent = getTranslation('routes_title_dynamic').replace('{location}', locationName);
 
     // Load routes from Overpass API
     loadRoutesFromOverpass(locationBounds);
@@ -29,7 +29,7 @@ function initializeRoutes() {
 // Function to load routes from Overpass API
 function loadRoutesFromOverpass(bounds) {
     // Show loading message
-    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> Carregant rutes...</p>';
+    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> ' + getTranslation('routes_loading') + '</p>';
 
     // If no bounds available, use default area around Vilanova i la Geltrú
     if (!bounds) {
@@ -182,12 +182,12 @@ function processTransportStops(data) {
     if (data && data.elements) {
         data.elements.forEach(function(element) {
             if (element.type === 'node') {
-                stops.push({
-                    name: getLocalizedName(element.tags) || 'Parada',
-                    lat: element.lat,
-                    lon: element.lon,
-                    tags: element.tags
-                });
+            stops.push({
+                name: getLocalizedName(element.tags) || getTranslation('routes_stop_generic'),
+                lat: element.lat,
+                lon: element.lon,
+                tags: element.tags
+            });
             }
         });
     }
@@ -204,8 +204,8 @@ function createTransportRoutesFromStops(stops) {
         // Create a generic bus route for the area
         routes.push({
             id: 'generated_bus_route',
-            name: 'Línies d\'autobús locals',
-            description: 'Parades d\'autobús trobades a la zona',
+            name: getTranslation('routes_bus_lines_local'),
+            description: getTranslation('routes_bus_stops_local_desc'),
             frequency: 'Variable',
             type: 'public_transport',
             route_type: 'bus',
@@ -263,7 +263,7 @@ function processWalkingRoutes(data) {
             namedRoutes.forEach(function(element) {
                 var route = {
                     id: 'relation_' + element.id,
-                    name: getLocalizedName(element.tags) || element.tags.ref || 'Ruta a peu',
+                    name: getLocalizedName(element.tags) || element.tags.ref || getTranslation('routes_type_walking'),
                     description: element.tags.description || '',
                     distance: element.tags.distance || 'N/A',
                     elevation: element.tags.ele || '',
@@ -318,7 +318,7 @@ function processBikingRoutes(data) {
             namedRoutes.forEach(function(element) {
                 var route = {
                     id: 'relation_' + element.id,
-                    name: getLocalizedName(element.tags) || element.tags.ref || 'Ruta en bicicleta',
+                    name: getLocalizedName(element.tags) || element.tags.ref || getTranslation('routes_type_biking'),
                     description: element.tags.description || '',
                     distance: element.tags.distance || 'N/A',
                     elevation: element.tags.ele || '',
@@ -1982,33 +1982,23 @@ function createOsmcSymbolVisual(symbol, backgroundColor, textColor, backgroundLo
     // For the corrected format: upper_color:lower_color:other:text_color
     // Use textColor as lower background, additionalText as text color
     var lowerHex = textHex; // Second parameter becomes lower stripe color
-    var finalTextColor = getOsmcHexColor(additionalText) !== '#FFFFFF' ? getOsmcHexColor(additionalText) : textHex;
+    var finalTextColor = getOsmcHexColor(additionalText) !== '#FFFFFF' ? getOsmcHexColor(additionalText) : '#000000'; // Default to black for REF
 
     var visualHtml = '<div style="display: inline-block; margin-right: 10px; vertical-align: middle;" title="' + symbol + '">';
-    visualHtml += '<svg width="60" height="30" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">';
 
+    // SVG with just the colored stripes
+    visualHtml += '<svg width="40" height="20" viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">';
     // Background rectangle (upper part)
-    visualHtml += '<rect x="0" y="0" width="60" height="15" fill="' + bgHex + '" stroke="#000" stroke-width="1"/>';
-
+    visualHtml += '<rect x="0" y="0" width="40" height="10" fill="' + bgHex + '" stroke="#000" stroke-width="1"/>';
     // Lower background rectangle
-    visualHtml += '<rect x="0" y="15" width="60" height="15" fill="' + lowerHex + '" stroke="#000" stroke-width="1"/>';
-
-    // Text/symbol - show route reference in the specified text color, no rotation
-    var textToShow = '';
-    if (routeRef && routeRef !== '') {
-        textToShow = routeRef;
-    }
-
-    if (textToShow) {
-        // Show text centered, no rotation
-        var fontSize = textToShow.length > 3 ? '6' : '8'; // Smaller font for longer text
-        visualHtml += '<text x="30" y="22" font-family="Arial" font-size="' + fontSize + '" fill="' + finalTextColor + '" text-anchor="middle">' + textToShow.toUpperCase() + '</text>';
-    } else {
-        // Default symbol (arrow or similar)
-        visualHtml += '<polygon points="25,8 35,15 25,22" fill="' + finalTextColor + '"/>';
-    }
-
+    visualHtml += '<rect x="0" y="10" width="40" height="10" fill="' + lowerHex + '" stroke="#000" stroke-width="1"/>';
     visualHtml += '</svg>';
+
+    // REF text next to the stripes
+    if (routeRef && routeRef !== '') {
+        visualHtml += '<span style="font-weight: bold; font-size: 14px; color: ' + finalTextColor + '; margin-left: 5px; vertical-align: middle;">' + routeRef + '</span>';
+    }
+
     visualHtml += '</div>';
 
     return visualHtml;
