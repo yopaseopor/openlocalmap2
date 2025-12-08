@@ -113,6 +113,20 @@ window.translations_en = {
     wikidata_transport_network: "Transport Network",
     wikidata_links_resources: "Links and Resources",
 
+    // No Wikidata info fallback translations
+    wikidata_no_info_found: "No information found on Wikidata",
+    wikidata_no_info_suggestion: "No specific information found on Wikidata for '{route}'. You can try manual search or consult OSM data below.",
+    wikidata_osm_info: "OSM Information",
+    wikidata_no_osm_info: "No additional OSM information",
+    wikidata_search_suggestions: "Search suggestions",
+    wikidata_try_manual_search: "You can try a manual search on Wikidata with related terms.",
+    wikidata_manual_search: "Manual search",
+    wikidata_back: "Back",
+    wikidata_search_results: "Search results",
+    wikidata_select_result: "Select a result to view its information:",
+    wikidata_no_search_results: "No results found for this search.",
+    wikidata_search_error: "Error in search. Try again later.",
+
     // Related entities translations
     wikidata_related_entities: "Related entities",
     wikidata_related_description: "Click on any related Wikidata item to view its full information:",
