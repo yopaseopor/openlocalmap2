@@ -392,6 +392,11 @@ function processTransportRoutes(data) {
                     tags: element.tags // Store tags for expert mode
                 };
 
+                // Add wikidata tag if present in OSM data
+                if (element.tags && element.tags.wikidata) {
+                    route.wikidata = element.tags.wikidata;
+                }
+
                 // Add to routes if it has a name
                 if (route.name !== getTranslation('routes_unnamed_line')) {
                     routes.push(route);
@@ -605,6 +610,11 @@ function showRouteDetails(routeId) {
     if (!route) return;
 
     currentSelectedRoute = route;
+
+    // Update Wikipedia content to show route-specific information
+    if (typeof updateWikipediaContent === 'function') {
+        updateWikipediaContent();
+    }
 
     // For public transport routes, always try to show stops
     if (route.type === 'public_transport') {
@@ -849,6 +859,11 @@ function hideRouteDetails() {
     document.getElementById('route-details').style.display = 'none';
     document.getElementById('routes-content').style.display = 'block';
     currentSelectedRoute = null;
+    
+    // Update Wikipedia content to return to base location information
+    if (typeof updateWikipediaContent === 'function') {
+        updateWikipediaContent();
+    }
 }
 
 // Function to initialize route layer
@@ -1706,6 +1721,13 @@ function clearRoute() {
     if (routeLayer) {
         routeLayer.clearLayers(); // Clear route geometry
     }
+    
+    // Clear the selected route and update Wikipedia
+    currentSelectedRoute = null;
+    if (typeof updateWikipediaContent === 'function') {
+        updateWikipediaContent();
+    }
+    
     if (typeof sidebar !== 'undefined') {
         sidebar.close();
     }

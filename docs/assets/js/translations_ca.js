@@ -104,6 +104,40 @@ window.translations_ca = {
     wikidata_no_links: "No hi ha enllaços disponibles",
     wikidata_location_map: "Mapa de localització",
     wikidata_no_wikipedia_articles: "No hi ha articles de Viquipèdia disponibles",
+    
+    // Transport route specific translations
+    wikidata_route_info: "Informació de la Ruta",
+    wikidata_route_code: "Codi de la ruta",
+    wikidata_route_color: "Color de la ruta",
+    wikidata_operator: "Operador",
+    wikidata_transport_network: "Xarxa de transport",
+    wikidata_links_resources: "Enllaços i Recursos",
+
+    // No Wikidata info fallback translations
+    wikidata_no_info_found: "No s'ha trobat informació a Wikidata",
+    wikidata_no_info_suggestion: "No s'ha trobat informació específica a Wikidata per a '{route}'. Podeu provar de cercar manualment o consultar les dades d'OSM a continuació.",
+    wikidata_osm_info: "Informació d'OSM",
+    wikidata_no_osm_info: "No hi ha informació addicional d'OSM",
+    wikidata_search_suggestions: "Suggeriments de cerca",
+    wikidata_try_manual_search: "Podeu provar una cerca manual a Wikidata amb termes relacionats amb aquesta ruta.",
+    wikidata_manual_search: "Cerca manual",
+    wikidata_back: "Tornar",
+    wikidata_search_results: "Resultats de la cerca",
+    wikidata_select_result: "Seleccioneu un resultat per veure'n la informació:",
+    wikidata_no_search_results: "No s'han trobat resultats per aquesta cerca.",
+    wikidata_search_error: "Error en la cerca. Proveu-ho més tard.",
+
+    // Related entities translations
+    wikidata_related_entities: "Entitats relacionades",
+    wikidata_related_description: "Feu clic en qualsevol element relacionat de Wikidata per veure'n la informació completa:",
+    wikidata_click_to_load: "Feu clic per carregar la informació completa de Wikidata",
+    wikidata_part_of: "Part de",
+    wikidata_operator: "Operador",
+    wikidata_country: "País",
+    wikidata_admin_division: "Divisió administrativa",
+    wikidata_located_in: "Situat a",
+    wikidata_instance_of: "Instància de",
+    wikidata_subclass_of: "Subclasse de",
 
     // Comments pane
     comments_title: "Comentaris",

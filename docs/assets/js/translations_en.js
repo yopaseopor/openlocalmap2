@@ -104,6 +104,25 @@ window.translations_en = {
     wikidata_no_links: "No links available",
     wikidata_location_map: "Location map",
     wikidata_no_wikipedia_articles: "No Wikipedia articles available",
+    
+    // Transport route specific translations
+    wikidata_route_info: "Route Information",
+    wikidata_route_code: "Route Code",
+    wikidata_route_color: "Route Color",
+    wikidata_operator: "Operator",
+    wikidata_transport_network: "Transport Network",
+    wikidata_links_resources: "Links and Resources",
+
+    // Related entities translations
+    wikidata_related_entities: "Related entities",
+    wikidata_related_description: "Click on any related Wikidata item to view its full information:",
+    wikidata_click_to_load: "Click to load full Wikidata information",
+    wikidata_part_of: "Part of",
+    wikidata_country: "Country",
+    wikidata_admin_division: "Administrative division",
+    wikidata_located_in: "Located in",
+    wikidata_instance_of: "Instance of",
+    wikidata_subclass_of: "Subclass of",
 
     // Comments pane
     comments_title: "Comments",
