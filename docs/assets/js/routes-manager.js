@@ -22,6 +22,17 @@ function initializeRoutes() {
     // Update title
     document.getElementById('routes-title').textContent = getTranslation('routes_title_dynamic').replace('{location}', locationName);
 
+    // Update route type buttons with current translations
+    var walkingBtn = document.querySelector('.route-type-btn.fa.fa-walking');
+    var bikingBtn = document.querySelector('.route-type-btn.fa.fa-bicycle');
+
+    if (walkingBtn) {
+        walkingBtn.innerHTML = '<i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short');
+    }
+    if (bikingBtn) {
+        bikingBtn.innerHTML = '<i class="fa fa-bicycle"></i> ' + getTranslation('routes_biking_title_short');
+    }
+
     // Load routes from Overpass API
     loadRoutesFromOverpass(locationBounds);
 }
@@ -285,8 +296,8 @@ function processWalkingRoutes(data) {
             if (pathCount > 0) {
                 routes.push({
                     id: 'walking_paths_synthetic',
-                    name: 'Camins i senders locals',
-                    description: 'Camins a peu trobats a la zona',
+                    name: getTranslation('routes_walking_synthetic'),
+                    description: getTranslation('routes_walking_synthetic_desc'),
                     distance: 'Variable',
                     elevation: 'Variable',
                     difficulty: 'Variable',
@@ -340,8 +351,8 @@ function processBikingRoutes(data) {
             if (pathCount > 0) {
                 routes.push({
                     id: 'cycling_paths_synthetic',
-                    name: 'Carrils bici locals',
-                    description: 'Carrils i vies ciclistes trobats a la zona',
+                    name: getTranslation('routes_biking_synthetic'),
+                    description: getTranslation('routes_biking_synthetic_desc'),
                     distance: 'Variable',
                     elevation: 'Variable',
                     difficulty: 'Variable',
@@ -368,7 +379,7 @@ function processTransportRoutes(data) {
             if (element.type === 'relation') {
                 var route = {
                     id: 'relation_' + element.id,
-                    name: getLocalizedName(element.tags) || element.tags.ref || 'Línia sense nom',
+                    name: getLocalizedName(element.tags) || getTranslation('routes_unnamed_line'),
                     description: element.tags.description || '',
                     frequency: element.tags.interval || '',
                     type: 'public_transport',
@@ -382,7 +393,7 @@ function processTransportRoutes(data) {
                 };
 
                 // Add to routes if it has a name
-                if (route.name !== 'Línia sense nom') {
+                if (route.name !== getTranslation('routes_unnamed_line')) {
                     routes.push(route);
                 }
             }
@@ -507,7 +518,7 @@ function displayRoutes(walkingRoutes, bikingRoutes, transportRoutes) {
 
     // Walking routes
     if (walkingRoutes && walkingRoutes.length > 0) {
-        contentHtml += '<h3><i class="fa fa-walking"></i> Rutes a peu (' + walkingRoutes.length + ')</h3>';
+        contentHtml += '<h3><i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short') + ' (' + walkingRoutes.length + ')</h3>';
         contentHtml += '<div class="routes-list">';
         walkingRoutes.slice(0, 10).forEach(function(route) { // Limit to 10 routes
             contentHtml += createRouteItem(route);
@@ -517,7 +528,7 @@ function displayRoutes(walkingRoutes, bikingRoutes, transportRoutes) {
 
     // Biking routes
     if (bikingRoutes && bikingRoutes.length > 0) {
-        contentHtml += '<h3><i class="fa fa-bicycle"></i> Rutes en bicicleta (' + bikingRoutes.length + ')</h3>';
+        contentHtml += '<h3><i class="fa fa-bicycle"></i> ' + getTranslation('routes_biking_title_short') + ' (' + bikingRoutes.length + ')</h3>';
         contentHtml += '<div class="routes-list">';
         bikingRoutes.slice(0, 10).forEach(function(route) {
             contentHtml += createRouteItem(route);
@@ -527,7 +538,7 @@ function displayRoutes(walkingRoutes, bikingRoutes, transportRoutes) {
 
     // Public transport
     if (transportRoutes && transportRoutes.length > 0) {
-        contentHtml += '<h3><i class="fa fa-bus"></i> Transport públic (' + transportRoutes.length + ')</h3>';
+        contentHtml += '<h3><i class="fa fa-bus"></i> ' + getTranslation('routes_transport_title_short') + ' (' + transportRoutes.length + ')</h3>';
         contentHtml += '<div class="routes-list">';
         transportRoutes.slice(0, 10).forEach(function(route) {
             contentHtml += createRouteItem(route);
@@ -569,7 +580,7 @@ function createRouteItem(route) {
     html += '<span class="route-type">' + typeName + '</span>';
     html += '</div>';
     html += '<div class="route-summary" onclick="showRouteDetails(\'' + route.id + '\')">';
-    html += '<span class="route-distance"><i class="fa fa-route"></i> ' + route.distance + '</span>';
+    html += '<span class="route-distance"><i class="fa fa-route"></i> ' + (route.tags && route.tags.ref ? route.tags.ref : route.distance) + '</span>';
     if (route.elevation) {
         html += '<span class="route-elevation"><i class="fa fa-mountain"></i> ' + route.elevation + '</span>';
     }
@@ -578,8 +589,8 @@ function createRouteItem(route) {
     }
     html += '</div>';
     html += '<div class="route-actions">';
-    html += '<button class="route-details-btn" onclick="showRouteDetails(\'' + route.id + '\')">Detalls</button>';
-    html += '<button class="route-remove-btn" onclick="removeRoute(\'' + route.id + '\')">Eliminar</button>';
+    html += '<button class="route-details-btn" onclick="showRouteDetails(\'' + route.id + '\')">' + getTranslation('routes_details') + '</button>';
+    html += '<button class="route-remove-btn" onclick="removeRoute(\'' + route.id + '\')">' + getTranslation('routes_remove') + '</button>';
     html += '</div>';
     html += '</div>';
 
@@ -695,7 +706,7 @@ function showRouteDetails(routeId) {
 
     // Update route details
     document.getElementById('route-detail-title').textContent = route.name;
-    document.getElementById('route-detail-description').textContent = route.description || 'Sense descripció';
+    document.getElementById('route-detail-description').textContent = route.description || getTranslation('routes_no_description');
 
     // Update route info
     document.getElementById('route-distance').textContent = route.distance || 'N/A';
@@ -738,16 +749,16 @@ function showRouteDetails(routeId) {
     var showBtn = document.getElementById('show-route-btn');
     if (route.type === 'public_transport') {
         if (route.stops && route.stops.length > 0) {
-            showBtn.textContent = 'Mostra parades i ruta';
+            showBtn.textContent = getTranslation('routes_show_stops_and_route');
             showBtn.onclick = function() { showPublicTransportRoute(route); };
             showBtn.style.display = 'inline-block';
         } else {
-            showBtn.textContent = 'Mostra ruta';
+            showBtn.textContent = getTranslation('routes_show_route_only');
             showBtn.onclick = function() { showSelectedRoute(); };
             showBtn.style.display = 'inline-block';
         }
     } else if (route.osm_type !== 'synthetic') {
-        showBtn.textContent = 'Mostra ruta';
+        showBtn.textContent = getTranslation('routes_show_route_only');
         showBtn.onclick = function() { showSelectedRoute(); };
         showBtn.style.display = 'inline-block';
     } else {
@@ -1726,6 +1737,75 @@ function reloadRoutes() {
     initializeRoutes();
 }
 
+// Function to update route button texts when language changes
+function updateRouteButtonTranslations() {
+    // Update main route type buttons
+    var walkingBtn = document.querySelector('.route-type-btn.fa.fa-walking');
+    var bikingBtn = document.querySelector('.route-type-btn.fa.fa-bicycle');
+
+    if (walkingBtn) {
+        walkingBtn.innerHTML = '<i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short');
+    }
+    if (bikingBtn) {
+        bikingBtn.innerHTML = '<i class="fa fa-bicycle"></i> ' + getTranslation('routes_biking_title_short');
+    }
+
+    // Update transport type buttons
+    var transportButtons = document.querySelectorAll('.transport-type-btn');
+    transportButtons.forEach(function(btn) {
+        var icon = btn.querySelector('i');
+        var textNode = btn.lastChild;
+
+        // Skip the "Tots"/"Todos"/"All" button (it has fa fa-bus class on the button itself)
+        if (btn.classList.contains('fa') && btn.classList.contains('fa-bus')) {
+            btn.innerHTML = '<i class="fa fa-bus"></i> ' + getTranslation('routes_transport_all');
+            return;
+        }
+
+        if (icon && textNode && textNode.nodeType === Node.TEXT_NODE) {
+            var text = textNode.textContent.trim();
+
+            // Map button text to translation keys
+            var translationKey = '';
+            switch(text) {
+                case 'Bus':
+                case 'Autobus':
+                case 'Autobús':
+                    translationKey = 'routes_button_bus';
+                    break;
+                case 'Tram':
+                case 'Tranvía':
+                case 'Tramvia':
+                    translationKey = 'routes_button_tram';
+                    break;
+                case 'Metro':
+                case 'Subway':
+                    translationKey = 'routes_button_metro';
+                    break;
+                case 'Tren':
+                case 'Train':
+                    translationKey = 'routes_button_tren';
+                    break;
+                case 'Tram lleuger':
+                case 'Tranvía ligero':
+                case 'Light Rail':
+                    translationKey = 'routes_button_tram_lleuger';
+                    break;
+            }
+
+            if (translationKey) {
+                textNode.textContent = ' ' + getTranslation(translationKey);
+            }
+        }
+    });
+
+    // Update transport header
+    var transportHeader = document.querySelector('#routes h4');
+    if (transportHeader) {
+        transportHeader.textContent = getTranslation('routes_transport_header');
+    }
+}
+
 // Global variables for pagination
 var currentPage = 1;
 var routesPerPage = 10;
@@ -1762,7 +1842,7 @@ function loadSpecificTransportRoutes(transportType) {
     var locationBounds = baseLocation.bounds;
 
     // Show loading message
-    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> Carregant rutes de transport públic (' + transportType + ')...</p>';
+    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> ' + getTranslation('routes_loading_transport').replace('{type}', transportType) + '</p>';
 
     // Build query for specific transport type
     var bbox = locationBounds.getSouth() + ',' + locationBounds.getWest() + ',' + locationBounds.getNorth() + ',' + locationBounds.getEast();
@@ -2160,7 +2240,10 @@ function displayRoutesWithPagination(routes, transportType) {
     // Pagination info
     if (totalRoutes > routesPerPage) {
         contentHtml += '<div class="pagination-info">';
-        contentHtml += 'Mostrant ' + (startIndex + 1) + '-' + endIndex + ' de ' + totalRoutes + ' rutes';
+        contentHtml += getTranslation('routes_pagination_showing')
+            .replace('{start}', startIndex + 1)
+            .replace('{end}', endIndex)
+            .replace('{total}', totalRoutes);
         contentHtml += '</div>';
     }
 
@@ -2173,8 +2256,8 @@ function displayRoutesWithPagination(routes, transportType) {
         contentHtml += '</div>';
     } else {
         contentHtml += '<div class="no-routes-message">';
-        contentHtml += '<p><i class="fa fa-info-circle"></i> No s\'han trobat rutes de ' + transportTypeName.toLowerCase() + ' per aquesta ubicació.</p>';
-        contentHtml += '<p>Proveu amb una zona més gran o amb àrees turístiques.</p>';
+        contentHtml += '<p><i class="fa fa-info-circle"></i> ' + getTranslation('routes_no_routes_found_type').replace('{type}', transportTypeName.toLowerCase()) + '</p>';
+        contentHtml += '<p>' + getTranslation('routes_no_routes_suggestion') + '</p>';
         contentHtml += '</div>';
     }
 
@@ -2183,9 +2266,9 @@ function displayRoutesWithPagination(routes, transportType) {
         contentHtml += '<div class="pagination">';
         // Previous button
         if (currentPage > 1) {
-            contentHtml += '<button onclick="changePage(' + (currentPage - 1) + ', \'' + transportType + '\')">&laquo; Anterior</button>';
+            contentHtml += '<button onclick="changePage(' + (currentPage - 1) + ', \'' + transportType + '\')">&laquo; ' + getTranslation('routes_pagination_previous') + '</button>';
         } else {
-            contentHtml += '<button disabled>&laquo; Anterior</button>';
+            contentHtml += '<button disabled>&laquo; ' + getTranslation('routes_pagination_previous') + '</button>';
         }
 
         // Page numbers (show max 5 pages around current)
@@ -2216,9 +2299,9 @@ function displayRoutesWithPagination(routes, transportType) {
 
         // Next button
         if (currentPage < totalPages) {
-            contentHtml += '<button onclick="changePage(' + (currentPage + 1) + ', \'' + transportType + '\')">Següent &raquo;</button>';
+            contentHtml += '<button onclick="changePage(' + (currentPage + 1) + ', \'' + transportType + '\')">' + getTranslation('routes_pagination_next') + ' &raquo;</button>';
         } else {
-            contentHtml += '<button disabled>Següent &raquo;</button>';
+            contentHtml += '<button disabled>' + getTranslation('routes_pagination_next') + ' &raquo;</button>';
         }
 
         contentHtml += '</div>';
@@ -2236,14 +2319,14 @@ function changePage(page, transportType) {
 
 // Function to get transport type display name
 function getTransportTypeDisplayName(transportType) {
-    var names = {
-        'bus': 'Autobusos',
-        'tram': 'Tramvies',
-        'subway': 'Metro',
-        'train': 'Trens',
-        'light_rail': 'Tramvia lleuger'
-    };
-    return names[transportType] || transportType;
+    switch(transportType) {
+        case 'bus': return getTranslation('routes_type_bus_plural');
+        case 'tram': return getTranslation('routes_type_tram_plural');
+        case 'subway': return getTranslation('routes_type_subway_plural');
+        case 'train': return getTranslation('routes_type_train_plural');
+        case 'light_rail': return getTranslation('routes_type_light_rail_plural');
+        default: return transportType;
+    }
 }
 
 // Function to get transport type icon
@@ -2279,18 +2362,18 @@ function getRouteIcon(type, route_type) {
 // Function to get route type name
 function getRouteTypeName(type, route_type) {
     switch(type) {
-        case 'walking': return 'Ruta a peu';
-        case 'biking': return 'Ruta en bicicleta';
+        case 'walking': return getTranslation('routes_type_walking');
+        case 'biking': return getTranslation('routes_type_biking');
         case 'public_transport':
             switch(route_type) {
-                case 'bus': return 'Autobús';
-                case 'tram': return 'Tramvia';
-                case 'subway': return 'Metro';
-                case 'train': return 'Tren';
-                case 'light_rail': return 'Tramvia lleuger';
-                default: return 'Transport públic';
+                case 'bus': return getTranslation('routes_type_bus');
+                case 'tram': return getTranslation('routes_type_tram');
+                case 'subway': return getTranslation('routes_type_subway');
+                case 'train': return getTranslation('routes_type_train');
+                case 'light_rail': return getTranslation('routes_type_light_rail');
+                default: return getTranslation('routes_type_transport');
             }
-        default: return 'Ruta';
+        default: return getTranslation('routes_type_default');
     }
 }
 

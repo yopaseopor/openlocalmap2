@@ -68,13 +68,13 @@
 	  <a id="permalink" href="#" data-i18n="home_permalink">Comparteix aquest mapa (enllaç)</a>
 	  </p>
 	  <center>
-	    <button id="start-query-btn" class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();">Carrega punts d'interès</button>
+	    <button id="start-query-btn" class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();" data-i18n="poi_manual_search">Carrega punts d'interès</button>
 	    <button id="stop-query-btn" class="fa fa-stop manual-stop-btn" type="button" onclick="stopQuery();">Atura consulta</button>
 	    <br><small class="manual-query-note" data-i18n="poi_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
 	  </center>
 	  <div id="pois"></div>
 	  <center>
-	    <button class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();">Carrega punts d'interès</button>
+	    <button class="fa fa-search manual-query-btn" type="button" onclick="manualPoiQuery();" data-i18n="poi_manual_search">Carrega punts d'interès</button>
 	    <button class="fa fa-stop manual-stop-btn" type="button" onclick="stopQuery();">Atura consulta</button>
 	    <br><small class="manual-query-note" data-i18n="poi_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
 	  </center>
@@ -215,9 +215,9 @@
 	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
-          onClick="location.href='#help_rutes'"> Ajuda (rutes)</button></center>
-  <h1 id="routes-title">Rutes a Vilanova i la Geltrú</h1>
-  <p style="text-align:justify; margin-right:5px;">Les rutes han estat creades a partir de les dades
+          onClick="location.href='#help_rutes'" data-i18n="routes_help_button"> Ajuda (rutes)</button></center>
+  <h1 id="routes-title" data-i18n="routes_title">Rutes</h1>
+  <p style="text-align:justify; margin-right:5px;" data-i18n="routes_description">Les rutes han estat creades a partir de les dades
    d'OpenStreetMap amb
   <a href="https://graphhopper.com/maps/">GraphHopper</a>.</p>
 
@@ -239,7 +239,7 @@
       <button class="transport-type-btn fa fa-bus" type="button" onclick="loadPublicTransportRoutes()" title="Tots els transports públics" style="background:#007acc; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"> Tots</button>
     </div>
 
-    <small style="color: #666; font-size: 11px;">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
+    <small style="color: #666; font-size: 11px;" data-i18n="routes_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
   </center>
 
   <!-- Route categories -->
@@ -252,25 +252,25 @@
 	    <hr>
 	    <h3 id="route-detail-title"></h3>
 	    <p id="route-detail-description"></p>
-	    <div class="route-info">
-	      <div class="route-info-item"><strong>Distància:</strong> <span id="route-distance"></span></div>
-	      <div class="route-info-item"><strong>Desnivell:</strong> <span id="route-elevation"></span></div>
-	      <div class="route-info-item"><strong>Dificultat:</strong> <span id="route-difficulty"></span></div>
-	      <div class="route-info-item"><strong>Durada estimada:</strong> <span id="route-duration"></span></div>
-	      <div class="route-info-item"><strong>Freqüència:</strong> <span id="route-frequency"></span></div>
-	      <div class="route-info-item"><strong>Primer servei:</strong> <span id="route-first-service"></span></div>
-	      <div class="route-info-item"><strong>Últim servei:</strong> <span id="route-last-service"></span></div>
-	    </div>
+    <div class="route-info">
+      <div class="route-info-item"><strong data-i18n="routes_detail_distance">Distància:</strong> <span id="route-distance"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_elevation">Desnivell:</strong> <span id="route-elevation"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_difficulty">Dificultat:</strong> <span id="route-difficulty"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_duration">Durada estimada:</strong> <span id="route-duration"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_frequency">Freqüència:</strong> <span id="route-frequency"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_first_service">Primer servei:</strong> <span id="route-first-service"></span></div>
+      <div class="route-info-item"><strong data-i18n="routes_detail_last_service">Últim servei:</strong> <span id="route-last-service"></span></div>
+    </div>
 	    <div id="route-stops" style="display: none;">
-	      <h4>Parades:</h4>
+	      <h4 data-i18n="routes_stops_title">Parades:</h4>
 	      <ul id="route-stops-list"></ul>
 	    </div>
 	    <div class="route-actions">
-	      <button id="show-route-btn" class="fa fa-search" onclick="showSelectedRoute()"> Mostra ruta</button>
-	      <button id="clear-route-btn" class="fa fa-trash" onclick="clearRoute()"> Neteja</button>
+	      <button id="show-route-btn" class="fa fa-search" onclick="showSelectedRoute()" data-i18n="routes_show_route"> Mostra ruta</button>
+	      <button id="clear-route-btn" class="fa fa-trash" onclick="clearRoute()" data-i18n="routes_clear_route"> Neteja</button>
 	      <div id="route-download-link" style="margin-top: 10px;"></div>
 	    </div>
-	    <button onclick="hideRouteDetails()" style="margin-top: 10px;">← Tornar al llistat</button>
+	    <button onclick="hideRouteDetails()" style="margin-top: 10px;" data-i18n="routes_back_to_list">← Tornar al llistat</button>
 	  </div>
 
 	  <br><hr width="90%">
@@ -280,11 +280,11 @@
 	  <h1 data-i18n="routes_help_title"><span class="fa fa-support"></span> Ajuda</h1>
 	  <p style="text-align:justify; margin-right:5px;" data-i18n="routes_help_text1">Des d'aquesta secció podeu explorar les diferents rutes disponibles a la vostra ubicació actual. Les rutes es divideixen en categories:</p>
 	  <ul style="text-align:left; margin-left:20px;">
-	    <li><strong>Rutes a peu:</strong> Caminades i senderisme</li>
-	    <li><strong>Rutes en bicicleta:</strong> Recorreguts per bicicleta</li>
-	    <li><strong>Transport públic:</strong> Línies d'autobús i metro</li>
+	    <li><strong data-i18n="routes_help_walking_title">Rutes a peu:</strong> <span data-i18n="routes_help_walking_desc">Caminades i senderisme</span></li>
+	    <li><strong data-i18n="routes_help_biking_title">Rutes en bicicleta:</strong> <span data-i18n="routes_help_biking_desc">Recorreguts per bicicleta</span></li>
+	    <li><strong data-i18n="routes_help_transport_title">Transport públic:</strong> <span data-i18n="routes_help_transport_desc">Línies d'autobús i metro</span></li>
 	  </ul>
-	  <p style="text-align:justify; margin-right:5px;">Feu clic en qualsevol ruta per veure'n els detalls, parades (si s'escau) i opcions per visualitzar-la al mapa.</p>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="routes_help_click_text">Feu clic en qualsevol ruta per veure'n els detalls, parades (si s'escau) i opcions per visualitzar-la al mapa.</p>
 	  <br>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
           onClick="location.href='#rutes_init'" data-i18n="routes_help_back"> Inici</button></center>
@@ -297,34 +297,492 @@
 	  </div>
 	  <A NAME="IniciWiki"></A>
 	  <!--MODIFICAR AQUÍ-->
-	  <h1 id="wikipedia_title">Vilanova i la Geltrú a la Viquipèdia</h1>
-	  <center><p><button onclick="refreshIframe();" id="wikipedia_reload">Torna a les categories</button></p></center>
+	  <h1 id="wikipedia_title">Vilanova i la Geltrú a Wikidata</h1>
+	  <center><p><button onclick="updateWikipediaContent();" id="wikipedia_reload">Actualitza</button></p></center>
 	  <!--MODIFICAR AQUÍ-->
-	  <p><iframe name="Wikiciutat" id="wikipedia_iframe" width="100%" height="25000px" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://ca.m.wikipedia.org/w/index.php?title=Categoria:Vilanova_i_la_Geltrú&mobileaction=toggle_view_mobile"></iframe>
-	  <center><a href="#IniciWiki">Torna a l'inici</a></p></center></p>
+	  <div id="wikidata-content">
+	    <p>Carregant informació de Wikidata...</p>
+	  </div>
+	  <center><a href="#IniciWiki" data-i18n="wikipedia_back">Torna a l'inici</a></p></center></p>
 	  <script>
 		function updateWikipediaContent() {
 			var titleElement = document.getElementById('wikipedia_title');
 			var reloadButton = document.getElementById('wikipedia_reload');
-			var iframe = document.getElementById('wikipedia_iframe');
+			var contentDiv = document.getElementById('wikidata-content');
 
-			if (baseLocation.name !== "Vilanova i la Geltrú") {
-				// For locations other than default, try to find Wikipedia category
-				var wikiTitle = "Categoria:" + baseLocation.name.replace(/ /g, "_");
-				iframe.src = "https://ca.m.wikipedia.org/w/index.php?title=" + encodeURIComponent(wikiTitle) + "&mobileaction=toggle_view_mobile";
-				titleElement.textContent = baseLocation.name.replace(/'/g, "\\'") + " a la Viquipèdia";
-				reloadButton.textContent = "Torna a les categories";
+			// Get current language
+			var currentLang = currentLanguage || 'ca';
+			var langNames = {ca: 'Wikidata', es: 'Wikidata', en: 'Wikidata'};
+			var buttonTexts = {ca: 'Actualitza', es: 'Actualizar', en: 'Update'};
+
+			titleElement.textContent = baseLocation.name.replace(/'/g, "\\'") + " a " + (langNames[currentLang] || 'Wikidata');
+			reloadButton.textContent = buttonTexts[currentLang] || "Actualitza";
+
+			contentDiv.innerHTML = "<p>" + (currentLang === 'es' ? 'Cargando información de Wikidata...' : currentLang === 'en' ? 'Loading Wikidata information...' : 'Carregant informació de Wikidata...') + "</p>";
+
+			// Fetch Wikidata information
+			fetchWikidataInfo(baseLocation, currentLang, function(data) {
+				displayWikidataInfo(data, contentDiv, currentLang);
+			}, function(error) {
+				var errorMsgs = {
+					ca: "Error carregant dades de Wikidata: ",
+					es: "Error cargando datos de Wikidata: ",
+					en: "Error loading Wikidata data: "
+				};
+				contentDiv.innerHTML = "<p>" + (errorMsgs[currentLang] || errorMsgs.ca) + error + "</p>";
+			});
+		}
+
+		function fetchWikidataInfo(location, currentLang, successCallback, errorCallback) {
+			var osmId = location.osm_id;
+			var osmType = location.osm_type;
+
+			if (osmId && osmType === 'relation' && (location.type === 'city' || location.type === 'municipality')) {
+				// For municipalities with OSM relation ID, query Wikidata by P402 (OSM relation ID)
+				var langOrder = currentLang + ",[AUTO_LANGUAGE],ca,en,es";
+				var sparqlQuery = "SELECT ?item ?itemLabel WHERE { ?item wdt:P402 \"" + osmId + "\" . SERVICE wikibase:label { bd:serviceParam wikibase:language \"" + langOrder + "\". } }";
+				var url = "https://query.wikidata.org/sparql?query=" + encodeURIComponent(sparqlQuery) + "&format=json";
+
+				$.ajax({
+					url: url,
+					dataType: "json",
+					success: function(data) {
+						if (data.results.bindings.length > 0) {
+							var qid = data.results.bindings[0].item.value.split('/').pop();
+							fetchWikidataEntity(qid, successCallback, errorCallback);
+						} else {
+							// Fallback to search by name
+							searchWikidataByName(location.name, currentLang, successCallback, errorCallback);
+						}
+					},
+					error: function() {
+						errorCallback("Error en la consulta SPARQL");
+					}
+				});
 			} else {
-				// Default Vilanova i la Geltrú
-				iframe.src = "https://ca.m.wikipedia.org/w/index.php?title=Categoria:Vilanova_i_la_Geltrú&mobileaction=toggle_view_mobile";
-				titleElement.textContent = "Vilanova i la Geltrú a la Viquipèdia";
-				reloadButton.textContent = "Torna a les categories";
+				// For other locations, search by name
+				searchWikidataByName(location.name, currentLang, successCallback, errorCallback);
 			}
 		}
 
-		function refreshIframe() {
-   	 	var ifr = document.getElementsByName('Wikiciutat')[0];
-   	 	ifr.src = ifr.src;
+		function searchWikidataByName(name, currentLang, successCallback, errorCallback) {
+			// Extract main name by splitting on commas and taking first part
+			var mainName = name.split(',')[0].trim();
+
+			// Use current language for search with better fallback logic
+			var searchLang = currentLang || 'ca';
+			var fallbackLangs = ['ca', 'es', 'en'];
+
+			// First, try to search in the current language
+			var url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search=" + encodeURIComponent(mainName) + "&language=" + searchLang + "&limit=10&type=item&format=json&origin=*";
+
+			$.ajax({
+				url: url,
+				dataType: "json",
+				success: function(data) {
+					var filteredResults = filterRelevantWikidataResults(data.search || [], mainName, currentLang);
+
+					if (filteredResults.length > 0) {
+						if (filteredResults.length === 1) {
+							// Only one relevant result, proceed directly
+							var qid = filteredResults[0].id;
+							fetchWikidataEntity(qid, successCallback, errorCallback);
+						} else {
+							// Multiple relevant results, show selection
+							showWikidataSelection(filteredResults, currentLang, successCallback, errorCallback);
+						}
+					} else {
+						errorCallback(getTranslatedText("No s'ha trobat cap element a Wikidata", currentLang));
+					}
+				},
+				error: function() {
+					errorCallback(getTranslatedText("Error en la cerca a Wikidata", currentLang));
+				}
+			});
+		}
+
+		function filterRelevantWikidataResults(results, searchName, currentLang) {
+			if (!results || results.length === 0) return [];
+
+			// Filter out obviously irrelevant results
+			var filtered = results.filter(function(result) {
+				var label = result.label || "";
+				var description = result.description || "";
+
+				// Skip astronomical objects (Venus crater, etc.)
+				if (description.toLowerCase().indexOf('crater') !== -1 ||
+					description.toLowerCase().indexOf('asteroid') !== -1 ||
+					description.toLowerCase().indexOf('venus') !== -1 ||
+					description.toLowerCase().indexOf('moon') !== -1 ||
+					description.toLowerCase().indexOf('planet') !== -1) {
+					return false;
+				}
+
+				// Skip if it's a disambiguation page
+				if (description.toLowerCase().indexOf('disambiguation') !== -1 ||
+					description.toLowerCase().indexOf('desambiguación') !== -1 ||
+					description.toLowerCase().indexOf('desambiguació') !== -1) {
+					return false;
+				}
+
+			// Include if label contains the search term (case insensitive)
+			var searchTermLower = searchName.toLowerCase();
+			var labelLower = label.toLowerCase();
+
+			// Exact match or contains the search term
+			if (labelLower === searchTermLower || labelLower.indexOf(searchTermLower) !== -1) {
+				return true;
+			}
+
+			// Also include if description mentions it
+			if (description.toLowerCase().indexOf(searchTermLower) !== -1) {
+				return true;
+			}
+
+			// Include Wikipedia categories that match
+			if (labelLower.indexOf('category:') !== -1 && labelLower.indexOf(searchTermLower) !== -1) {
+				return true;
+			}
+
+			// Include municipality-related items even if they don't exactly match
+			if ((description.toLowerCase().indexOf('municipality') !== -1 ||
+				 description.toLowerCase().indexOf('municipio') !== -1 ||
+				 description.toLowerCase().indexOf('municipi') !== -1) &&
+				labelLower.length > 3) {
+				return true;
+			}
+
+			return false;
+			});
+
+			// Sort by relevance
+			filtered.sort(function(a, b) {
+				var aLabel = (a.label || "").toLowerCase();
+				var bLabel = (b.label || "").toLowerCase();
+				var aDesc = (a.description || "").toLowerCase();
+				var bDesc = (b.description || "").toLowerCase();
+				var searchLower = searchName.toLowerCase();
+
+				// Exact matches first
+				var aExact = aLabel === searchLower;
+				var bExact = bLabel === searchLower;
+				if (aExact && !bExact) return -1;
+				if (bExact && !aExact) return 1;
+
+				// Municipality/city matches next
+				var aIsMunicipality = aDesc.indexOf('municipality') !== -1 || aDesc.indexOf('municipio') !== -1 || aDesc.indexOf('municipi') !== -1 || aDesc.indexOf('city') !== -1 || aDesc.indexOf('ciutat') !== -1 || aDesc.indexOf('ciudad') !== -1;
+				var bIsMunicipality = bDesc.indexOf('municipality') !== -1 || bDesc.indexOf('municipio') !== -1 || bDesc.indexOf('municipi') !== -1 || bDesc.indexOf('city') !== -1 || bDesc.indexOf('ciutat') !== -1 || bDesc.indexOf('ciudad') !== -1;
+
+				if (aIsMunicipality && !bIsMunicipality) return -1;
+				if (bIsMunicipality && !aIsMunicipality) return 1;
+
+				// Starts with search term
+				var aStarts = aLabel.indexOf(searchLower) === 0;
+				var bStarts = bLabel.indexOf(searchLower) === 0;
+				if (aStarts && !bStarts) return -1;
+				if (bStarts && !aStarts) return 1;
+
+				return 0;
+			});
+
+			return filtered.slice(0, 10); // Return top 10 most relevant results to include more options
+		}
+
+		var wikidataCallbacks = null;
+
+		function showWikidataSelection(results, currentLang, successCallback, errorCallback) {
+			wikidataCallbacks = {success: successCallback, error: errorCallback};
+			var html = "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_multiple_results') + "</h3>";
+			html += "<p style='margin-bottom: 15px; color: #666;'>" + getTranslation('wikidata_select_one') + "</p>";
+			html += "<div style='display: grid; gap: 10px;'>";
+
+			results.forEach(function(result, index) {
+				// Get label in current language or fallback to English
+				var label = (result.labels && result.labels[currentLang]) ? result.labels[currentLang].value :
+				           (result.labels && result.labels.en) ? result.labels.en.value :
+				           result.label || result.id;
+
+				// Get description in current language or fallback to English
+				var description = (result.descriptions && result.descriptions[currentLang]) ? result.descriptions[currentLang].value :
+				                 (result.descriptions && result.descriptions.en) ? result.descriptions.en.value :
+				                 result.description || "";
+
+				html += "<div style='background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: background-color 0.2s;' onclick='selectWikidataResult(\"" + result.id.replace(/"/g, '\\"') + "\")' onmouseover='this.style.backgroundColor=\"#f0f8ff\"' onmouseout='this.style.backgroundColor=\"#fff\"'>";
+				html += "<div style='font-weight: bold; color: #0066cc; margin-bottom: 4px;'>" + label + "</div>";
+				if (description) {
+					html += "<div style='color: #666; font-size: 14px;'>" + description + "</div>";
+				}
+				html += "<div style='color: #999; font-size: 12px; margin-top: 4px;'>Wikidata: " + result.id + "</div>";
+				html += "</div>";
+			});
+
+			html += "</div></div>";
+			document.getElementById('wikidata-content').innerHTML = html;
+		}
+
+		function selectWikidataResult(qid) {
+			if (wikidataCallbacks) {
+				fetchWikidataEntity(qid, wikidataCallbacks.success, wikidataCallbacks.error);
+				wikidataCallbacks = null;
+			}
+		}
+
+		function fetchWikidataEntity(qid, successCallback, errorCallback) {
+			var currentLang = currentLanguage || 'ca';
+			// Request data with all language variants and all sitelinks
+			var url = "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=" + qid + "&props=labels|descriptions|claims|sitelinks&languages=" + currentLang + "|ca|es|en&format=json&origin=*";
+
+			$.ajax({
+				url: url,
+				dataType: "json",
+				success: function(data) {
+					if (data.entities && data.entities[qid]) {
+						successCallback(data.entities[qid]);
+					} else {
+						errorCallback("No s'han trobat dades per a l'element " + qid);
+					}
+				},
+				error: function() {
+					errorCallback("Error carregant les dades de l'element Wikidata");
+				}
+			});
+		}
+
+		function displayWikidataInfo(entity, contentDiv, currentLang) {
+			var claims = entity.claims || {};
+			var html = "<div style='margin-bottom: 20px;'>";
+
+			// Header with title and main image
+			html += "<div style='display: flex; align-items: flex-start; margin-bottom: 15px;'>";
+			html += "<div style='flex: 1;'>";
+
+			if (entity.labels) {
+				var title = entity.labels[currentLang] ? entity.labels[currentLang].value : (entity.labels.en ? entity.labels.en.value : entity.id);
+				html += "<h2 style='margin: 0 0 10px 0;'>" + title + "</h2>";
+			}
+
+			html += "<p style='margin: 5px 0;'><strong>" + getTranslation('wikidata_item') + "</strong> <a href='https://www.wikidata.org/wiki/" + entity.id + "' target='_blank'>" + entity.id + "</a></p>";
+
+			if (entity.descriptions) {
+				var description = entity.descriptions[currentLang] ? entity.descriptions[currentLang].value : (entity.descriptions.en ? entity.descriptions.en.value : "");
+				if (description) {
+					html += "<p style='margin: 5px 0; font-style: italic;'>" + description + "</p>";
+				}
+			}
+
+			html += "</div>";
+
+			// Main image
+			if (claims.P18 && claims.P18.length > 0) {
+				var imageFile = claims.P18[0].mainsnak.datavalue.value;
+				var imageUrl = "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(imageFile) + "?width=200";
+				html += "<div style='margin-left: 20px;'><img src='" + imageUrl + "' alt='Image' style='max-width:200px; max-height:150px; border: 1px solid #ccc; border-radius: 4px;'></div>";
+			}
+
+			html += "</div></div>";
+
+			// Basic information section
+			html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_basic_info') + "</h3>";
+			html += "<div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;'>";
+
+			// Population
+			if (claims.P1082 && claims.P1082.length > 0) {
+				var population = claims.P1082[0].mainsnak.datavalue.value.amount;
+				html += "<div><strong>" + getTranslation('wikidata_population') + "</strong><br>" + parseInt(population).toLocaleString() + "</div>";
+			}
+
+			// Area
+			if (claims.P2046 && claims.P2046.length > 0) {
+				var area = claims.P2046[0].mainsnak.datavalue.value.amount;
+				html += "<div><strong>" + getTranslation('wikidata_area') + "</strong><br>" + parseFloat(area).toFixed(2) + " km²</div>";
+			}
+
+			// Coordinates
+			if (claims.P625 && claims.P625.length > 0) {
+				var coords = claims.P625[0].mainsnak.datavalue.value;
+				html += "<div><strong>" + getTranslation('wikidata_coordinates') + "</strong><br>" + coords.latitude.toFixed(4) + ", " + coords.longitude.toFixed(4) + "</div>";
+			}
+
+			// Elevation
+			if (claims.P2044 && claims.P2044.length > 0) {
+				var elevation = claims.P2044[0].mainsnak.datavalue.value.amount;
+				html += "<div><strong>" + getTranslation('wikidata_elevation') + "</strong><br>" + parseInt(elevation) + " m</div>";
+			}
+
+			html += "</div></div>";
+
+			// Flags and symbols
+			var hasFlags = false;
+			html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_flags_symbols') + "</h3>";
+			html += "<div style='display: flex; gap: 15px; flex-wrap: wrap;'>";
+
+			// Flag
+			if (claims.P41 && claims.P41.length > 0) {
+				var flagFile = claims.P41[0].mainsnak.datavalue.value;
+				var flagUrl = "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(flagFile) + "?width=100";
+				html += "<div><strong>" + getTranslation('wikidata_flag') + "</strong><br><img src='" + flagUrl + "' alt='Flag' style='height: 60px; border: 1px solid #ccc;'></div>";
+				hasFlags = true;
+			}
+
+			// Coat of arms
+			if (claims.P94 && claims.P94.length > 0) {
+				var armsFile = claims.P94[0].mainsnak.datavalue.value;
+				var armsUrl = "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(armsFile) + "?width=80";
+				html += "<div><strong>" + getTranslation('wikidata_coat_arms') + "</strong><br><img src='" + armsUrl + "' alt='Coat of arms' style='height: 60px; border: 1px solid #ccc;'></div>";
+				hasFlags = true;
+			}
+
+			if (!hasFlags) {
+				html += "<p style='margin: 0; color: #666;'>" + getTranslation('wikidata_no_info') + "</p>";
+			}
+
+			html += "</div></div>";
+
+			// Location map
+			if (claims.P242 && claims.P242.length > 0) {
+				html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+				html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_location_map') + "</h3>";
+				var mapFile = claims.P242[0].mainsnak.datavalue.value;
+				var mapUrl = "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(mapFile) + "?width=300";
+				html += "<img src='" + mapUrl + "' alt='Location map' style='max-width:100%; border: 1px solid #ccc; border-radius: 4px;'>";
+				html += "</div>";
+			}
+
+			// Links and websites
+			var hasLinks = false;
+			html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_links') + "</h3>";
+			html += "<div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;'>";
+
+			// Wikimedia Commons category
+			var commonsCategory = "Category:" + title.replace(/ /g, '_');
+			html += "<div><strong>Wikimedia Commons</strong><br><a href='https://commons.wikimedia.org/wiki/" + encodeURIComponent(commonsCategory) + "' target='_blank' style='color: #0066cc;'>" + commonsCategory + "</a></div>";
+
+			// Wikipedia category in current language
+			var wikiCategory = (currentLang === 'ca' ? 'Categoria:' : currentLang === 'es' ? 'Categoría:' : 'Category:') + title.replace(/ /g, '_');
+			var wikiLang = currentLang || 'ca';
+			html += "<div><strong>Wikipedia " + getTranslation('wikidata_wikipedia_in').replace('Viquipèdia en ', '').replace('Wikipedia en ', '').replace('Wikipedia in ', '') + "</strong><br><a href='https://" + wikiLang + ".wikipedia.org/wiki/" + encodeURIComponent(wikiCategory) + "' target='_blank' style='color: #0066cc;'>" + wikiCategory + "</a></div>";
+			hasLinks = true;
+
+			// Official website
+			if (claims.P856 && claims.P856.length > 0) {
+				var website = claims.P856[0].mainsnak.datavalue.value;
+				html += "<div><strong>" + getTranslation('wikidata_official_website') + "</strong><br><a href='" + website + "' target='_blank' style='color: #0066cc;'>" + website + "</a></div>";
+				hasLinks = true;
+			}
+
+			// Facebook
+			if (claims.P2013 && claims.P2013.length > 0) {
+				var facebook = claims.P2013[0].mainsnak.datavalue.value;
+				html += "<div><strong>Facebook</strong><br><a href='https://facebook.com/" + facebook + "' target='_blank' style='color: #0066cc;'>/" + facebook + "</a></div>";
+				hasLinks = true;
+			}
+
+			// Twitter
+			if (claims.P2002 && claims.P2002.length > 0) {
+				var twitter = claims.P2002[0].mainsnak.datavalue.value;
+				html += "<div><strong>Twitter</strong><br><a href='https://twitter.com/" + twitter + "' target='_blank' style='color: #0066cc;'>@" + twitter + "</a></div>";
+				hasLinks = true;
+			}
+
+			// Instagram
+			if (claims.P2003 && claims.P2003.length > 0) {
+				var instagram = claims.P2003[0].mainsnak.datavalue.value;
+				html += "<div><strong>Instagram</strong><br><a href='https://instagram.com/" + instagram + "' target='_blank' style='color: #0066cc;'>@" + instagram + "</a></div>";
+				hasLinks = true;
+			}
+
+			html += "</div></div>";
+
+			// Administrative information
+			var hasAdmin = false;
+			html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_admin_info') + "</h3>";
+			html += "<div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;'>";
+
+			// Country
+			if (claims.P17 && claims.P17.length > 0) {
+				var countryId = claims.P17[0].mainsnak.datavalue.value.id;
+				html += "<div><strong>" + getTranslation('wikidata_country') + "</strong><br><a href='https://www.wikidata.org/wiki/" + countryId + "' target='_blank' style='color: #0066cc;'>" + (claims.P17[0].mainsnak.datavalue.value.labels ? claims.P17[0].mainsnak.datavalue.value.labels[currentLang] || claims.P17[0].mainsnak.datavalue.value.labels.en : countryId) + "</a></div>";
+				hasAdmin = true;
+			}
+
+			// Administrative division
+			if (claims.P131 && claims.P131.length > 0) {
+				var adminId = claims.P131[0].mainsnak.datavalue.value.id;
+				html += "<div><strong>" + getTranslation('wikidata_admin_division') + "</strong><br><a href='https://www.wikidata.org/wiki/" + adminId + "' target='_blank' style='color: #0066cc;'>" + (claims.P131[0].mainsnak.datavalue.value.labels ? claims.P131[0].mainsnak.datavalue.value.labels[currentLang] || claims.P131[0].mainsnak.datavalue.value.labels.en : adminId) + "</a></div>";
+				hasAdmin = true;
+			}
+
+			// Postal code
+			if (claims.P281 && claims.P281.length > 0) {
+				var postalCode = claims.P281[0].mainsnak.datavalue.value;
+				html += "<div><strong>" + getTranslation('wikidata_postal_code') + "</strong><br>" + postalCode + "</div>";
+				hasAdmin = true;
+			}
+
+			if (!hasAdmin) {
+				html += "<p style='margin: 0; color: #666; grid-column: 1 / -1;'>" + getTranslation('wikidata_no_admin_info') + "</p>";
+			}
+
+			html += "</div></div>";
+
+			// Wikipedia articles
+			html += "<div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;'>";
+			html += "<h3 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_wikipedia_articles') + "</h3>";
+			html += "<div style='display: flex; flex-wrap: wrap; gap: 10px;'>";
+
+			var sitelinks = entity.sitelinks || {};
+			var wikiLinks = [currentLang + 'wiki', 'cawiki', 'eswiki', 'enwiki', 'frwiki', 'itwiki', 'ptwiki'];
+			var hasWikiLinks = false;
+
+			wikiLinks.forEach(function(wiki) {
+				if (sitelinks[wiki]) {
+					var lang = wiki.replace('wiki', '');
+					var title = sitelinks[wiki].title;
+					var url = "https://" + lang + ".wikipedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, '_'));
+					html += "<a href='" + url + "' target='_blank' style='color: #0066cc; text-decoration: underline; margin-right: 15px;'>" + getLanguageName(lang) + " (" + title + ")</a>";
+					hasWikiLinks = true;
+				}
+			});
+
+			if (!hasWikiLinks) {
+				html += "<p style='margin: 0; color: #666;'>" + getTranslation('wikidata_no_wikipedia_articles') + "</p>";
+			}
+
+			html += "</div></div>";
+
+			contentDiv.innerHTML = html;
+		}
+
+		function getTranslatedText(text, lang) {
+			var translations = {
+				ca: {
+					"Error carregant dades de Wikidata: ": "Error carregant dades de Wikidata: ",
+					"No s'ha trobat cap element a Wikidata": "No s'ha trobat cap element a Wikidata",
+					"Error en la cerca a Wikidata": "Error en la cerca a Wikidata"
+				},
+				es: {
+					"Error carregant dades de Wikidata: ": "Error cargando datos de Wikidata: ",
+					"No s'ha trobat cap element a Wikidata": "No se encontró ningún elemento en Wikidata",
+					"Error en la cerca a Wikidata": "Error en la búsqueda de Wikidata"
+				},
+				en: {
+					"Error carregant dades de Wikidata: ": "Error loading Wikidata data: ",
+					"No s'ha trobat cap element a Wikidata": "No Wikidata item found",
+					"Error en la cerca a Wikidata": "Error searching Wikidata"
+				}
+			};
+
+			return translations[lang] ? translations[lang][text] || text : text;
+		}
+
+		function getLanguageName(lang) {
+			var langs = {ca: 'català', es: 'espanyol', en: 'anglès', fr: 'francès', it: 'italià', pt: 'portuguès'};
+			return langs[lang] || lang;
 		}
 
 		// Update Wikipedia content when base location changes
@@ -375,7 +833,7 @@ s.setAttribute('data-timestamp', +new Date());
 	  <center><p><button onclick="refreshIframe();">Carrega el mapa</button></p></center>
 	  	<!--MODIFICAR AQUÍ-->
 	  <p><iframe name="Aparcament" width="300px" height="400px" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://overpass-turbo.eu/map.html?Q=%2F*%0AThis%20has%20been%20generated%20by%20the%20overpass-turbo%20wizard.%0AThe%20original%20search%20was%3A%0A%E2%80%9Cparking%3Acondition%3Aright%3Aresidents%3D*%E2%80%9D%0A*%2F%0A%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%2F%2F%20gather%20results%0A(%0A%20%20%2F%2F%20query%20part%20for%3A%20%E2%80%9C%22parking%3Acondition%3Aright%3Aresidents%22%3D*%E2%80%9D%0A%20%20node%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20way%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20way%5B%22parking%3Acondition%3Aleft%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20way%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20way%5B%22parking%3Acondition%3Aboth%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20%20%20way%5B%22amenity%22%3D%22parking%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20%20%20%20%20way%5B%22parking%3Alane%3Aboth%22%3D%22no_stopping%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%0A)%3B%0A%2F%2F%20print%20results%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0Aout%20body%3B%0A%0A%3E%3B%0A%0Aout%20skel%20qt%3B%7B%7Bstyle%3A%20%20%0A%0Away%5Bamenity%3Dparking%5D%7B%0A%0A%20%20icon-width%3A%2020%3B%0A%0A%20%20icon-image%3A%20url(%27https%3A%2F%2Fgithub.com%2Fyopaseopor%2Fbeta_style_josm%2Fraw%2Fmaster%2Ftraffic_signs_EUR%2FES%2FES_S17.png%27)%3B%0A%0A%20%20text%3A%20name%3B%0A%0A%7D%0A%0Away%5Bparking%3Acondition%3Aleft%3Dticket%5D%5Bparking%3Acondition%3Aleft%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Alime%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Acondition%3Aright%3Dticket%5D%5Bparking%3Acondition%3Aright%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Agreen%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Acondition%3Aboth%3Dticket%5D%5Bparking%3Acondition%3Aboth%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Ateal%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Alane%3Aboth%3Dno_stopping%5D%7B%0A%0A%20%20color%3Ayellow%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0A%20%20%7D%7D"></iframe>
-	  <center><a href="#IniciParking">Torna a l'inici</a></p></center></p>
+	  <center><a href="#IniciParking" data-i18n="parking_back">Torna a l'inici</a></p></center></p>
 	  <script>
 		function refreshIframe() {
    	 	var ifr = document.getElementsByName('Aparcament')[0];

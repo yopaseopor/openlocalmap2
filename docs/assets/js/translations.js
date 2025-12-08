@@ -33,6 +33,10 @@ async function setLanguage(lang) {
         updateLanguage();
         // Also update POI names when language changes
         updatePOINames();
+        // Update route button translations when language changes
+        if (typeof updateRouteButtonTranslations === 'function') {
+            updateRouteButtonTranslations();
+        }
     } catch (error) {
         console.error('Error loading language:', error);
         // Fallback to default language
