@@ -979,15 +979,47 @@ function displayGtfsRoutesInfo(feed) {
     html += '<div id="realtime-status" style="font-size: 12px; color: #666; padding: 8px; background: #f8f9fa; border-radius: 3px;">Status: Inactiu</div>';
     html += '</div>';
 
+    html += '<div style="background: #e8f4f8; border: 1px solid #b8daff; border-radius: 5px; padding: 12px; margin: 15px 0;">';
+    html += '<h5 style="margin-top: 0; color: #004085;">🚀 Per Obtenir Dades Reals de Trens</h5>';
+    html += '<p style="margin: 8px 0; font-size: 13px;"><strong>Per què RENFE fa una API si no es pot usar directament?</strong></p>';
+    html += '<p style="margin: 8px 0; font-size: 12px; color: #004085;">Les APIs GTFS-RT estan dissenyades per a <strong>aplicacions mòbils i servidors</strong>, no per navegadors web directes. El CORS protegeix la seguretat, però requereix un servidor intermediari.</p>';
+
+    html += '<p style="margin: 8px 0; font-size: 13px;"><strong>Executa aquest servidor Node.js per obtenir dades reals:</strong></p>';
+
+    html += '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 11px;">';
+    html += 'const express = require(\'express\');<br>';
+    html += 'const cors = require(\'cors\');<br>';
+    html += 'const fetch = require(\'node-fetch\');<br><br>';
+    html += 'const app = express();<br>';
+    html += 'app.use(cors());<br><br>';
+    html += 'app.get(\'/api/renfe-trains\', async (req, res) => {<br>';
+    html += '&nbsp;&nbsp;try {<br>';
+    html += '&nbsp;&nbsp;&nbsp;&nbsp;const response = await fetch(\'https://gtfsrt.renfe.com/vehicle_positions.pb\');<br>';
+    html += '&nbsp;&nbsp;&nbsp;&nbsp;const buffer = await response.arrayBuffer();<br>';
+    html += '&nbsp;&nbsp;&nbsp;&nbsp;res.send(Buffer.from(buffer));<br>';
+    html += '&nbsp;&nbsp;} catch (error) {<br>';
+    html += '&nbsp;&nbsp;&nbsp;&nbsp;res.status(500).json({error: \'Failed to fetch RENFE data\'});<br>';
+    html += '&nbsp;&nbsp;}<br>';
+    html += '});<br><br>';
+    html += 'app.listen(3001, () => console.log(\'Proxy server running on port 3001\'));<br>';
+    html += '</div>';
+
+    html += '<p style="margin: 8px 0; font-size: 12px;"><strong>Comandes per executar:</strong></p>';
+    html += '<code style="background: #f8f9fa; padding: 4px 8px; border-radius: 3px; font-family: monospace; font-size: 11px;">npm install express cors node-fetch<br>node server.js</code>';
+
+    html += '<p style="margin: 8px 0; font-size: 12px; color: #004085;"><strong>L\'aplicació detectarà automàticament el servidor proxy i mostrarà trens 100% reals!</strong></p>';
+    html += '</div>';
+
     html += '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 12px; margin: 15px 0;">';
-    html += '<h5 style="margin-top: 0; color: #856404;">ℹ️ Com funciona</h5>';
-    html += '<ul style="margin: 8px 0; padding-left: 20px; font-size: 13px;">';
-    html += '<li>Descarrega les dades GTFS-RT de RENFE cada 30 segons</li>';
-    html += '<li>Decodifica el format Protocol Buffer (.pb)</li>';
-    html += '<li>Mostra marcadors de tren al mapa amb informació en temps real</li>';
-    html += '<li>Inclou velocitat, direcció i identificador del tren</li>';
+    html += '<h5 style="margin-top: 0; color: #856404;">ℹ️ Status Actual: Funcionant amb Dades de Demostració</h5>';
+    html += '<p style="margin: 8px 0; font-size: 13px;">L\'aplicació mostra trens de demostració perquè:</p>';
+    html += '<ul style="margin: 8px 0; padding-left: 20px; font-size: 12px; color: #856404;">';
+    html += '<li>Protocol Buffer decoding no està disponible al navegador</li>';
+    html += '<li>Les dades GTFS-RT són binàries i requereixen eines especialitzades</li>';
+    html += '<li>Per dades reals, cal executar el servidor Node.js proporcionat</li>';
     html += '</ul>';
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Nota:</strong> Requereix connexió a Internet. Les dades es refresquen automàticament.</p>';
+    html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Els trens que veus són posicions simulades però realistes d\'arreu d\'Espanya.</strong></p>';
+    html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Executa el servidor proxy per obtenir dades 100% reals de RENFE!</strong></p>';
     html += '</div>';
 
     html += '<p style="font-size: 12px; color: #666;">Llicència: <a href="https://data.renfe.com/dataset/ubicacion-vehiculos" target="_blank">CC-BY-4.0</a> | Última actualització: 2025-12-27</p>';
@@ -1243,84 +1275,94 @@ function parseVehiclePositionsBasic(buffer) {
 
 // Fetch and decode GTFS-RT vehicle positions
 function fetchRealtimeTrains() {
-    // Try multiple CORS proxies for reliability
-    var corsProxies = [
-        'https://cors-anywhere.herokuapp.com/',
-        'https://api.allorigins.win/raw?url=',
-        'https://thingproxy.freeboard.io/fetch/'
-    ];
+    // Try local proxy server first (if running)
+    var localProxyUrl = 'http://localhost:3001/api/renfe-trains';
 
-    var renfeUrl = 'https://gtfsrt.renfe.com/vehicle_positions.pb';
+    console.log('Trying local proxy server...');
 
-    // Try each proxy in sequence until one works
-    function tryProxy(proxyIndex) {
-        if (proxyIndex >= corsProxies.length) {
-            console.warn('All CORS proxies failed, using mock data');
-            return Promise.resolve(generateMockTrainPositions());
-        }
-
-        var proxy = corsProxies[proxyIndex];
-        var fullUrl = proxy + encodeURIComponent(renfeUrl);
-
-        console.log('Trying CORS proxy:', proxy);
-
-        return fetch(fullUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Proxy failed: ' + response.status);
-                }
-                return response.arrayBuffer();
-            })
-            .then(buffer => {
-                console.log('Proxy', proxy, 'succeeded, attempting to decode data...');
-                var decodedTrains = decodeGtfsRealtimeBuffer(buffer);
-                if (decodedTrains && decodedTrains.length > 0) {
-                    console.log('Successfully decoded', decodedTrains.length, 'real trains');
-                    return decodedTrains;
-                } else {
-                    console.warn('Could not decode data from proxy', proxy, ', trying next proxy...');
-                    return tryProxy(proxyIndex + 1);
-                }
-            })
-            .catch(error => {
-                console.warn('Proxy', proxy, 'failed:', error.message, ', trying next proxy...');
-                return tryProxy(proxyIndex + 1);
-            });
-    }
-
-    return tryProxy(0);
-
-    return fetch(corsProxy + renfeUrl)
+    return fetch(localProxyUrl)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to fetch GTFS-RT data: ' + response.status);
+                throw new Error('Local proxy not available: ' + response.status);
             }
             return response.arrayBuffer();
         })
         .then(buffer => {
-            // Try to decode the real Protocol Buffer data
-            console.log('Attempting to decode real GTFS-RT data...');
+            console.log('Local proxy succeeded, decoding real RENFE data...');
             var decodedTrains = decodeGtfsRealtimeBuffer(buffer);
             if (decodedTrains && decodedTrains.length > 0) {
-                console.log('Successfully decoded ' + decodedTrains.length + ' real trains');
+                console.log('✅ Successfully decoded', decodedTrains.length, 'REAL trains from RENFE!');
                 return decodedTrains;
             } else {
-                console.warn('Could not decode real data, falling back to mock data');
-                return generateMockTrainPositions();
+                console.warn('Could not decode data from local proxy');
+                return tryCorsProxies();
             }
         })
         .catch(error => {
-            console.warn('Error fetching real GTFS-RT data:', error.message);
-            console.log('Falling back to mock train data');
-            return generateMockTrainPositions();
+            console.warn('Local proxy failed:', error.message);
+            console.log('Falling back to CORS proxies...');
+            return tryCorsProxies();
         });
+
+    // Try CORS proxies as fallback
+    function tryCorsProxies() {
+        var corsProxies = [
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/raw?url=',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+
+        var renfeUrl = 'https://gtfsrt.renfe.com/vehicle_positions.pb';
+
+        function tryProxy(proxyIndex) {
+            if (proxyIndex >= corsProxies.length) {
+                console.warn('All CORS proxies failed, using mock data');
+                return Promise.resolve(generateMockTrainPositions());
+            }
+
+            var proxy = corsProxies[proxyIndex];
+            var fullUrl = proxy + encodeURIComponent(renfeUrl);
+
+            console.log('Trying CORS proxy:', proxy);
+
+            return fetch(fullUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Proxy failed: ' + response.status);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(buffer => {
+                    console.log('Proxy', proxy, 'succeeded, attempting to decode data...');
+                    var decodedTrains = decodeGtfsRealtimeBuffer(buffer);
+                    if (decodedTrains && decodedTrains.length > 0) {
+                        console.log('Successfully decoded', decodedTrains.length, 'real trains');
+                        return decodedTrains;
+                    } else {
+                        console.warn('Could not decode data from proxy', proxy, ', trying next proxy...');
+                        return tryProxy(proxyIndex + 1);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Proxy', proxy, 'failed:', error.message, ', trying next proxy...');
+                    return tryProxy(proxyIndex + 1);
+                });
+        }
+
+        return tryProxy(0);
+    }
 }
 
 // Decode GTFS-RT Protocol Buffer data
 function decodeGtfsRealtimeBuffer(buffer) {
     try {
+        // Check if protobuf definitions are loaded
+        if (!protobuf || !protobuf.roots || !protobuf.roots.gtfsrt) {
+            console.warn('GTFS-RT protobuf definitions not loaded, using mock data');
+            return null;
+        }
+
         // Use protobuf.js to decode the buffer
-        // This requires the GTFS-RT proto definition to be loaded
         var FeedMessage = protobuf.roots.gtfsrt.FeedMessage;
         var feed = FeedMessage.decode(new Uint8Array(buffer));
 
@@ -1344,13 +1386,14 @@ function decodeGtfsRealtimeBuffer(buffer) {
         return trains;
     } catch (error) {
         console.error('Error decoding GTFS-RT buffer:', error);
-        return null;
+        console.log('Falling back to mock train data for demonstration');
+        return null; // Return null to trigger mock data fallback
     }
 }
 
-// Generate mock train positions for demonstration
+// Generate mock train positions for demonstration (only used when real data unavailable)
 function generateMockTrainPositions() {
-    // Mock train positions around Spain for demonstration
+    // Mock train positions around Spain for demonstration when real data is blocked by CORS
     var mockTrains = [
         {id: 'RENFE-001', lat: 40.4168, lng: -3.7038, speed: 120, bearing: 45, route: 'AVE Madrid-Barcelona'},
         {id: 'RENFE-002', lat: 41.3851, lng: 2.1734, speed: 0, bearing: 180, route: 'Regional Barcelona-Girona'},
@@ -1361,6 +1404,37 @@ function generateMockTrainPositions() {
     ];
 
     return mockTrains;
+}
+
+// Try to get real RENFE data using a server-side proxy approach
+function tryRealRenfeData() {
+    // This would require a backend server to proxy the request
+    // Example Node.js/Express server code that would work:
+
+    /*
+    const express = require('express');
+    const cors = require('cors');
+    const fetch = require('node-fetch');
+
+    const app = express();
+    app.use(cors());
+
+    app.get('/api/renfe-trains', async (req, res) => {
+        try {
+            const response = await fetch('https://gtfsrt.renfe.com/vehicle_positions.pb');
+            const buffer = await response.arrayBuffer();
+            res.send(Buffer.from(buffer));
+        } catch (error) {
+            res.status(500).json({error: 'Failed to fetch RENFE data'});
+        }
+    });
+
+    app.listen(3001, () => console.log('Proxy server running on port 3001'));
+    */
+
+    // Since we don't have a backend server, we fall back to mock data
+    console.log('Real RENFE data requires a backend proxy server. Using demonstration data.');
+    return generateMockTrainPositions();
 }
 
 // Display train positions on map

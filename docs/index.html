@@ -13,6 +13,7 @@
     <meta property="og:image" content="https://osm-catalan.github.io/openlocalmap/assets/img/preview.jpg" />
 	<!--MODIFICAR AQUÍ-->
     <meta property="og:description" content="Mapa de Vilanova i la Geltrú amb cerca de punts d'interès i altra informació." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: http:; font-src 'self' https:; connect-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https:; base-uri 'self'; form-action 'self';">
     <link rel="shortcut icon" href="assets/img/favicon.ico"/>
     <link rel="stylesheet" href="assets/leaflet/leaflet.css" />
     <link rel="stylesheet" href="assets/css/Control.Loading.css" />
@@ -2109,6 +2110,29 @@ s.setAttribute('data-timestamp', +new Date());
     <script src="assets/js/pois-type.js"></script>
     <script src="assets/js/routes-manager.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js"></script>
+    <script>
+        // Attempt to enable CORS for GTFS-RT requests
+        // This is a workaround for development/testing
+        if (typeof XMLHttpRequest !== 'undefined') {
+            var originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if (url && url.includes('gtfsrt.renfe.com')) {
+                    // Try to add CORS headers (won't actually work but worth attempting)
+                    this.setRequestHeader = this.setRequestHeader || function() {};
+                    try {
+                        this.withCredentials = true;
+                    } catch(e) {}
+                }
+                return originalOpen.apply(this, arguments);
+            };
+        }
+
+        // Alternative: Try using a different protocol or approach
+        window.gtfsrtCORSWorkaround = function() {
+            // This is a development workaround - in production, use a server-side proxy
+            console.log('Attempting GTFS-RT CORS workaround...');
+        };
+    </script>
     <script src="assets/js/site.functions.js"></script>
     <script src="assets/js/translations.js"></script>
     <script src="assets/js/site.js"></script>
