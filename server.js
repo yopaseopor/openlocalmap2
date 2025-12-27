@@ -4,7 +4,7 @@ const app = express();
 
 // Enable CORS for all routes (must run before all other middleware)
 app.use((req, res, next) => {
-  // Always set CORS headers, even on errors
+  // IMPORTANT: Set CORS headers immediately on every request
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -15,19 +15,6 @@ app.use((req, res, next) => {
     return res.sendStatus(204);
   }
   next();
-});
-
-// Error handler wrapper to ensure CORS headers on errors
-app.use((err, req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
-  console.error('Unhandled error:', err);
-  res.status(500).json({
-    error: 'Internal server error',
-    message: err.message
-  });
 });
 
 // Serve static files from the docs directory
@@ -124,6 +111,20 @@ app.get('*', (req, res) => {
     return res.status(404).json({error: 'API endpoint not found'});
   }
   res.sendFile(path.join(__dirname, 'docs', 'index.html'));
+});
+
+// Error handler MUST be defined last (with 4 parameters)
+app.use((err, req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    timestamp: new Date().toISOString()
+  });
 });
 
 const PORT = process.env.PORT || 3000;
