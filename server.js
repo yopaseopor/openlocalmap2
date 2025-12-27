@@ -1,11 +1,14 @@
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
-const fetch = require('node-fetch');
 const app = express();
 
 // Enable CORS for all routes
-app.use(cors());
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 // Serve static files from the docs directory
 app.use(express.static(path.join(__dirname, 'docs')));
