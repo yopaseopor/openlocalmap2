@@ -1478,6 +1478,7 @@ function displayRealtimeTrains(trains) {
         'C3': {name: 'C-3', color: '#F8B80E'},   // Yellow
         'C4': {name: 'C-4', color: '#8BC53F'},   // Green
         'C5': {name: 'C-5', color: '#9B59B6'},   // Purple
+        'C6': {name: 'C-6', color: '#9B59B6'},   // Purple (same as C5)
         'C7': {name: 'C-7', color: '#FF6B35'},   // Orange/Red
         'C8': {name: 'C-8', color: '#00A0E9'},   // Light Blue
         'C9': {name: 'C-9', color: '#8BC53F'},   // Green
@@ -1489,6 +1490,7 @@ function displayRealtimeTrains(trains) {
         'C-3': {name: 'C-3', color: '#F8B80E'},   // Yellow
         'C-4': {name: 'C-4', color: '#8BC53F'},   // Green
         'C-5': {name: 'C-5', color: '#9B59B6'},   // Purple
+        'C-6': {name: 'C-6', color: '#9B59B6'},   // Purple (same as C5)
         'C-7': {name: 'C-7', color: '#FF6B35'},   // Orange/Red
         'C-8': {name: 'C-8', color: '#00A0E9'},   // Light Blue
         'C-9': {name: 'C-9', color: '#8BC53F'},   // Green
@@ -1507,10 +1509,10 @@ function displayRealtimeTrains(trains) {
 
         // Rodalies Barcelona - Official colors from Wikipedia (ca.wikipedia.org/wiki/Rodalies_de_Catalunya)
         'R1': {name: 'R1', color: '#0066CC'}, // Blue
-        'R2': {name: 'R2', color: '#CC0000'}, // Red
-        'R2S': {name: 'R2 Sud', color: '#CC0000'}, // Red
-        'R2N': {name: 'R2 Nord', color: '#CC0000'}, // Red
-        'R3': {name: 'R3', color: '#009933'}, // Green
+        'R2': {name: 'R2', color: '#009933'}, // Green
+        'R2S': {name: 'R2 Sud', color: '#009933'}, // Green
+        'R2N': {name: 'R2 Nord', color: '#009933'}, // Green
+        'R3': {name: 'R3', color: '#CC0000'}, // Red
         'R4': {name: 'R4', color: '#FFCC00'}, // Yellow
         'R5': {name: 'R5', color: '#660099'}, // Purple
         'R6': {name: 'R6', color: '#0099CC'}, // Light Blue
@@ -1549,7 +1551,14 @@ function displayRealtimeTrains(trains) {
     // Create markers for each train, grouped by route
     Object.keys(trainsByRoute).forEach(function(routeId) {
         var routeTrains = trainsByRoute[routeId];
-        var routeData = routeInfo[routeId] || routeInfo['Unknown'];
+        var routeData = routeInfo[routeId];
+        if (!routeData) {
+            // Use the route code directly if not in mapping
+            routeData = {
+                name: routeId,
+                color: '#95A5A6' // Gray for unknown routes
+            };
+        }
         var routeColor = routeData.color;
         var routeName = routeData.name;
 
@@ -1640,7 +1649,7 @@ function createTrainLegend(trainsByRoute, routeColors) {
     legend.id = 'train-legend';
     legend.style.cssText = `
         position: absolute;
-        top: 10px;
+        top: 70px;
         right: 10px;
         background: white;
         padding: 10px;
@@ -2005,12 +2014,39 @@ function tryAutomatedCopyPaste() {
     return false;
 }
 
+// Toggle train legend visibility
+function toggleTrainLegend() {
+    var legend = document.getElementById('train-legend');
+    var legendBtn = document.getElementById('legend-btn');
+
+    if (!legend) {
+        // Legend doesn't exist, create it and show
+        if (realtimeTrainMarkers.length > 0) {
+            createTrainLegend(trainsByRoute, routeInfo);
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            alert('No hi ha trens al mapa. Inicia la visualització de trens primer.');
+            return;
+        }
+    } else {
+        // Legend exists, toggle visibility
+        if (legend.style.display === 'none' || !legend.style.display) {
+            legend.style.display = 'block';
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            legend.style.display = 'none';
+            legendBtn.textContent = '🎨 Mostrar Llegenda';
+        }
+    }
+}
+
 // Make all functions globally accessible
 window.startRealtimeTrains = startRealtimeTrains;
 window.stopRealtimeTrains = stopRealtimeTrains;
 window.openRenfeJson = openRenfeJson;
 window.showManualDataEntry = showManualDataEntry;
 window.processManualJsonData = processManualJsonData;
+window.toggleTrainLegend = toggleTrainLegend;
 
 // Define global mdb object for Mobility Database API functions
 window.mdb = {
