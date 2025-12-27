@@ -2,16 +2,32 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// Enable CORS for all routes
+// Enable CORS for all routes (must run before all other middleware)
 app.use((req, res, next) => {
+  // Always set CORS headers, even on errors
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
+  
   // Respond to preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
   next();
+});
+
+// Error handler wrapper to ensure CORS headers on errors
+app.use((err, req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message
+  });
 });
 
 // Serve static files from the docs directory
@@ -30,27 +46,27 @@ app.get('/api/renfe-trains', async (req, res) => {
         'User-Agent': 'OpenLocalMap-Proxy/1.0',
         'Accept': 'application/json'
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 30000 // 30 second timeout for Vercel
     });
 
     if (!response.ok) {
-      throw new Error(`RENFE API returned ${response.status}: ${response.statusText}`);
+      console.warn(`⚠️ RENFE API returned ${response.status}: ${response.statusText}`);
+      return res.status(response.status).json({
+        error: 'RENFE API error',
+        status: response.status,
+        message: response.statusText,
+        timestamp: new Date().toISOString()
+      });
     }
 
     const data = await response.json();
-
     console.log('✅ Successfully fetched RENFE data:', data.entity ? data.entity.length : 0, 'trains');
-
-    // Add CORS headers explicitly
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+    
     res.json(data);
   } catch (error) {
     console.error('❌ Error fetching RENFE data:', error.message);
-
-    // Return error response
+    
+    // Return error response with explicit CORS headers
     res.status(500).json({
       error: 'Failed to fetch RENFE data',
       message: error.message,
@@ -72,27 +88,27 @@ app.get('/api/fgc-trains', async (req, res) => {
         'User-Agent': 'OpenLocalMap-Proxy/1.0',
         'Accept': 'application/json'
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 30000 // 30 second timeout for Vercel
     });
 
     if (!response.ok) {
-      throw new Error(`FGC API returned ${response.status}: ${response.statusText}`);
+      console.warn(`⚠️ FGC API returned ${response.status}: ${response.statusText}`);
+      return res.status(response.status).json({
+        error: 'FGC API error',
+        status: response.status,
+        message: response.statusText,
+        timestamp: new Date().toISOString()
+      });
     }
 
     const data = await response.json();
-
     console.log('✅ Successfully fetched FGC data:', data.results ? data.results.length : 0, 'trains');
-
-    // Add CORS headers explicitly
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+    
     res.json(data);
   } catch (error) {
     console.error('❌ Error fetching FGC data:', error.message);
 
-    // Return error response
+    // Return error response with explicit CORS headers
     res.status(500).json({
       error: 'Failed to fetch FGC data',
       message: error.message,
