@@ -1335,14 +1335,11 @@ function fetchRealtimeTrains() {
         apiUrl = '/api/renfe-trains';
         console.log('🚂 Fetching RENFE data via Vercel API...');
     } else if (isGitHubPages) {
-        // On GitHub Pages, we can't use server-side proxies
-        console.log('🚂 Running on GitHub Pages - using manual data entry mode');
-
-        // Show a user-friendly message and direct to manual entry
-        alert('🚂 For live RENFE train data on GitHub Pages:\n\n1. Open this URL in a new tab: https://gtfsrt.renfe.com/vehicle_positions.json\n2. Copy all the JSON data (Ctrl+A, Ctrl+C)\n3. Return here and click "📝 Introduir Dades Manualment"\n4. Paste the data (Ctrl+V) and click "Processar Dades Reals"\n\nThis gives you 100% real RENFE train positions!');
-
-        // Return empty array to trigger manual mode
-        return Promise.resolve([]);
+        // On GitHub Pages, use Vercel API proxy (replace with your actual Vercel URL)
+        // TODO: Replace this with your actual Vercel deployment URL
+        var vercelUrl = 'https://openlocalmap2-yopaseopor.vercel.app'; // Replace with actual URL
+        apiUrl = vercelUrl + '/api/renfe-trains';
+        console.log('🚂 Fetching RENFE data via Vercel proxy from GitHub Pages...');
     } else {
         // Local development
         apiUrl = '/api/renfe-trains';
@@ -1376,7 +1373,12 @@ function fetchRealtimeTrains() {
         .catch(error => {
             console.error('❌ API proxy failed:', error.message);
 
-            if (isVercel) {
+            // Fallback options
+            if (isGitHubPages) {
+                // On GitHub Pages, direct to manual entry if Vercel proxy fails
+                alert('🚂 Vercel API proxy unavailable. Use manual data entry:\n\n1. Open: https://gtfsrt.renfe.com/vehicle_positions.json\n2. Copy JSON data (Ctrl+A, Ctrl+C)\n3. Click "📝 Introduir Dades Manualment"\n4. Paste and click "Processar Dades Reals"');
+                return Promise.resolve([]);
+            } else if (isVercel) {
                 // On Vercel, show manual fallback option
                 alert('🚂 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://gtfsrt.renfe.com/vehicle_positions.json\n2. Copy JSON data\n3. Use "📝 Introduir Dades Manualment"');
                 return Promise.resolve([]);
