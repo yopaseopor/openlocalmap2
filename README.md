@@ -76,7 +76,9 @@ Similar functionality is available for FGC (Ferrocarrils de la Generalitat de Ca
 
 ## Deployment to GitHub Pages
 
-The application is automatically deployed to GitHub Pages using GitHub Actions with Node.js:
+The application is automatically deployed to GitHub Pages using GitHub Actions with Node.js.
+
+**Live Demo with RENFE Real-Time Trains**: https://yopaseopor.github.io/openlocalmap2
 
 1. **Enable GitHub Pages** in your repository settings:
    - Go to Settings → Pages
