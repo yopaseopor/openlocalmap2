@@ -1014,12 +1014,12 @@ function displayGtfsRoutesInfo(feed) {
     html += '<h5 style="margin-top: 0; color: #856404;">ℹ️ Status Actual: Funcionant amb Dades de Demostració</h5>';
     html += '<p style="margin: 8px 0; font-size: 13px;">L\'aplicació mostra trens de demostració perquè:</p>';
     html += '<ul style="margin: 8px 0; padding-left: 20px; font-size: 12px; color: #856404;">';
-    html += '<li>Protocol Buffer decoding no està disponible al navegador</li>';
-    html += '<li>Les dades GTFS-RT són binàries i requereixen eines especialitzades</li>';
-    html += '<li>Per dades reals, cal executar el servidor Node.js proporcionat</li>';
+    html += '<li>GTFS-RT API està protegit per CORS (seguretat del navegador)</li>';
+    html += '<li>Protocol Buffer libraries funcionen al navegador, però les dades reals requereixen un servidor intermediari</li>';
+    html += '<li>Les dades GTFS-RT són binàries i demanen autenticació</li>';
     html += '</ul>';
     html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Els trens que veus són posicions simulades però realistes d\'arreu d\'Espanya.</strong></p>';
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Executa el servidor proxy per obtenir dades 100% reals de RENFE!</strong></p>';
+    html += '<p style="margin: 8px 0; font-size: 12px; color: #856404;"><strong>Protocol Buffer decoding SÍ que està disponible al navegador - el problema és l\'accés a les dades reals.</strong></p>';
     html += '</div>';
 
     html += '<p style="font-size: 12px; color: #666;">Llicència: <a href="https://data.renfe.com/dataset/ubicacion-vehiculos" target="_blank">CC-BY-4.0</a> | Última actualització: 2025-12-27</p>';
@@ -1231,7 +1231,7 @@ var gtfsRealtimeProto = null;
 function loadGtfsRealtimeProto() {
     if (gtfsRealtimeProto) return Promise.resolve(gtfsRealtimeProto);
 
-    return fetch('https://raw.githubusercontent.com/google/transit/master/gtfs-realtime/proto/gtfs-realtime.proto')
+    return fetch('assets/txt/gtfs-realtime.proto.txt')
         .then(response => response.text())
         .then(protoText => {
             // Parse the protobuf definition
@@ -1239,6 +1239,7 @@ function loadGtfsRealtimeProto() {
                 if (err) throw err;
                 gtfsRealtimeProto = root;
                 protobuf.roots.gtfsrt = root;
+                console.log('✅ GTFS-RT protobuf definitions loaded successfully');
             });
             return gtfsRealtimeProto;
         })
