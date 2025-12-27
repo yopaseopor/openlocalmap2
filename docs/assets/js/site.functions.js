@@ -1323,10 +1323,18 @@ function decodeRenfeJsonData(jsonData) {
 
 // Fetch real-time train positions
 function fetchRealtimeTrains() {
-    // Detect if we're running on GitHub Pages (static hosting)
-    var isGitHubPages = window.location.hostname.includes('github.io');
+    // Detect deployment environment
+    var hostname = window.location.hostname;
+    var isGitHubPages = hostname.includes('github.io');
+    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
 
-    if (isGitHubPages) {
+    // Use appropriate API endpoint based on environment
+    var apiUrl;
+    if (isVercel) {
+        // Use Vercel-deployed API
+        apiUrl = '/api/renfe-trains';
+        console.log('🚂 Fetching RENFE data via Vercel API...');
+    } else if (isGitHubPages) {
         // On GitHub Pages, we can't use server-side proxies
         console.log('🚂 Running on GitHub Pages - using manual data entry mode');
 
@@ -1335,22 +1343,21 @@ function fetchRealtimeTrains() {
 
         // Return empty array to trigger manual mode
         return Promise.resolve([]);
+    } else {
+        // Local development
+        apiUrl = '/api/renfe-trains';
+        console.log('🚂 Fetching RENFE data via local proxy server...');
     }
 
-    // Use local proxy server for local development
-    var localProxyUrl = '/api/renfe-trains';
-
-    console.log('🚂 Fetching RENFE data via local proxy server...');
-
-    return fetch(localProxyUrl)
+    return fetch(apiUrl)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Local proxy failed: ' + response.status + ' ' + response.statusText);
+                throw new Error('API proxy failed: ' + response.status + ' ' + response.statusText);
             }
             return response.json();
         })
         .then(jsonData => {
-            console.log('✅ Local proxy succeeded! Processing RENFE data...');
+            console.log('✅ API proxy succeeded! Processing RENFE data...');
 
             // Check if the response contains an error
             if (jsonData.error) {
@@ -1359,7 +1366,7 @@ function fetchRealtimeTrains() {
 
             var decodedTrains = decodeRenfeJsonData(jsonData);
             if (decodedTrains && decodedTrains.length > 0) {
-                console.log('🚂 SUCCESS: Retrieved', decodedTrains.length, 'REAL RENFE trains via local proxy!');
+                console.log('🚂 SUCCESS: Retrieved', decodedTrains.length, 'REAL RENFE trains via API proxy!');
                 return decodedTrains;
             } else {
                 console.warn('Proxy returned data but no trains found');
@@ -1367,11 +1374,17 @@ function fetchRealtimeTrains() {
             }
         })
         .catch(error => {
-            console.error('❌ Local proxy failed:', error.message);
+            console.error('❌ API proxy failed:', error.message);
 
-            // Fallback: Try direct CORS proxies as backup (only for local development)
-            console.log('🔄 Falling back to external CORS proxies...');
-            return fetchRealtimeTrainsFallback();
+            if (isVercel) {
+                // On Vercel, show manual fallback option
+                alert('🚂 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://gtfsrt.renfe.com/vehicle_positions.json\n2. Copy JSON data\n3. Use "📝 Introduir Dades Manualment"');
+                return Promise.resolve([]);
+            } else {
+                // Local development fallback to external CORS proxies
+                console.log('🔄 Falling back to external CORS proxies...');
+                return fetchRealtimeTrainsFallback();
+            }
         });
 }
 
