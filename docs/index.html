@@ -39,6 +39,7 @@
 	<li><a href="#search" role="tab"><i class="fa fa-search"></i></a></li>
 	<li><a href="#home" role="tab"><i class="fa fa-map-marker"></i></a></li>
 	<li><a href="#routes" role="tab"><i class="fa fa-compass"></i></a></li>
+	<li><a href="#gtfs" role="tab"><i class="fa fa-clock-o"></i></a></li>
 	<li><a href="#wikipedia" role="tab"><i class="fa fa-book"></i></a></li>
 		<!--MODIFICAR AQUÍ-->
 	<li><a href="#comments" role="tab"><i class="fa fa-comments-o"></i></a></li>
@@ -224,19 +225,19 @@
   <!-- Route type buttons -->
   <center style="margin-bottom: 15px;">
     <div style="text-align: center;">
-      <button class="route-type-btn fa fa-walking" type="button" onclick="loadWalkingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes a peu</button>
-      <button class="route-type-btn fa fa-bicycle" type="button" onclick="loadBikingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"> Rutes en bicicleta</button>
+      <button id="walking-routes-btn" class="route-type-btn" type="button" onclick="loadWalkingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"><i class="fa fa-user"></i> Rutes a peu</button>
+      <button id="biking-routes-btn" class="route-type-btn" type="button" onclick="loadBikingRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin: 5px;"><i class="fa fa-bicycle"></i> Rutes en bicicleta</button>
     </div>
 
     <!-- Public transport type buttons -->
     <div style="text-align: center; margin-top: 10px;">
       <h4 style="margin: 5px 0; color: #666; font-size: 14px;">Transport públic:</h4>
-      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('bus')" title="Autobusos" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-bus"></i> Bus</button>
-      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('tram')" title="Tramvies" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-subway"></i> Tram</button>
-      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('subway')" title="Metro" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-train"></i> Metro</button>
-      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('train')" title="Trens" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-train"></i> Tren</button>
-      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('light_rail')" title="Tramvia lleuger" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"><i class="fa fa-subway"></i> Tram lleuger</button>
-      <button class="transport-type-btn fa fa-bus" type="button" onclick="loadPublicTransportRoutes()" title="Tots els transports públics" style="background:#007acc; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;"> Tots</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('bus')" title="Autobusos" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚌 Bus</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('tram')" title="Tramvies" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚊 Tram</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('subway')" title="Metro" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚇 Metro</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('train')" title="Trens" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚆 Tren</button>
+      <button class="transport-type-btn" type="button" onclick="loadSpecificTransportRoutes('light_rail')" title="Tramvia lleuger" style="background:#2a2a2a; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚊 Tram lleuger</button>
+      <button class="transport-type-btn" type="button" onclick="loadPublicTransportRoutes()" title="Tots els transports públics" style="background:#007acc; color:white; padding:6px 8px; border:none; border-radius:3px; cursor:pointer; margin: 2px; font-size: 12px;">🚌🚊🚇🚆🚊 All</button>
     </div>
 
     <small style="color: #666; font-size: 11px;" data-i18n="routes_manual_note">Les consultes es fan manualment per evitar sobrecàrrega dels servidors</small>
@@ -291,17 +292,122 @@
 	</div>
 
 
+	<!--GTFS-->
+	<div class="sidebar-pane" id="gtfs">
+	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
+	  </div>
+	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
+          onClick="location.href='#help_gtfs'"> Ajuda (GTFS)</button></center>
+	  <h1 data-i18n="gtfs_title">GTFS - Dades de Transport</h1>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_description">Explora conjunts de dades GTFS de transports públics de tot el món. Selecciona un conjunt de dades per veure informació sobre rutes, parades i horaris.</p>
+
+	  <!-- GTFS Search and Selection -->
+	  <div style="margin-bottom: 15px;">
+	    <h4 data-i18n="gtfs_search_title">Buscar conjunts de dades GTFS:</h4>
+	    <input type="text" id="gtfs-search" placeholder="Buscar per ciutat, país o operador..." style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+	    <button onclick="searchGtfsDatasets()" style="background:#007acc; color:white; padding:8px 15px; border:none; border-radius:3px; cursor:pointer; margin-right: 10px;">
+	      <i class="fa fa-search"></i> Buscar
+	    </button>
+	    <button onclick="loadAllGtfsDatasets()" style="background:#666; color:white; padding:8px 15px; border:none; border-radius:3px; cursor:pointer;">
+	      <i class="fa fa-list"></i> Mostrar tots
+	    </button>
+	  </div>
+
+	<!-- Mobility Database Auth UI -->
+	<div style="margin-bottom: 12px; padding: 10px; border: 1px dashed #ccc; border-radius:4px; background:#fbfbfb;">
+		<label style="display:block; font-weight:600; margin-bottom:6px;">Mobility Database Refresh Token</label>
+		<input id="mobility-refresh-token" type="password" placeholder="Paste your refresh token here" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:8px;">
+		<div style="display:flex; gap:8px;">
+			<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, true); document.getElementById('mobility-auth-status').textContent='Refresh token saved (in localStorage).'; })()" style="background:#007acc; color:white; padding:6px 10px; border:none; border-radius:3px;">Save token</button>
+			<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, false); document.getElementById('mobility-auth-status').textContent='Refresh token set for session only.'; })()" style="background:#2a2a2a; color:white; padding:6px 10px; border:none; border-radius:3px;">Use for session</button>
+			<button onclick="(function(){ clearStoredRefreshToken(); document.getElementById('mobility-auth-status').textContent='Refresh token cleared.'; })()" style="background:#aa0000; color:white; padding:6px 10px; border:none; border-radius:3px;">Clear</button>
+			<button onclick="(function(){ document.getElementById('mobility-auth-status').textContent='Requesting access token...'; getValidAccessToken().then(function(tok){ document.getElementById('mobility-auth-status').textContent='Access token obtained.'; }).catch(function(err){ document.getElementById('mobility-auth-status').textContent='Token error: '+err.message; }); })()" style="background:#228822; color:white; padding:6px 10px; border:none; border-radius:3px;">Get Access Token</button>
+		</div>
+		<div id="mobility-auth-status" style="margin-top:8px; color:#444; font-size:13px;">No refresh token configured.</div>
+		<div style="margin-top:8px; font-size:12px; color:#666;">If you don't have a refresh token, sign in at <a href="https://mobilitydatabase.org/account" target="_blank">mobilitydatabase.org/account</a>. See API docs at <a href="https://mobilitydata.github.io/mobility-feed-api/SwaggerUI/index.html#/" target="_blank">Mobility Feed API (Swagger)</a>.</div>
+	</div>
+
+	  <!-- GTFS Results -->
+	  <div id="gtfs-results" style="display: none; margin-top: 15px;">
+	    <h4 data-i18n="gtfs_results_title">Conjunts de dades disponibles:</h4>
+	    <div id="gtfs-dataset-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+	      <!-- Dataset list will be populated here -->
+	    </div>
+	  </div>
+
+	  <!-- GTFS Dataset Details -->
+	  <div id="gtfs-details" style="display: none; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+	    <h4 id="gtfs-dataset-title"></h4>
+	    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
+	      <div><strong data-i18n="gtfs_provider">Proveïdor:</strong> <span id="gtfs-provider"></span></div>
+	      <div><strong data-i18n="gtfs_country">País:</strong> <span id="gtfs-country"></span></div>
+	      <div><strong data-i18n="gtfs_location">Ubicació:</strong> <span id="gtfs-location"></span></div>
+	      <div><strong data-i18n="gtfs_last_updated">Última actualització:</strong> <span id="gtfs-last-updated"></span></div>
+	    </div>
+	    <p id="gtfs-description" style="margin-bottom: 15px;"></p>
+
+	    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+	      <button onclick="exploreGtfsRoutes()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-route"></i> Explorar rutes
+	      </button>
+	      <button onclick="exploreGtfsStops()" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-map-marker"></i> Explorar parades
+	      </button>
+	      <button onclick="downloadGtfsData()" style="background:#007acc; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-download"></i> Descarregar dades
+	      </button>
+	    </div>
+	  </div>
+
+	  <!-- GTFS Routes/Stops Display -->
+	  <div id="gtfs-content" style="display: none; margin-top: 15px;">
+	    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+	      <h4 id="gtfs-content-title"></h4>
+	      <button onclick="backToGtfsDetails()" style="background:#666; color:white; padding:4px 8px; border:none; border-radius:3px; cursor:pointer; font-size: 12px;">
+	        <i class="fa fa-arrow-left"></i> Tornar
+	      </button>
+	    </div>
+	    <div id="gtfs-content-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+	      <!-- Content will be populated here -->
+	    </div>
+	  </div>
+
+	  <!-- Loading indicator -->
+	  <div id="gtfs-loading" style="display: none; text-align: center; margin-top: 20px;">
+	    <img src="assets/img/spinner.gif" alt="Loading..." style="width: 32px; height: 32px;">
+	    <p data-i18n="gtfs_loading">Carregant dades GTFS...</p>
+	  </div>
+
+	  <br><hr width="90%">
+
+	  <!-- GTFS - ajuda -->
+	  <A NAME="help_gtfs"></A>
+	  <h1 data-i18n="gtfs_help_title"><span class="fa fa-support"></span> Ajuda (GTFS)</h1>
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_help_text1">Des d'aquesta secció pots explorar conjunts de dades GTFS (General Transit Feed Specification) de transports públics de tot el món. GTFS és un format estàndard per compartir informació de transports públics.</p>
+
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_help_text2">Per començar, pots buscar conjunts de dades per ciutat, país o operador de transport, o simplement fer clic a "Mostrar tots" per veure totes les opcions disponibles.</p>
+
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_help_text3">Quan seleccionis un conjunt de dades, podràs explorar les rutes disponibles, veure les parades al mapa i fins i tot descarregar les dades completes per al teu ús.</p>
+
+	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_help_text4">Les dades GTFS provenen de l'API de Mobility Database i s'actualitzen regularment pels proveïdors de transport.</p>
+
+	  <br>
+	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-arrow-up"
+          onClick="location.href='#gtfs_init'" data-i18n="gtfs_help_back"> Inici</button></center>
+	</div>
+
+
 	<!--VIQUIPÈDIA-->
 	<div class="sidebar-pane" id="wikipedia">
 	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
 	  </div>
 	  <A NAME="IniciWiki"></A>
 	  <!--MODIFICAR AQUÍ-->
-	  <h1 id="wikipedia_title">Vilanova i la Geltrú a Wikidata</h1>
-	  <center><p><button onclick="updateWikipediaContent();" id="wikipedia_reload">Actualitza</button></p></center>
+	  <h1 id="wikipedia_title" data-i18n="wikipedia_title">Atenció</h1>
+	  <center><p><button onclick="updateWikipediaContent();" id="wikipedia_reload" data-i18n="wikipedia_reload">Actualitza</button></p></center>
 	  <!--MODIFICAR AQUÍ-->
 	  <div id="wikidata-content">
-	    <p>Carregant informació de Wikidata...</p>
+	    <p data-i18n="wikipedia_search_first">Primer has de cercar un lloc per obtenir informació de Wikidata. Utilitza la <i class='fa fa-search'></i> cerca per seleccionar una ubicació.</p>
 	  </div>
 	  <center><a href="#IniciWiki" data-i18n="wikipedia_back">Torna a l'inici</a></p></center></p>
 	  <script>
@@ -313,50 +419,74 @@
 			// Get current language
 			var currentLang = currentLanguage || 'ca';
 			var langNames = {ca: 'Wikidata', es: 'Wikidata', en: 'Wikidata'};
-			var buttonTexts = {ca: 'Actualitza', es: 'Actualizar', en: 'Update'};
 
 			// Check if there's a selected route first
 			if (typeof currentSelectedRoute !== 'undefined' && currentSelectedRoute) {
 				// Show route-specific information
 				var routeName = currentSelectedRoute.name || currentSelectedRoute.id;
-				titleElement.textContent = routeName.replace(/'/g, "\\'") + " a " + (langNames[currentLang] || 'Wikidata');
-				reloadButton.textContent = buttonTexts[currentLang] || "Actualitza";
+				titleElement.textContent = routeName.replace(/'/g, "\\'") + getTranslation('wikipedia_to_wikidata', currentLang);
+				reloadButton.textContent = getTranslation('wikipedia_reload', currentLang);
 
 				contentDiv.innerHTML = "<p>" + (currentLang === 'es' ? 'Cargando información de Wikidata...' : currentLang === 'en' ? 'Loading Wikidata information...' : 'Carregant informació de Wikidata...') + "</p>";
 
 				// Fetch Wikidata information for the route
 				fetchRouteWikidataInfo(currentSelectedRoute, currentLang, function(data) {
 					displayWikidataInfo(data, contentDiv, currentLang);
+					// Add the clear button after content is loaded
+					setTimeout(function() {
+						var existingHtml = contentDiv.innerHTML;
+						var clearButtonHtml = "<div style='margin-bottom: 15px; text-align: center;'><button onclick='clearRouteFromWikidata()' style='background:#666; color:white; padding:6px 12px; border:none; border-radius:3px; cursor:pointer; font-size: 12px;'>" +
+							(currentLang === 'es' ? '← Volver a ubicación' : currentLang === 'en' ? '← Back to location' : '← Tornar a ubicació') + "</button></div>";
+						contentDiv.innerHTML = clearButtonHtml + existingHtml;
+					}, 100);
 				}, function(error) {
 					showNoWikidataSuggestions(currentSelectedRoute, contentDiv, currentLang);
+					// Add clear button even on error
+					setTimeout(function() {
+						var existingHtml = contentDiv.innerHTML;
+						var clearButtonHtml = "<div style='margin-bottom: 15px; text-align: center;'><button onclick='clearRouteFromWikidata()' style='background:#666; color:white; padding:6px 12px; border:none; border-radius:3px; cursor:pointer; font-size: 12px;'>" +
+							(currentLang === 'es' ? '← Volver a ubicación' : currentLang === 'en' ? '← Back to location' : '← Tornar a ubicació') + "</button></div>";
+						contentDiv.innerHTML = clearButtonHtml + existingHtml;
+					}, 100);
 				});
-			} else if (typeof baseLocation !== 'undefined' && baseLocation) {
-				// Fall back to base location (original behavior)
-				titleElement.textContent = baseLocation.name.replace(/'/g, "\\'") + " a " + (langNames[currentLang] || 'Wikidata');
-				reloadButton.textContent = buttonTexts[currentLang] || "Actualitza";
+			} else if (baseLocation && baseLocation.name !== "Vilanova i la Geltrú") {
+				// Show Wikidata for searched location
+				titleElement.textContent = baseLocation.name.replace(/'/g, "\\'") + getTranslation('wikipedia_to_wikidata', currentLang);
+				reloadButton.textContent = getTranslation('wikipedia_reload', currentLang);
 
 				contentDiv.innerHTML = "<p>" + (currentLang === 'es' ? 'Cargando información de Wikidata...' : currentLang === 'en' ? 'Loading Wikidata information...' : 'Carregant informació de Wikidata...') + "</p>";
 
-				// Fetch Wikidata information
+				// Fetch Wikidata information for the searched location
 				fetchWikidataInfo(baseLocation, currentLang, function(data) {
 					displayWikidataInfo(data, contentDiv, currentLang);
 				}, function(error) {
-					var errorMsgs = {
-						ca: "Error carregant dades de Wikidata: ",
-						es: "Error cargando datos de Wikidata: ",
-						en: "Error loading Wikidata data: "
+					// Show helpful message about searching first when no Wikidata info is found
+					var noInfoMsgs = {
+						ca: "No s'ha trobat informació de Wikidata per aquesta ubicació. Proveu de cercar primer el lloc utilitzant la <i class='fa fa-search'></i> cerca per obtenir millors resultats.",
+						es: "No se encontró información de Wikidata para esta ubicación. Prueba a buscar primero el lugar utilizando la <i class='fa fa-search'></i> búsqueda para obtener mejores resultados.",
+						en: "No Wikidata information found for this location. Try searching for the place first using the <i class='fa fa-search'></i> search to get better results."
 					};
-					contentDiv.innerHTML = "<p>" + (errorMsgs[currentLang] || errorMsgs.ca) + error + "</p>";
+					contentDiv.innerHTML = "<p>" + (noInfoMsgs[currentLang] || noInfoMsgs.ca) + "</p>";
 				});
 			} else {
-				// No location or route selected
-				var noSelectionMsgs = {
-					ca: "Si us plau, selecciona una ruta o una ubicació per veure la informació de Wikidata.",
-					es: "Por favor, selecciona una ruta o una ubicación para ver la información de Wikidata.",
-					en: "Please select a route or location to see Wikidata information."
-				};
-				contentDiv.innerHTML = "<p>" + (noSelectionMsgs[currentLang] || noSelectionMsgs.ca) + "</p>";
+				// No route or location selected - show message to search first
+				contentDiv.innerHTML = "<p data-i18n='wikipedia_search_first'>" + getTranslation('wikipedia_search_first', currentLang) + "</p>";
 			}
+		}
+
+		// Function to clear route selection and show location info
+		function clearRouteFromWikidata() {
+			// Clear the current selected route
+			if (typeof currentSelectedRoute !== 'undefined') {
+				currentSelectedRoute = null;
+			}
+
+			// Reset Wikidata history
+			wikidataHistory = [];
+			currentWikidataEntity = null;
+
+			// Update the Wikipedia content to show location info
+			updateWikipediaContent();
 		}
 
 		function fetchRouteWikidataInfo(route, currentLang, successCallback, errorCallback) {
@@ -368,6 +498,7 @@
 				if (!qid.startsWith('Q')) {
 					qid = 'Q' + qid;
 				}
+				console.log('Using OSM Wikidata tag:', qid);
 				fetchWikidataEntity(qid, successCallback, errorCallback);
 				return;
 			}
@@ -436,7 +567,10 @@
 			html += "<div style='background: #fff; padding: 10px; border-radius: 3px; border: 1px solid #ddd;'>";
 			html += "<h4 style='margin-top: 0; color: #333;'>" + getTranslation('wikidata_search_suggestions', currentLang) + "</h4>";
 			html += "<p style='margin-bottom: 10px; color: #666;'>" + getTranslation('wikidata_try_manual_search', currentLang) + "</p>";
-			html += "<button onclick='manualWikidataSearch(\"" + encodeURIComponent(routeName) + "\", \"" + currentLang + "\")' style='background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin-right: 10px;'>" + getTranslation('wikidata_manual_search', currentLang) + "</button>";
+			// Escape special characters for onclick attribute
+			var escapedRouteName = routeName.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+			var escapedCurrentLang = currentLang.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+			html += "<button onclick='manualWikidataSearch(\"" + escapedRouteName + "\", \"" + escapedCurrentLang + "\")' style='background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer; margin-right: 10px;'>" + getTranslation('wikidata_manual_search', currentLang) + "</button>";
 			html += "</div>";
 
 			html += "</div>";
@@ -480,7 +614,8 @@
 				                 (result.descriptions && result.descriptions.en) ? result.descriptions.en.value :
 				                 result.description || "";
 
-				html += "<div style='background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: background-color 0.2s;' onclick='selectManualWikidataResult(\"" + result.id + "\")' onmouseover='this.style.backgroundColor=\"#f0f8ff\"' onmouseout='this.style.backgroundColor=\"#fff\"'>";
+				var escapedResultId = result.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div style='background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: background-color 0.2s;' onclick='selectManualWikidataResult(\"" + escapedResultId + "\")' onmouseover='this.style.backgroundColor=\"#f0f8ff\"' onmouseout='this.style.backgroundColor=\"#fff\"'>";
 				html += "<div style='font-weight: bold; color: #0066cc; margin-bottom: 4px;'>" + label + "</div>";
 				if (description) {
 					html += "<div style='color: #666; font-size: 14px;'>" + description + "</div>";
@@ -490,7 +625,8 @@
 			});
 
 			html += "</div>";
-			html += "<button onclick='showNoWikidataSuggestions(currentSelectedRoute, document.getElementById(\"wikidata-content\"), \"" + currentLang + "\")' style='margin-top: 15px; background:#666; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;'>" + getTranslation('wikidata_back', currentLang) + "</button>";
+			var escapedCurrentLangForBack = currentLang.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+			html += "<button onclick='showNoWikidataSuggestions(currentSelectedRoute, document.getElementById(\"wikidata-content\"), \"" + escapedCurrentLangForBack + "\")' style='margin-top: 15px; background:#666; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;'>" + getTranslation('wikidata_back', currentLang) + "</button>";
 			html += "</div>";
 
 			contentDiv.innerHTML = html;
@@ -894,7 +1030,8 @@
 				                 (result.descriptions && result.descriptions.en) ? result.descriptions.en.value :
 				                 result.description || "";
 
-				html += "<div style='background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: background-color 0.2s;' onclick='selectWikidataResult(\"" + result.id.replace(/"/g, '\\"') + "\")' onmouseover='this.style.backgroundColor=\"#f0f8ff\"' onmouseout='this.style.backgroundColor=\"#fff\"'>";
+				var escapedResultId = result.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div style='background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: background-color 0.2s;' onclick='selectWikidataResult(\"" + escapedResultId + "\")' onmouseover='this.style.backgroundColor=\"#f0f8ff\"' onmouseout='this.style.backgroundColor=\"#fff\"'>";
 				html += "<div style='font-weight: bold; color: #0066cc; margin-bottom: 4px;'>" + label + "</div>";
 				if (description) {
 					html += "<div style='color: #666; font-size: 14px;'>" + description + "</div>";
@@ -1116,7 +1253,8 @@
 				var transportNetworkLabel = getEntityLabel(transportNetworkEntity, currentLang);
 				var displayText = (transportNetworkLabel && transportNetworkLabel !== transportNetworkEntity.id) ?
 					transportNetworkLabel + " (" + transportNetworkEntity.id + ")" : transportNetworkEntity.id;
-				html += "<div><strong>" + getTranslation('wikidata_transport_network', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + transportNetworkEntity.id + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
+				var escapedId = transportNetworkEntity.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div><strong>" + getTranslation('wikidata_transport_network', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + escapedId + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
 			}
 
 			// Operator (P137)
@@ -1125,7 +1263,8 @@
 				var operatorLabel = getEntityLabel(operatorEntity, currentLang);
 				var displayText = (operatorLabel && operatorLabel !== operatorEntity.id) ?
 					operatorLabel + " (" + operatorEntity.id + ")" : operatorEntity.id;
-				html += "<div><strong>" + getTranslation('wikidata_operator', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + operatorEntity.id + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
+				var escapedId = operatorEntity.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div><strong>" + getTranslation('wikidata_operator', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + escapedId + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
 			}
 
 			// Part of transport network (P361)
@@ -1134,7 +1273,8 @@
 				var networkLabel = getEntityLabel(networkEntity, currentLang);
 				var displayText = (networkLabel && networkLabel !== networkEntity.id) ?
 					networkLabel + " (" + networkEntity.id + ")" : networkEntity.id;
-				html += "<div><strong>" + (getTranslation('wikidata_part_of', currentLang) || 'Part of') + " " + getTranslation('wikidata_transport_network', currentLang).toLowerCase() + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + networkEntity.id + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
+				var escapedId = networkEntity.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div><strong>" + (getTranslation('wikidata_part_of', currentLang) || 'Part of') + " " + getTranslation('wikidata_transport_network', currentLang).toLowerCase() + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + escapedId + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
 			}
 
 			// Country (P17)
@@ -1143,7 +1283,8 @@
 				var countryLabel = getEntityLabel(countryEntity, currentLang);
 				var displayText = (countryLabel && countryLabel !== countryEntity.id) ?
 					countryLabel + " (" + countryEntity.id + ")" : countryEntity.id;
-				html += "<div><strong>" + getTranslation('wikidata_country', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + countryEntity.id + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
+				var escapedId = countryEntity.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				html += "<div><strong>" + getTranslation('wikidata_country', currentLang) + "</strong><br><a href='#' onclick='loadWikidataEntity(\"" + escapedId + "\")' style='color: #0066cc; cursor: pointer;'>" + displayText + "</a></div>";
 			}
 
 			html += "</div></div>";
@@ -1460,19 +1601,90 @@
 			contentDiv.innerHTML = html;
 		}
 
+		// Helper function to extract entity labels from Wikidata nested data (global scope)
+		function getEntityLabel(entityData, preferredLang) {
+			if (!entityData) return '';
+
+			var entityId = entityData.id;
+			if (!entityId) return '';
+
+			// Check cache first
+			if (typeof entityLabelCache !== 'undefined' && entityLabelCache[entityId] && entityLabelCache[entityId][preferredLang]) {
+				return entityLabelCache[entityId][preferredLang];
+			}
+
+			// Try to get from entity data directly
+			if (entityData.labels) {
+				// Try preferred language first
+				if (entityData.labels[preferredLang] && entityData.labels[preferredLang].value) {
+					if (typeof entityLabelCache !== 'undefined') {
+						if (!entityLabelCache[entityId]) entityLabelCache[entityId] = {};
+						entityLabelCache[entityId][preferredLang] = entityData.labels[preferredLang].value;
+					}
+					return entityData.labels[preferredLang].value;
+				}
+
+				// Try English as fallback
+				if (entityData.labels.en && entityData.labels.en.value) {
+					if (typeof entityLabelCache !== 'undefined') {
+						if (!entityLabelCache[entityId]) entityLabelCache[entityId] = {};
+						entityLabelCache[entityId][preferredLang] = entityData.labels.en.value;
+					}
+					return entityData.labels.en.value;
+				}
+
+				// Try Catalan as another fallback
+				if (entityData.labels.ca && entityData.labels.ca.value) {
+					if (typeof entityLabelCache !== 'undefined') {
+						if (!entityLabelCache[entityId]) entityLabelCache[entityId] = {};
+						entityLabelCache[entityId][preferredLang] = entityData.labels.ca.value;
+					}
+					return entityData.labels.ca.value;
+				}
+
+				// Try Spanish as another fallback
+				if (entityData.labels.es && entityData.labels.es.value) {
+					if (typeof entityLabelCache !== 'undefined') {
+						if (!entityLabelCache[entityId]) entityLabelCache[entityId] = {};
+						entityLabelCache[entityId][preferredLang] = entityData.labels.es.value;
+					}
+					return entityData.labels.es.value;
+				}
+			}
+
+			// Last resort: return the entity ID
+			return entityId;
+		}
+
+		// Global cache for entity labels
+		var entityLabelCache = {};
+
 		function addRelatedEntitiesSection(entity, contentDiv, currentLang) {
 			var claims = entity.claims || {};
 			var relatedEntities = [];
 
-			// Check for common related properties
+			// Check for comprehensive related properties - expanded for better coverage
 			var relatedProperties = [
 				{property: 'P361', label: getTranslation('wikidata_part_of', currentLang) || 'Part of'}, // part of
 				{property: 'P137', label: getTranslation('wikidata_operator', currentLang) || 'Operator'}, // operator
 				{property: 'P17', label: getTranslation('wikidata_country', currentLang) || 'Country'}, // country
 				{property: 'P131', label: getTranslation('wikidata_admin_division', currentLang) || 'Administrative division'}, // located in the administrative territorial entity
-				{property: 'P131', label: getTranslation('wikidata_located_in', currentLang) || 'Located in'}, // located in
+				{property: 'P131', label: getTranslation('wikidata_located_in', currentLang) || 'Located in'}, // located in (duplicate for different label)
+				{property: 'P150', label: getTranslation('wikidata_contains', currentLang) || 'Contains'}, // contains administrative territorial entity
 				{property: 'P31', label: getTranslation('wikidata_instance_of', currentLang) || 'Instance of'}, // instance of
-				{property: 'P279', label: getTranslation('wikidata_subclass_of', currentLang) || 'Subclass of'} // subclass of
+				{property: 'P279', label: getTranslation('wikidata_subclass_of', currentLang) || 'Subclass of'}, // subclass of
+				{property: 'P16', label: getTranslation('wikidata_transport_network', currentLang) || 'Transport network'}, // transport network
+				{property: 'P1269', label: getTranslation('wikidata_facility', currentLang) || 'Facility'}, // facility
+				{property: 'P206', label: getTranslation('wikidata_located_next_to', currentLang) || 'Located next to'}, // located next to body of water
+				{property: 'P206', label: getTranslation('wikidata_water_body', currentLang) || 'Water body'}, // located next to body of water (duplicate for different label)
+				{property: 'P625', label: getTranslation('wikidata_coordinates', currentLang) || 'Coordinates'}, // coordinate location (not a relation but useful)
+				{property: 'P856', label: getTranslation('wikidata_website', currentLang) || 'Website'}, // official website (not a relation but useful)
+				// Additional administrative properties for better coverage
+				{property: 'P30', label: getTranslation('wikidata_continent', currentLang) || 'Continent'}, // continent
+				{property: 'P27', label: getTranslation('wikidata_nationality', currentLang) || 'Country of citizenship'}, // country of citizenship
+				{property: 'P37', label: getTranslation('wikidata_official_language', currentLang) || 'Official language'}, // official language
+				{property: 'P36', label: getTranslation('wikidata_capital', currentLang) || 'Capital'}, // capital
+				{property: 'P122', label: getTranslation('wikidata_basic_form', currentLang) || 'Basic form of government'} // basic form of government
 			];
 
 			relatedProperties.forEach(function(prop) {
@@ -1515,7 +1727,11 @@
 					// Format as "Name" if name is available, otherwise "QID"
 					var displayLabel = entityLabel ? entityLabel : rel.id;
 
-					relatedHtml += "<div style='background: #fff; border: 1px solid #d1ecf1; border-radius: 3px; padding: 10px; cursor: pointer;' onclick='fetchRelatedEntity(\"" + rel.id + "\", \"" + currentLang + "\")'>";
+					// Escape special characters for onclick attribute
+					var escapedId = rel.id.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+					var escapedLang = currentLang.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+					relatedHtml += "<div style='background: #fff; border: 1px solid #d1ecf1; border-radius: 3px; padding: 10px; cursor: pointer;' onclick='fetchRelatedEntity(\"" + escapedId + "\", \"" + escapedLang + "\")'>";
 					relatedHtml += "<div style='font-weight: bold; color: #0066cc; margin-bottom: 2px;'>" + displayLabel + "</div>";
 					relatedHtml += "<div style='color: #666; font-size: 12px; margin-bottom: 2px;'>" + rel.label + "</div>";
 					relatedHtml += "<div style='color: #999; font-size: 11px;'>" + getTranslation('wikidata_click_to_load', currentLang) + "</div>";
@@ -1650,23 +1866,69 @@ s.setAttribute('data-timestamp', +new Date());
 	  
 	  
 	  
-	<!--MAPA APARCAMENT-->
+	<!--OSRM ROUTING-->
 	<div class="sidebar-pane" id="parking">
 	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
 	  </div>
-	  <a name="IniciParking"></a>
-	  <h1>Zona Verda a Vilanova i la Geltrú</h1>
-	  <center><p><button onclick="refreshIframe();">Carrega el mapa</button></p></center>
-	  	<!--MODIFICAR AQUÍ-->
-	  <p><iframe name="Aparcament" width="300px" height="400px" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://overpass-turbo.eu/map.html?Q=%2F*%0AThis%20has%20been%20generated%20by%20the%20overpass-turbo%20wizard.%0AThe%20original%20search%20was%3A%0A%E2%80%9Cparking%3Acondition%3Aright%3Aresidents%3D*%E2%80%9D%0A*%2F%0A%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%2F%2F%20gather%20results%0A(%0A%20%20%2F%2F%20query%20part%20for%3A%20%E2%80%9C%22parking%3Acondition%3Aright%3Aresidents%22%3D*%E2%80%9D%0A%20%20node%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20way%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20way%5B%22parking%3Acondition%3Aleft%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20way%5B%22parking%3Acondition%3Aright%3Aresidents%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20way%5B%22parking%3Acondition%3Aboth%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20%20%20way%5B%22amenity%22%3D%22parking%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%20%20%0A%20%20%20%20%20%20%20%20%20%20way%5B%22parking%3Alane%3Aboth%22%3D%22no_stopping%22%5D(41.21222998725971%2C1.7167532444000244%2C41.21716119922773%2C1.725325584411621)%3B%0A%0A)%3B%0A%2F%2F%20print%20results%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0A%0Aout%20body%3B%0A%0A%3E%3B%0A%0Aout%20skel%20qt%3B%7B%7Bstyle%3A%20%20%0A%0Away%5Bamenity%3Dparking%5D%7B%0A%0A%20%20icon-width%3A%2020%3B%0A%0A%20%20icon-image%3A%20url(%27https%3A%2F%2Fgithub.com%2Fyopaseopor%2Fbeta_style_josm%2Fraw%2Fmaster%2Ftraffic_signs_EUR%2FES%2FES_S17.png%27)%3B%0A%0A%20%20text%3A%20name%3B%0A%0A%7D%0A%0Away%5Bparking%3Acondition%3Aleft%3Dticket%5D%5Bparking%3Acondition%3Aleft%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Alime%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Acondition%3Aright%3Dticket%5D%5Bparking%3Acondition%3Aright%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Agreen%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Acondition%3Aboth%3Dticket%5D%5Bparking%3Acondition%3Aboth%3Aresidents%3Dfree%5D%7B%0A%0A%20%20color%3Ateal%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0Away%5Bparking%3Alane%3Aboth%3Dno_stopping%5D%7B%0A%0A%20%20color%3Ayellow%3B%0A%0A%20%20opacity%3A0.5%3B%0A%0A%20%20%20%20text%3A%20wheelchair%3Adescription%3B%0A%20%20%0A%7D%0A%0A%20%20%7D%7D"></iframe>
-	  <center><a href="#IniciParking" data-i18n="parking_back">Torna a l'inici</a></p></center></p>
-	  <script>
-		function refreshIframe() {
-   	 	var ifr = document.getElementsByName('Aparcament')[0];
-   	 	ifr.src = ifr.src;
-		}
-	  </script>
+	  <a name="IniciRouting"></a>
+	  <h1>Calculadora de Rutes</h1>
+	  <p style="text-align:justify; margin-right:5px;">Calcula rutes per cotxe, bicicleta o a peu utilitzant el servei OSRM (Open Source Routing Machine). Les rutes es centren en la vostra ubicació actual.</p>
+
+	  <!-- Route Type Selection -->
+	  <div style="margin-bottom: 15px;">
+	    <h4>Tipus de ruta:</h4>
+	    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+	      <button id="route-car" class="route-type-btn active" onclick="setRouteType('driving')" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-car"></i> Cotxe
+	      </button>
+	      <button id="route-bike" class="route-type-btn" onclick="setRouteType('cycling')" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-bicycle"></i> Bicicleta
+	      </button>
+	      <button id="route-walk" class="route-type-btn" onclick="setRouteType('walking')" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-walking"></i> A peu
+	      </button>
+	    </div>
 	  </div>
+
+	  <!-- Route Input -->
+	  <div style="margin-bottom: 15px;">
+	    <h4>Punts de la ruta:</h4>
+	    <div style="margin-bottom: 10px;">
+	      <label>Origen:</label>
+	      <input type="text" id="route-start" placeholder="Clic al mapa o introdueix adreça" style="width: 100%; padding: 5px; margin-top: 3px;">
+	    </div>
+	    <div style="margin-bottom: 10px;">
+	      <label>Destí:</label>
+	      <input type="text" id="route-end" placeholder="Clic al mapa o introdueix adreça" style="width: 100%; padding: 5px; margin-top: 3px;">
+	    </div>
+	    <div style="display: flex; gap: 10px;">
+	      <button onclick="calculateRoute()" style="background:#007acc; color:white; padding:8px 15px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-route"></i> Calcular Ruta
+	      </button>
+	      <button onclick="clearRoute()" style="background:#666; color:white; padding:8px 15px; border:none; border-radius:3px; cursor:pointer;">
+	        <i class="fa fa-trash"></i> Neteja
+	      </button>
+	    </div>
+	  </div>
+
+	  <!-- Route Results -->
+	  <div id="route-results" style="display: none; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+	    <h4>Resultats de la ruta:</h4>
+	    <div id="route-info"></div>
+	  </div>
+
+	  <!-- Instructions -->
+	  <div style="margin-top: 15px; padding: 10px; background: #e8f4f8; border-radius: 5px; font-size: 14px;">
+	    <strong>Instruccions:</strong>
+	    <ul style="margin: 5px 0; padding-left: 20px;">
+	      <li>Selecciona el tipus de ruta (cotxe, bicicleta o a peu)</li>
+	      <li>Introdueix origen i destí, o fes clic al mapa</li>
+	      <li>Prem "Calcular Ruta" per veure el resultat</li>
+	    </ul>
+	  </div>
+
+	  <center><a href="#IniciRouting">Torna a l'inici</a></center>
+	</div>
 	  
 	<!-- ENLLAÇOS D'INTERÈS -->
 	<div class="sidebar-pane" id="links">
@@ -1803,6 +2065,7 @@ s.setAttribute('data-timestamp', +new Date());
 	    <li><a href="https://github.com/janl/mustache.js" target="_blank">Mustache</a> © Jan Lehnardt</li>
 	    <li><a href="https://www.mapillary.com/" target="_blank">Mapillary</a> © Mapillary</li>
 	    <li><a href="https://graphhopper.com/" target="_blank">Graphhopper</a> © Graphhopper</li>
+	    <li><a href="https://project-osrm.org/" target="_blank">OSRM (Open Source Routing Machine)</a> © Project OSRM contributors</li>
 	  </ul>
 
 	  <p style="text-align:justify; margin-right:5px;">També cal agrair a <b>Konfrare Albert (que és qui ha permés la personalització extrema de la seva eina)</b>  ,  (<a href="https://twitter.com/la_konfraria" target="_blank">@la_konfraria</a>) , <b>Xavier Barnada</b> (<a href="https://twitter.com/Xevib" target="_blank">@Xevib</a>) i a <b>Marco Antonio</b> (<a href="https://twitter.com/51114u9" target="_blank">@51114u9</a>) la seva ajuda i contribucions.</p>
@@ -1845,6 +2108,7 @@ s.setAttribute('data-timestamp', +new Date());
     <script src="assets/js/tags-parsers.js"></script>
     <script src="assets/js/pois-type.js"></script>
     <script src="assets/js/routes-manager.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js"></script>
     <script src="assets/js/site.functions.js"></script>
     <script src="assets/js/translations.js"></script>
     <script src="assets/js/site.js"></script>

@@ -3,6 +3,7 @@ window.translations_en = {
     home_tab: "Points of Interest",
     search_tab: "Search",
     routes_tab: "Routes",
+    gtfs_tab: "GTFS",
     wikipedia_tab: "Wikipedia",
     comments_tab: "Comments",
     parking_tab: "Parking",
@@ -69,8 +70,11 @@ window.translations_en = {
     routes_help_back: "Back to top",
 
     // Wikipedia pane
-    wikipedia_title: "Vilanova i la Geltrú on Wikipedia",
+    wikipedia_title: "Attention",
+    wikipedia_to_wikidata: " in Wikidata",
     wikipedia_reload: "Update",
+    wikipedia_search_first: "First you have to search for a place to get Wikidata information. Use the search to select a location.",
+    wikipedia_back: "Back to top",
 
     // Wikidata translations
     wikidata_loading: "Loading Wikidata information...",
@@ -339,6 +343,23 @@ window.translations_en = {
     routes_unnamed_line: "Unnamed line",
     routes_unnamed_stop: "Unnamed stop",
     routes_stop_numbered: "Stop {number}",
+
+    // GTFS translations
+    gtfs_title: "GTFS - Transit Data",
+    gtfs_description: "Explore GTFS datasets from public transportation systems worldwide. Select a dataset to view information about routes, stops and schedules.",
+    gtfs_search_title: "Search GTFS datasets:",
+    gtfs_results_title: "Available datasets:",
+    gtfs_provider: "Provider:",
+    gtfs_country: "Country:",
+    gtfs_location: "Location:",
+    gtfs_last_updated: "Last updated:",
+    gtfs_loading: "Loading GTFS data...",
+    gtfs_help_title: "Help (GTFS)",
+    gtfs_help_text1: "From this section you can explore GTFS (General Transit Feed Specification) datasets from public transportation systems worldwide. GTFS is a standard format for sharing public transportation information.",
+    gtfs_help_text2: "To get started, you can search for datasets by city, country or transportation operator, or simply click \"Show all\" to see all available options.",
+    gtfs_help_text3: "When you select a dataset, you can explore available routes, view stops on the map and even download the complete data for your use.",
+    gtfs_help_text4: "GTFS data comes from the Mobility Database API and is regularly updated by transportation providers.",
+    gtfs_help_back: "Back to top",
 
     // POI translations
     poi_biergarten: "Bar",

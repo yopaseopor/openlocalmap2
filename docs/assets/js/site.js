@@ -326,7 +326,9 @@ function addr_search() {
             bb = val.boundingbox;
             var locationType = getLocationType(val.display_name, val.osm_type, val.class);
             var typeTranslation = getTranslation('location_type_' + locationType);
-            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' onclick='chooseAddr(" + bb[0] + ", " + bb[2] + ", " + bb[1] + ", " + bb[3]  + ", \"" + val.osm_type + "\", \"" + val.display_name.replace(/"/g, '\\"') + "\", \"" + (val.class || '') + "\", " + (val.osm_id || 0) + ", \"" + (val.osm_type || '') + "\");return false;'>" + val.display_name + ' <small>(' + typeTranslation + ')</small></a></li>');
+            // Use data attributes to avoid onclick escaping issues
+            var dataAttrs = 'data-lat1="' + bb[0] + '" data-lng1="' + bb[2] + '" data-lat2="' + bb[1] + '" data-lng2="' + bb[3] + '" data-osm-type="' + val.osm_type + '" data-display-name="' + val.display_name.replace(/"/g, '"').replace(/'/g, '&#39;') + '" data-class="' + (val.class || '') + '" data-osm-id="' + (val.osm_id || 0) + '" data-osm-type-full="' + (val.osm_type || '') + '"';
+            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' class='search-result' " + dataAttrs + ">" + val.display_name + ' <small>(' + typeTranslation + ')</small></a></li>');
         });
 
 		$('#results').empty();
@@ -397,7 +399,9 @@ function addr_search2() {
 
         $.each(data, function(key, val) {
             bb = val.boundingbox;
-            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' onclick='chooseAddr2(" + bb[0] + ", " + bb[2] + ", " + bb[1] + ", " + bb[3]  + ", \"" + val.osm_type + "\");return false;'>" + val.display_name + '</a></li>');
+            // Use data attributes to avoid onclick escaping issues
+            var dataAttrs = 'data-lat1="' + bb[0] + '" data-lng1="' + bb[2] + '" data-lat2="' + bb[1] + '" data-lng2="' + bb[3] + '" data-osm-type="' + val.osm_type + '"';
+            items.push("<li class='fa fa-dot-circle-o' style='padding:5px;'> <a href='#' class='search-result-global' " + dataAttrs + ">" + val.display_name + '</a></li>');
         });
 
 		$('#results2').empty();
@@ -531,5 +535,74 @@ function cleargpx() {
 	document.getElementById("link").innerHTML="";
 }
 
+// Handle clicks on local search results using data attributes
+$(document).on('click', '.search-result', function(e) {
+    e.preventDefault();
+    var $this = $(this);
+    var lat1 = parseFloat($this.data('lat1'));
+    var lng1 = parseFloat($this.data('lng1'));
+    var lat2 = parseFloat($this.data('lat2'));
+    var lng2 = parseFloat($this.data('lng2'));
+    var osm_type = $this.data('osm-type');
+    var display_name = $this.data('display-name');
+    var class_type = $this.data('class');
+    var osm_id = parseInt($this.data('osm-id')) || 0;
+    var osm_type_full = $this.data('osm-type-full');
+
+    chooseAddr(lat1, lng1, lat2, lng2, osm_type, display_name, class_type, osm_id, osm_type_full);
+    return false;
+});
+
+// Handle clicks on global search results using data attributes
+$(document).on('click', '.search-result-global', function(e) {
+    e.preventDefault();
+    var $this = $(this);
+    var lat1 = parseFloat($this.data('lat1'));
+    var lng1 = parseFloat($this.data('lng1'));
+    var lat2 = parseFloat($this.data('lat2'));
+    var lng2 = parseFloat($this.data('lng2'));
+    var osm_type = $this.data('osm-type');
+
+    chooseAddr2(lat1, lng1, lat2, lng2, osm_type);
+    return false;
+});
+
 expert_mode_init();
 updateQueryButton(); // Initialize button states
+
+// Map click handler for setting route points (only when routing tab is active)
+if (typeof map !== 'undefined' && map && typeof map.on === 'function') {
+    map.on('click', function(e) {
+        // Only handle clicks if the routing tab is active
+        if (document.querySelector('#parking').classList.contains('active')) {
+            if (!routeStartPoint) {
+                routeStartPoint = [e.latlng.lng, e.latlng.lat];
+                document.getElementById('route-start').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+
+                // Add temporary marker
+                var tempMarker = L.marker(e.latlng, {
+                    icon: L.icon({
+                        iconUrl: 'assets/img/pin-icon-start.png',
+                        iconSize: [32, 37],
+                        iconAnchor: [18.5, 35]
+                    })
+                }).addTo(map).bindPopup('Origen (fes clic per canviar)');
+                routeMarkers.push(tempMarker);
+
+            } else if (!routeEndPoint) {
+                routeEndPoint = [e.latlng.lng, e.latlng.lat];
+                document.getElementById('route-end').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+
+                // Add temporary marker
+                var tempMarker = L.marker(e.latlng, {
+                    icon: L.icon({
+                        iconUrl: 'assets/img/pin-icon-end.png',
+                        iconSize: [32, 37],
+                        iconAnchor: [18.5, 35]
+                    })
+                }).addTo(map).bindPopup('Destí (fes clic per canviar)');
+                routeMarkers.push(tempMarker);
+            }
+        }
+    });
+}

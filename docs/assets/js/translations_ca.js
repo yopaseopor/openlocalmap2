@@ -3,6 +3,7 @@ window.translations_ca = {
     home_tab: "Punts d'interès",
     search_tab: "Cerca",
     routes_tab: "Rutes",
+    gtfs_tab: "GTFS",
     wikipedia_tab: "Viquipèdia",
     comments_tab: "Comentaris",
     parking_tab: "Aparcament",
@@ -69,8 +70,11 @@ window.translations_ca = {
     routes_help_back: "Tornar a l'inici",
 
     // Wikipedia pane
-    wikipedia_title: "Vilanova i la Geltrú a la Viquipèdia",
+    wikipedia_title: "Atenció",
+    wikipedia_to_wikidata: " a Wikidata",
     wikipedia_reload: "Actualitza",
+    wikipedia_search_first: "Primer has de cercar un lloc per obtenir informació de Wikidata. Utilitza la cerca per seleccionar una ubicació.",
+    wikipedia_back: "Torna a l'inici",
 
     // Wikidata translations
     wikidata_loading: "Carregant informació de Wikidata...",
@@ -206,7 +210,7 @@ window.translations_ca = {
     routes_title: "Rutes",
     routes_title_dynamic: "Rutes a {location}",
     routes_loading: "Carregant rutes...",
-    routes_loading_type: "Carregant rutes de {type}...",
+    routes_loading_type: "Carregant rutes {type}...",
     routes_loading_transport: "Carregant rutes de transport públic ({type})...",
     routes_no_routes_found: "No s'han trobat rutes etiquetades específicament per aquesta ubicació.",
     routes_no_routes_found_type: "No s'han trobat rutes de {type} per aquesta ubicació.",
@@ -339,6 +343,23 @@ window.translations_ca = {
     routes_unnamed_line: "Línia sense nom",
     routes_unnamed_stop: "Parada sense nom",
     routes_stop_numbered: "Parada {number}",
+
+    // GTFS translations
+    gtfs_title: "GTFS - Dades de Transport",
+    gtfs_description: "Explora conjunts de dades GTFS de transports públics de tot el món. Selecciona un conjunt de dades per veure informació sobre rutes, parades i horaris.",
+    gtfs_search_title: "Buscar conjunts de dades GTFS:",
+    gtfs_results_title: "Conjunts de dades disponibles:",
+    gtfs_provider: "Proveïdor:",
+    gtfs_country: "País:",
+    gtfs_location: "Ubicació:",
+    gtfs_last_updated: "Última actualització:",
+    gtfs_loading: "Carregant dades GTFS...",
+    gtfs_help_title: "Ajuda (GTFS)",
+    gtfs_help_text1: "Des d'aquesta secció pots explorar conjunts de dades GTFS (General Transit Feed Specification) de transports públics de tot el món. GTFS és un format estàndard per compartir informació de transports públics.",
+    gtfs_help_text2: "Per començar, pots buscar conjunts de dades per ciutat, país o operador de transport, o simplement fer clic a \"Mostrar tots\" per veure totes les opcions disponibles.",
+    gtfs_help_text3: "Quan seleccionis un conjunt de dades, podràs explorar les rutes disponibles, veure les parades al mapa i fins i tot descarregar les dades completes per al teu ús.",
+    gtfs_help_text4: "Les dades GTFS provenen de l'API de Mobility Database i s'actualitzen regularment pels proveïdors de transport.",
+    gtfs_help_back: "Tornar a l'inici",
 
     // POI translations
     poi_detailed_info: "Informació al detall (expert)",

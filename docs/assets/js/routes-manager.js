@@ -23,14 +23,14 @@ function initializeRoutes() {
     document.getElementById('routes-title').textContent = getTranslation('routes_title_dynamic').replace('{location}', locationName);
 
     // Update route type buttons with current translations
-    var walkingBtn = document.querySelector('.route-type-btn.fa.fa-walking');
+    var walkingBtn = document.querySelector('.route-type-btn.fa.fa-user');
     var bikingBtn = document.querySelector('.route-type-btn.fa.fa-bicycle');
 
     if (walkingBtn) {
-        walkingBtn.innerHTML = '<i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short');
+        walkingBtn.innerHTML = getTranslation('routes_walking_title_short');
     }
     if (bikingBtn) {
-        bikingBtn.innerHTML = '<i class="fa fa-bicycle"></i> ' + getTranslation('routes_biking_title_short');
+        bikingBtn.innerHTML = getTranslation('routes_biking_title_short');
     }
 
     // Load routes from Overpass API
@@ -42,9 +42,9 @@ function loadRoutesFromOverpass(bounds) {
     // Show loading message
     document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> ' + getTranslation('routes_loading') + '</p>';
 
-    // If no bounds available, use default area around Vilanova i la Geltrú
+    // If no bounds available, use current map bounds
     if (!bounds) {
-        bounds = L.latLngBounds([41.2, 1.7], [41.25, 1.75]);
+        bounds = map.getBounds();
     }
 
     // Build Overpass query for different route types
@@ -55,7 +55,7 @@ function loadRoutesFromOverpass(bounds) {
 
     // More comprehensive queries - use correct Overpass bbox syntax
     // Query for walking routes (hiking relations, foot paths, and any paths)
-    var walkingQuery = '[out:json][timeout:30];' +
+    var walkingQuery = '[out:json][timeout:60];' +
         '(relation(' + bbox + ')[type=route][route=hiking];' +
         'relation(' + bbox + ')[type=route][route=foot];' +
         'way(' + bbox + ')[highway=path];' +
@@ -65,7 +65,7 @@ function loadRoutesFromOverpass(bounds) {
         'out tags;';
 
     // Query for cycling routes - more comprehensive
-    var bikingQuery = '[out:json][timeout:30];' +
+    var bikingQuery = '[out:json][timeout:60];' +
         '(relation(' + bbox + ')[type=route][route=bicycle];' +
         'relation(' + bbox + ')[type=route][route=mtb];' +
         'way(' + bbox + ')[highway=cycleway];' +
@@ -74,7 +74,7 @@ function loadRoutesFromOverpass(bounds) {
         'out tags;';
 
     // Query for public transport routes - more comprehensive
-    var transportQuery = '[out:json][timeout:30];' +
+    var transportQuery = '[out:json][timeout:60];' +
         '(relation(' + bbox + ')[type=route][route=bus];' +
         'relation(' + bbox + ')[type=route][route=tram];' +
         'relation(' + bbox + ')[type=route][route=subway];' +
@@ -142,20 +142,20 @@ function loadRoutesFromOverpassExpanded(bounds) {
     var bbox = bounds.getSouth() + ',' + bounds.getWest() + ',' + bounds.getNorth() + ',' + bounds.getEast();
 
     // More inclusive queries for expanded search
-    var walkingQuery = '[out:json][timeout:40];' +
+    var walkingQuery = '[out:json][timeout:80];' +
         '(way(' + bbox + ')[highway=path];' +
         'way(' + bbox + ')[highway=footway];' +
         'way(' + bbox + ')[highway=track];' +
         'way(' + bbox + ')[highway=steps];);' +
         'out tags;';
 
-    var bikingQuery = '[out:json][timeout:40];' +
+    var bikingQuery = '[out:json][timeout:80];' +
         '(way(' + bbox + ')[highway=cycleway];' +
         'way(' + bbox + ')[cycleway];' +
         'way(' + bbox + ')[highway=path][bicycle=yes];);' +
         'out tags;';
 
-    var transportQuery = '[out:json][timeout:40];' +
+    var transportQuery = '[out:json][timeout:80];' +
         '(node(' + bbox + ')[highway=bus_stop];' +
         'node(' + bbox + ')[public_transport=stop_position];);' +
         'out tags;';
@@ -415,7 +415,7 @@ function processTransportRoutes(data) {
 function fetchRouteStops(routeId, osmId) {
     return new Promise(function(resolve, reject) {
         // Query to get the relation with its members (stops in order)
-        var stopsQuery = '[out:json][timeout:20];' +
+        var stopsQuery = '[out:json][timeout:40];' +
             'relation(' + osmId + ');' +
             'out;>;out;';
 
@@ -523,7 +523,7 @@ function displayRoutes(walkingRoutes, bikingRoutes, transportRoutes) {
 
     // Walking routes
     if (walkingRoutes && walkingRoutes.length > 0) {
-        contentHtml += '<h3><i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short') + ' (' + walkingRoutes.length + ')</h3>';
+        contentHtml += '<h3><i class="fa fa-user"></i> ' + getTranslation('routes_walking_title_short') + ' (' + walkingRoutes.length + ')</h3>';
         contentHtml += '<div class="routes-list">';
         walkingRoutes.slice(0, 10).forEach(function(route) { // Limit to 10 routes
             contentHtml += createRouteItem(route);
@@ -574,17 +574,23 @@ function createRouteItem(route) {
     var typeName = getRouteTypeName(route.type, route.route_type);
     var isChecked = routeCheckboxes[route.id] || false;
 
+    // Escape route ID for use in onclick attributes (JavaScript string escaping)
+    var escapedRouteId = route.id.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '\\"');
+
+    // Escape route name for safe HTML display (prevent XSS and JS injection)
+    var escapedRouteName = route.name.replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"').replace(/'/g, '&#39;');
+
     var html = '<div class="route-item">';
     html += '<div class="route-checkbox">';
-    html += '<input type="checkbox" id="route_' + route.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="toggleRouteDisplay(\'' + route.id + '\')">';
+    html += '<input type="checkbox" id="route_' + route.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="toggleRouteDisplay(\'' + escapedRouteId + '\')">';
     html += '<label for="route_' + route.id + '"></label>';
     html += '</div>';
-    html += '<div class="route-header" onclick="showRouteDetails(\'' + route.id + '\')">';
+    html += '<div class="route-header" onclick="showRouteDetails(\'' + escapedRouteId + '\')">';
     html += '<i class="fa ' + iconClass + '"></i>';
-    html += '<span class="route-name">' + route.name + '</span>';
+    html += '<span class="route-name">' + escapedRouteName + '</span>';
     html += '<span class="route-type">' + typeName + '</span>';
     html += '</div>';
-    html += '<div class="route-summary" onclick="showRouteDetails(\'' + route.id + '\')">';
+    html += '<div class="route-summary" onclick="showRouteDetails(\'' + escapedRouteId + '\')">';
     html += '<span class="route-distance"><i class="fa fa-route"></i> ' + (route.tags && route.tags.ref ? route.tags.ref : route.distance) + '</span>';
     if (route.elevation) {
         html += '<span class="route-elevation"><i class="fa fa-mountain"></i> ' + route.elevation + '</span>';
@@ -594,8 +600,8 @@ function createRouteItem(route) {
     }
     html += '</div>';
     html += '<div class="route-actions">';
-    html += '<button class="route-details-btn" onclick="showRouteDetails(\'' + route.id + '\')">' + getTranslation('routes_details') + '</button>';
-    html += '<button class="route-remove-btn" onclick="removeRoute(\'' + route.id + '\')">' + getTranslation('routes_remove') + '</button>';
+    html += '<button class="route-details-btn" onclick="showRouteDetails(\'' + escapedRouteId + '\')">' + getTranslation('routes_details') + '</button>';
+    html += '<button class="route-remove-btn" onclick="removeRoute(\'' + escapedRouteId + '\')">' + getTranslation('routes_remove') + '</button>';
     html += '</div>';
     html += '</div>';
 
@@ -632,7 +638,7 @@ function showRouteDetails(routeId) {
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
             try {
-                var stopsQuery = '[out:json][timeout:20];' +
+                var stopsQuery = '[out:json][timeout:40];' +
                     'relation(' + route.osm_id + ');' +
                     'out;>;out;';
 
@@ -859,7 +865,7 @@ function hideRouteDetails() {
     document.getElementById('route-details').style.display = 'none';
     document.getElementById('routes-content').style.display = 'block';
     currentSelectedRoute = null;
-    
+
     // Update Wikipedia content to return to base location information
     if (typeof updateWikipediaContent === 'function') {
         updateWikipediaContent();
@@ -875,72 +881,81 @@ function initializeRouteLayer() {
 
 // Function to fetch route geometry and display on map
 function fetchAndDisplayRouteGeometry(route) {
-    if (!route) return;
+    return new Promise(function(resolve, reject) {
+        if (!route) {
+            reject(new Error('No route provided'));
+            return;
+        }
 
-    // Clear existing route layer
-    if (routeLayer) {
-        routeLayer.clearLayers();
-    }
+        // Clear existing route layer
+        if (routeLayer) {
+            routeLayer.clearLayers();
+        }
 
-    // For relations, fetch the geometry of all ways in the relation
-    if (route.osm_type === 'relation') {
-        fetchRouteGeometry(route.osm_id).then(function(geometry) {
-            if (geometry && geometry.length > 0) {
-                displayRouteGeometry(geometry, route);
-            } else {
-                console.log('No geometry found for route:', route.name);
-                // Try alternative geometry fetching for relations
-                fetchRouteGeometryAlternative(route.osm_id, route).then(function(geometry) {
-                    if (geometry && geometry.length > 0) {
-                        displayRouteGeometry(geometry, route);
-                    } else {
-                        alert('No s\'ha pogut carregar la geometria d\'aquesta ruta.');
-                    }
-                }).catch(function(error) {
-                    console.error('Error in alternative geometry fetch:', error);
-                    alert('Error carregant la geometria de la ruta.');
-                });
-            }
-        }).catch(function(error) {
-            console.error('Error fetching route geometry:', error);
-            alert('Error carregant la geometria de la ruta.');
-        });
-    } else if (route.osm_type === 'way') {
-        // For direct ways, fetch the way geometry
-        fetchWayGeometry(route.osm_id).then(function(geometry) {
-            if (geometry && geometry.length > 0) {
-                displayRouteGeometry([geometry], route);
-            } else {
-                alert('No s\'ha pogut carregar la geometria d\'aquesta ruta.');
-            }
-        }).catch(function(error) {
-            console.error('Error fetching way geometry:', error);
-            alert('Error carregant la geometria de la ruta.');
-        });
-    } else {
-        // For synthetic routes, try to find ways with matching tags
-        if (route.type === 'walking' || route.type === 'biking') {
-            fetchSyntheticRouteGeometry(route).then(function(geometry) {
+        // For relations, fetch the geometry of all ways in the relation
+        if (route.osm_type === 'relation') {
+            fetchRouteGeometry(route.osm_id).then(function(geometry) {
                 if (geometry && geometry.length > 0) {
                     displayRouteGeometry(geometry, route);
+                    resolve(true);
                 } else {
-                    alert('No s\'ha pogut carregar la geometria d\'aquesta ruta.');
+                    console.log('No geometry found for route:', route.name);
+                    // Try alternative geometry fetching for relations
+                    fetchRouteGeometryAlternative(route.osm_id, route).then(function(geometry) {
+                        if (geometry && geometry.length > 0) {
+                            displayRouteGeometry(geometry, route);
+                            resolve(true);
+                        } else {
+                            reject(new Error('No s\'ha pogut carregar la geometria d\'aquesta ruta.'));
+                        }
+                    }).catch(function(error) {
+                        console.error('Error in alternative geometry fetch:', error);
+                        reject(error);
+                    });
                 }
             }).catch(function(error) {
-                console.error('Error fetching synthetic route geometry:', error);
-                alert('Error carregant la geometria de la ruta.');
+                console.error('Error fetching route geometry:', error);
+                reject(error);
+            });
+        } else if (route.osm_type === 'way') {
+            // For direct ways, fetch the way geometry
+            fetchWayGeometry(route.osm_id).then(function(geometry) {
+                if (geometry && geometry.length > 0) {
+                    displayRouteGeometry([geometry], route);
+                    resolve(true);
+                } else {
+                    reject(new Error('No s\'ha pogut carregar la geometria d\'aquesta ruta.'));
+                }
+            }).catch(function(error) {
+                console.error('Error fetching way geometry:', error);
+                reject(error);
             });
         } else {
-            alert('Aquesta ruta no té geometria disponible per mostrar al mapa.');
+            // For synthetic routes, try to find ways with matching tags
+            if (route.type === 'walking' || route.type === 'biking') {
+                fetchSyntheticRouteGeometry(route).then(function(geometry) {
+                    if (geometry && geometry.length > 0) {
+                        displayRouteGeometry(geometry, route);
+                        resolve(true);
+                    } else {
+                        reject(new Error('No s\'ha pogut carregar la geometria d\'aquesta ruta.'));
+                    }
+                }).catch(function(error) {
+                    console.error('Error fetching synthetic route geometry:', error);
+                    reject(error);
+                });
+            } else {
+                reject(new Error('Aquesta ruta no té geometria disponible per mostrar al mapa.'));
+            }
         }
-    }
+    });
 }
 
 // Function to fetch route geometry from Overpass API
 function fetchRouteGeometry(osmId) {
     return new Promise(function(resolve, reject) {
-        // Get all ways that are members of the route relation with geometry
-        var geometryQuery = '[out:json][timeout:30];' +
+    // Get all ways that are members of the route relation with geometry
+        var geometryQuery = '[out:json][timeout:60];' +
             'relation(' + osmId + ');' +
             'way(r);' +
             'out geom;';
@@ -1029,7 +1044,7 @@ function fetchPublicTransportGeometryAlternative(osmId) {
         console.log('Trying alternative geometry fetch for public transport route:', osmId);
 
         // First, get the stops from the relation
-        var stopsQuery = '[out:json][timeout:20];' +
+        var stopsQuery = '[out:json][timeout:40];' +
             'relation(' + osmId + ');' +
             'node(r);' +
             'out;';
@@ -1140,7 +1155,7 @@ function findTransportWaysBetweenStops(stopCoords) {
         var bbox = minLat + ',' + minLon + ',' + maxLat + ',' + maxLon;
 
         // Query for transport ways in the area around stops
-        var waysQuery = '[out:json][timeout:25];' +
+        var waysQuery = '[out:json][timeout:50];' +
             '(way(' + bbox + ')[highway=motorway];' +
             'way(' + bbox + ')[highway=trunk];' +
             'way(' + bbox + ')[highway=primary];' +
@@ -1236,7 +1251,7 @@ function fetchNearbyPublicTransportWays(stopCoords) {
         console.log('Searching for PT ways around center:', centerLat, centerLon);
 
         // Search for ways with public transport tags around the center
-        var nearbyQuery = '[out:json][timeout:25];' +
+        var nearbyQuery = '[out:json][timeout:50];' +
             'way(around:500,' + centerLat + ',' + centerLon + ')[highway];' +
             'way(around:500,' + centerLat + ',' + centerLon + ')[railway];' +
             'node(w);' +
@@ -1305,7 +1320,7 @@ function fetchWaysGeometry(wayIds) {
         }
 
         // Build query for all ways
-        var waysQuery = '[out:json][timeout:25];';
+        var waysQuery = '[out:json][timeout:50];';
         wayIds.forEach(function(wayId) {
             waysQuery += 'way(' + wayId + ');';
         });
@@ -1372,7 +1387,7 @@ function fetchRouteGeometryAlternative(osmId, route) {
     return new Promise(function(resolve, reject) {
         // Try fetching ways that have route-related tags
         var routeType = route.type === 'walking' ? 'hiking' : (route.type === 'biking' ? 'bicycle' : 'bus');
-        var alternativeQuery = '[out:json][timeout:25];' +
+        var alternativeQuery = '[out:json][timeout:50];' +
             'way(around:1000,' + baseLocation.lat + ',' + baseLocation.lng + ')[route=' + routeType + '];' +
             'way(around:1000,' + baseLocation.lat + ',' + baseLocation.lng + ')[highway=path];' +
             'way(around:1000,' + baseLocation.lat + ',' + baseLocation.lng + ')[highway=footway];' +
@@ -1431,10 +1446,10 @@ function fetchRouteGeometryAlternative(osmId, route) {
 // Function to fetch geometry for a single way
 function fetchWayGeometry(wayId) {
     return new Promise(function(resolve, reject) {
-        var wayQuery = '[out:json][timeout:15];' +
-            'way(' + wayId + ');' +
-            'node(w);' +
-            'out geom;';
+    var wayQuery = '[out:json][timeout:60];' +
+        'way(' + wayId + ');' +
+        'node(w);' +
+        'out geom;';
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://overpass-api.de/api/interpreter', true);
@@ -1588,7 +1603,8 @@ function displayRouteGeometry(coordinates, route) {
             }
 
             // Add expert mode link like POIs have
-            popupContent += '<br/><a href="#" onclick="javascript: showRouteExpertInfo(\'' + route.id + '\'); return false;" data-i18n="[title]route_detailed_info">Informació al detall (expert)</a>';
+            var escapedRouteId = route.id.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '\\"');
+            popupContent += '<br/><a href="#" onclick="javascript: showRouteExpertInfo(\'' + escapedRouteId + '\'); return false;" data-i18n="[title]route_detailed_info">Informació al detall (expert)</a>';
 
             polyline.bindPopup(popupContent);
             console.log('Added polyline', index + 1, 'with', wayCoords.length, 'points and color', color);
@@ -1721,13 +1737,13 @@ function clearRoute() {
     if (routeLayer) {
         routeLayer.clearLayers(); // Clear route geometry
     }
-    
+
     // Clear the selected route and update Wikipedia
     currentSelectedRoute = null;
     if (typeof updateWikipediaContent === 'function') {
         updateWikipediaContent();
     }
-    
+
     if (typeof sidebar !== 'undefined') {
         sidebar.close();
     }
@@ -1736,7 +1752,7 @@ function clearRoute() {
 // Function to get route icon based on type
 function getRouteIcon(type) {
     switch(type) {
-        case 'walking': return 'fa-walking';
+        case 'walking': return 'fa-user';
         case 'biking': return 'fa-bicycle';
         case 'public_transport': return 'fa-bus';
         default: return 'fa-route';
@@ -1762,11 +1778,11 @@ function reloadRoutes() {
 // Function to update route button texts when language changes
 function updateRouteButtonTranslations() {
     // Update main route type buttons
-    var walkingBtn = document.querySelector('.route-type-btn.fa.fa-walking');
-    var bikingBtn = document.querySelector('.route-type-btn.fa.fa-bicycle');
+    var walkingBtn = document.getElementById('walking-routes-btn');
+    var bikingBtn = document.getElementById('biking-routes-btn');
 
     if (walkingBtn) {
-        walkingBtn.innerHTML = '<i class="fa fa-walking"></i> ' + getTranslation('routes_walking_title_short');
+        walkingBtn.innerHTML = '<i class="fa fa-user"></i> ' + getTranslation('routes_walking_title_short');
     }
     if (bikingBtn) {
         bikingBtn.innerHTML = '<i class="fa fa-bicycle"></i> ' + getTranslation('routes_biking_title_short');
@@ -1861,7 +1877,34 @@ function loadSpecificTransportRoutes(transportType) {
         return;
     }
 
-    var locationBounds = baseLocation.bounds;
+    // Always start with current map bounds as default
+    var locationBounds = map.getBounds();
+
+    // Try to use baseLocation bounds if available
+    if (baseLocation && baseLocation.bounds && typeof baseLocation.bounds.getSouth === 'function') {
+        locationBounds = baseLocation.bounds;
+    }
+
+    // Try to parse coordinates from URL hash (format: #map=zoom/lat/lng)
+    var hash = window.location.hash;
+    if (hash && hash.startsWith('#map=')) {
+        try {
+            var parts = hash.substring(5).split('/');
+            if (parts.length >= 3) {
+                var lat = parseFloat(parts[1]);
+                var lng = parseFloat(parts[2]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    // Create bounds around the current map center
+                    locationBounds = L.latLngBounds(
+                        [lat - 0.01, lng - 0.01],
+                        [lat + 0.01, lng + 0.01]
+                    );
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing URL coordinates:', e);
+        }
+    }
 
     // Show loading message
     document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> ' + getTranslation('routes_loading_transport').replace('{type}', transportType) + '</p>';
@@ -1871,23 +1914,23 @@ function loadSpecificTransportRoutes(transportType) {
 
     var query;
     if (transportType === 'bus') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=bus];);' +
             'out tags;';
     } else if (transportType === 'tram') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=tram];);' +
             'out tags;';
     } else if (transportType === 'subway') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=subway];);' +
             'out tags;';
     } else if (transportType === 'train') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=train];);' +
             'out tags;';
     } else if (transportType === 'light_rail') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=light_rail];);' +
             'out tags;';
     }
@@ -1941,17 +1984,45 @@ function loadSpecificRouteType(routeType) {
         return;
     }
 
-    var locationBounds = baseLocation.bounds;
+    // Always start with current map bounds as default
+    var locationBounds = map.getBounds();
+
+    // Try to use baseLocation bounds if available
+    if (baseLocation && baseLocation.bounds && typeof baseLocation.bounds.getSouth === 'function') {
+        locationBounds = baseLocation.bounds;
+    }
+
+    // Try to parse coordinates from URL hash (format: #map=zoom/lat/lng)
+    var hash = window.location.hash;
+    if (hash && hash.startsWith('#map=')) {
+        try {
+            var parts = hash.substring(5).split('/');
+            if (parts.length >= 3) {
+                var lat = parseFloat(parts[1]);
+                var lng = parseFloat(parts[2]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    // Create bounds around the current map center
+                    locationBounds = L.latLngBounds(
+                        [lat - 0.01, lng - 0.01],
+                        [lat + 0.01, lng + 0.01]
+                    );
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing URL coordinates:', e);
+        }
+    }
 
     // Show loading message
-    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> Carregant rutes de ' + getRouteTypeName(routeType).toLowerCase() + '...</p>';
+    var loadingText = getTranslation('routes_loading_type').replace('{type}', getRouteTypeName(routeType).toLowerCase());
+    document.getElementById('routes-content').innerHTML = '<p><i class="fa fa-spinner fa-spin"></i> ' + loadingText + '</p>';
 
     // Build query based on route type
     var bbox = locationBounds.getSouth() + ',' + locationBounds.getWest() + ',' + locationBounds.getNorth() + ',' + locationBounds.getEast();
 
     var query;
     if (routeType === 'walking') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=hiking];' +
             'relation(' + bbox + ')[type=route][route=foot];' +
             'way(' + bbox + ')[highway=path];' +
@@ -1960,7 +2031,7 @@ function loadSpecificRouteType(routeType) {
             'way(' + bbox + ')[highway=steps];);' +
             'out tags;';
     } else if (routeType === 'biking') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=bicycle];' +
             'relation(' + bbox + ')[type=route][route=mtb];' +
             'way(' + bbox + ')[highway=cycleway];' +
@@ -1968,7 +2039,7 @@ function loadSpecificRouteType(routeType) {
             'way(' + bbox + ')[highway=path][bicycle=yes];);' +
             'out tags;';
     } else if (routeType === 'public_transport') {
-        query = '[out:json][timeout:30];' +
+        query = '[out:json][timeout:60];' +
             '(relation(' + bbox + ')[type=route][route=bus];' +
             'relation(' + bbox + ')[type=route][route=tram];' +
             'relation(' + bbox + ')[type=route][route=subway];' +
@@ -1998,7 +2069,7 @@ function loadSpecificRouteType(routeType) {
         if (routes && routes.length > 0) {
             contentHtml += '<h3><i class="fa ' + getRouteIcon(routeType) + '"></i> ' + getRouteTypeName(routeType) + ' (' + routes.length + ')</h3>';
             contentHtml += '<div class="routes-list">';
-            routes.slice(0, 20).forEach(function(route) { // Show more routes when loading specific type
+            routes.slice(0, 20).forEach(function(route) {
                 contentHtml += createRouteItem(route);
             });
             contentHtml += '</div>';
@@ -2122,9 +2193,9 @@ function createOsmcSymbolText(symbol, backgroundColor, textColor, backgroundLowe
 
     // Interpret lower background
     if (backgroundLower && backgroundLower !== backgroundColor) {
-        if (backgroundLower.includes('_lower')) {
-            var lowerColor = backgroundLower.replace('_lower', '');
-            var lowerDescription = getOsmcColorDescription(lowerColor);
+				if (backgroundLower.includes('_lower')) {
+					var lowerColor = backgroundLower.replace('_lower', '');
+					var lowerDescription = getOsmcColorDescription(lowerColor);
             interpretation += ', Part inferior: ' + lowerDescription;
         } else {
             var lowerDescription = getOsmcColorDescription(backgroundLower);
@@ -2288,7 +2359,8 @@ function displayRoutesWithPagination(routes, transportType) {
         contentHtml += '<div class="pagination">';
         // Previous button
         if (currentPage > 1) {
-            contentHtml += '<button onclick="changePage(' + (currentPage - 1) + ', \'' + transportType + '\')">&laquo; ' + getTranslation('routes_pagination_previous') + '</button>';
+            var escapedTransportType = transportType.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '\\"');
+            contentHtml += '<button onclick="changePage(' + (currentPage - 1) + ', \'' + escapedTransportType + '\')">&laquo; ' + getTranslation('routes_pagination_previous') + '</button>';
         } else {
             contentHtml += '<button disabled>&laquo; ' + getTranslation('routes_pagination_previous') + '</button>';
         }
@@ -2298,7 +2370,7 @@ function displayRoutesWithPagination(routes, transportType) {
         var endPage = Math.min(totalPages, currentPage + 2);
 
         if (startPage > 1) {
-            contentHtml += '<button onclick="changePage(1, \'' + transportType + '\')">1</button>';
+            contentHtml += '<button onclick="changePage(1, \'' + escapedTransportType + '\')">1</button>';
             if (startPage > 2) {
                 contentHtml += '<span>...</span>';
             }
@@ -2306,9 +2378,9 @@ function displayRoutesWithPagination(routes, transportType) {
 
         for (var i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
-                contentHtml += '<button class="active" onclick="changePage(' + i + ', \'' + transportType + '\')">' + i + '</button>';
+                contentHtml += '<button class="active" onclick="changePage(' + i + ', \'' + escapedTransportType + '\')">' + i + '</button>';
             } else {
-                contentHtml += '<button onclick="changePage(' + i + ', \'' + transportType + '\')">' + i + '</button>';
+                contentHtml += '<button onclick="changePage(' + i + ', \'' + escapedTransportType + '\')">' + i + '</button>';
             }
         }
 
@@ -2316,12 +2388,12 @@ function displayRoutesWithPagination(routes, transportType) {
             if (endPage < totalPages - 1) {
                 contentHtml += '<span>...</span>';
             }
-            contentHtml += '<button onclick="changePage(' + totalPages + ', \'' + transportType + '\')">' + totalPages + '</button>';
+            contentHtml += '<button onclick="changePage(' + totalPages + ', \'' + escapedTransportType + '\')">' + totalPages + '</button>';
         }
 
         // Next button
         if (currentPage < totalPages) {
-            contentHtml += '<button onclick="changePage(' + (currentPage + 1) + ', \'' + transportType + '\')">' + getTranslation('routes_pagination_next') + ' &raquo;</button>';
+            contentHtml += '<button onclick="changePage(' + (currentPage + 1) + ', \'' + escapedTransportType + '\')">' + getTranslation('routes_pagination_next') + ' &raquo;</button>';
         } else {
             contentHtml += '<button disabled>' + getTranslation('routes_pagination_next') + ' &raquo;</button>';
         }
@@ -2366,15 +2438,15 @@ function getTransportTypeIcon(transportType) {
 // Function to get route icon based on type and route_type
 function getRouteIcon(type, route_type) {
     switch(type) {
-        case 'walking': return 'fa-walking';
+        case 'walking': return 'fa-user';
         case 'biking': return 'fa-bicycle';
         case 'public_transport':
             switch(route_type) {
                 case 'bus': return 'fa-bus';
-                case 'tram': return 'fa-train';
+                case 'tram': return 'fa-subway';
                 case 'subway': return 'fa-subway';
                 case 'train': return 'fa-train';
-                case 'light_rail': return 'fa-train';
+                case 'light_rail': return 'fa-subway';
                 default: return 'fa-bus';
             }
         default: return 'fa-route';
@@ -2603,4 +2675,4 @@ function showPublicTransportStopsForLayer(route, routeLayerGroup) {
     });
 }
 
-// Routes will be initialized when a location is selected via updateRoutesForNewLocation()
+// Routes will be initialized when a location is selected via updateRoutesForNewLocation();

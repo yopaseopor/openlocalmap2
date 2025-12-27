@@ -3,6 +3,7 @@ window.translations_es = {
     home_tab: "Puntos de Interés",
     search_tab: "Buscar",
     routes_tab: "Rutas",
+    gtfs_tab: "GTFS",
     wikipedia_tab: "Wikipedia",
     comments_tab: "Comentarios",
     parking_tab: "Aparcamiento",
@@ -69,8 +70,11 @@ window.translations_es = {
     routes_help_back: "Volver al inicio",
 
     // Wikipedia pane
-    wikipedia_title: "Vilanova i la Geltrú en Wikipedia",
+    wikipedia_title: "Atención",
+    wikipedia_to_wikidata: " en Wikidata",
     wikipedia_reload: "Actualizar",
+    wikipedia_search_first: "Primero tienes que buscar un lugar para obtener información de Wikidata. Utiliza la búsqueda para seleccionar una ubicación.",
+    wikipedia_back: "Volver al inicio",
 
     // Wikidata translations
     wikidata_loading: "Cargando información de Wikidata...",
@@ -112,6 +116,20 @@ window.translations_es = {
     wikidata_operator: "Operador",
     wikidata_transport_network: "Red de transporte",
     wikidata_links_resources: "Enlaces y Recursos",
+
+    // No Wikidata info fallback translations
+    wikidata_no_info_found: "No se encontró información en Wikidata",
+    wikidata_no_info_suggestion: "No se encontró información específica en Wikidata para '{route}'. Puedes intentar búsqueda manual o consultar los datos de OSM a continuación.",
+    wikidata_osm_info: "Información de OSM",
+    wikidata_no_osm_info: "No hay información adicional de OSM",
+    wikidata_search_suggestions: "Sugerencias de búsqueda",
+    wikidata_try_manual_search: "Puedes intentar una búsqueda manual en Wikidata con términos relacionados.",
+    wikidata_manual_search: "Búsqueda manual",
+    wikidata_back: "Volver",
+    wikidata_search_results: "Resultados de la búsqueda",
+    wikidata_select_result: "Selecciona un resultado para ver su información:",
+    wikidata_no_search_results: "No se encontraron resultados para esta búsqueda.",
+    wikidata_search_error: "Error en la búsqueda. Inténtalo de nuevo más tarde.",
 
     // Related entities translations
     wikidata_related_entities: "Entidades relacionadas",
@@ -191,7 +209,7 @@ window.translations_es = {
     routes_title: "Rutas",
     routes_title_dynamic: "Rutas en {location}",
     routes_loading: "Cargando rutas...",
-    routes_loading_type: "Cargando rutas de {type}...",
+    routes_loading_type: "Cargando rutas {type}...",
     routes_loading_transport: "Cargando rutas de transporte público ({type})...",
     routes_no_routes_found: "No se han encontrado rutas etiquetadas específicamente para esta ubicación.",
     routes_no_routes_found_type: "No se han encontrado rutas de {type} para esta ubicación.",
@@ -325,6 +343,23 @@ window.translations_es = {
     routes_unnamed_line: "Línea sin nombre",
     routes_unnamed_stop: "Parada sin nombre",
     routes_stop_numbered: "Parada {number}",
+
+    // GTFS translations
+    gtfs_title: "GTFS - Datos de Transporte",
+    gtfs_description: "Explora conjuntos de datos GTFS de transportes públicos de todo el mundo. Selecciona un conjunto de datos para ver información sobre rutas, paradas y horarios.",
+    gtfs_search_title: "Buscar conjuntos de datos GTFS:",
+    gtfs_results_title: "Conjuntos de datos disponibles:",
+    gtfs_provider: "Proveedor:",
+    gtfs_country: "País:",
+    gtfs_location: "Ubicación:",
+    gtfs_last_updated: "Última actualización:",
+    gtfs_loading: "Cargando datos GTFS...",
+    gtfs_help_title: "Ayuda (GTFS)",
+    gtfs_help_text1: "Desde esta sección puedes explorar conjuntos de datos GTFS (General Transit Feed Specification) de transportes públicos de todo el mundo. GTFS es un formato estándar para compartir información de transportes públicos.",
+    gtfs_help_text2: "Para comenzar, puedes buscar conjuntos de datos por ciudad, país u operador de transporte, o simplemente hacer clic en \"Mostrar todos\" para ver todas las opciones disponibles.",
+    gtfs_help_text3: "Cuando selecciones un conjunto de datos, podrás explorar las rutas disponibles, ver las paradas en el mapa e incluso descargar los datos completos para tu uso.",
+    gtfs_help_text4: "Los datos GTFS provienen de la API de Mobility Database y se actualizan regularmente por los proveedores de transporte.",
+    gtfs_help_back: "Volver al inicio",
 
     // POI translations
     poi_biergarten: "Bar",
