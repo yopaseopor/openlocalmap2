@@ -13,7 +13,6 @@
     <meta property="og:image" content="https://osm-catalan.github.io/openlocalmap/assets/img/preview.jpg" />
 	<!--MODIFICAR AQUÍ-->
     <meta property="og:description" content="Mapa de Vilanova i la Geltrú amb cerca de punts d'interès i altra informació." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: http:; font-src 'self' https:; connect-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https:; base-uri 'self'; form-action 'self';">
     <link rel="shortcut icon" href="assets/img/favicon.ico"/>
     <link rel="stylesheet" href="assets/leaflet/leaflet.css" />
     <link rel="stylesheet" href="assets/css/Control.Loading.css" />
@@ -299,10 +298,111 @@
 	  </div>
 	  <center><button style="background:#2a2a2a; color:white; padding:5px;" class="fa fa-support"
           onClick="location.href='#help_gtfs'"> Ajuda (GTFS)</button></center>
-	  <h1 data-i18n="gtfs_title">GTFS - Dades de Transport</h1>
-	  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_description">Explora conjunts de dades GTFS de transports públics de tot el món. Selecciona un conjunt de dades per veure informació sobre rutes, parades i horaris.</p>
+  <h1 data-i18n="gtfs_title">GTFS - Dades de Transport</h1>
+  <p style="text-align:justify; margin-right:5px;" data-i18n="gtfs_description">Explora conjunts de dades GTFS de transports públics de tot el món. Selecciona un conjunt de dades per veure informació sobre rutes, parades i horaris.</p>
 
-	  <!-- GTFS Search and Selection -->
+  <!-- RENFE Real-Time Train Visualization -->
+  <div style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border: 1px solid #b8daff; border-radius: 5px;">
+    <h3 style="margin-top: 0; color: #004085;">🚂 Visualització en Temps Real de Trens RENFE</h3>
+    <p style="margin: 8px 0; font-size: 14px;">Mostra la posició actual dels trens RENFE al mapa en temps real:</p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+      <button onclick="startRealtimeTrains()" id="start-realtime-btn" style="background: #4caf50; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Iniciar Visualització de Trens</strong><br><small>Mostra trens al mapa cada 30 segons</small></button>
+      <button onclick="stopRealtimeTrains()" id="stop-realtime-btn" style="background: #f44336; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Aturar Visualització</strong><br><small>Oculta els trens del mapa</small></button>
+      <div id="realtime-status" style="font-size: 12px; color: #666; padding: 8px; background: #f8f9fa; border-radius: 3px;">Status: Inactiu</div>
+    </div>
+
+    <div style="background: #e8f4f8; border: 1px solid #b8daff; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <h5 style="margin-top: 0; color: #004085;">🚀 Per Obtenir Dades Reals de Trens</h5>
+      <p style="margin: 8px 0; font-size: 13px;"><strong>Per què RENFE fa una API si no es pot usar directament?</strong></p>
+      <p style="margin: 8px 0; font-size: 12px; color: #004085;">Les APIs GTFS-RT estan dissenyades per a <strong>aplicacions mòbils i servidors</strong>, no per navegadors web directes. El CORS protegeix la seguretat, però requereix un servidor intermediari.</p>
+
+      <p style="margin: 8px 0; font-size: 13px;"><strong>Executa aquest servidor Node.js per obtenir dades reals:</strong></p>
+
+      <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 11px;">
+        const express = require('express');<br>
+        const cors = require('cors');<br>
+        const fetch = require('node-fetch');<br><br>
+        const app = express();<br>
+        app.use(cors());<br><br>
+        app.get('/api/renfe-trains', async (req, res) => {<br>
+        &nbsp;&nbsp;try {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;const response = await fetch('https://gtfsrt.renfe.com/vehicle_positions.pb');<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;const buffer = await response.arrayBuffer();<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;res.send(Buffer.from(buffer));<br>
+        &nbsp;&nbsp;} catch (error) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;res.status(500).json({error: 'Failed to fetch RENFE data'});<br>
+        &nbsp;&nbsp;}<br>
+        });<br><br>
+        app.listen(3001, () => console.log('Proxy server running on port 3001'));<br>
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px;"><strong>Comandes per executar:</strong></p>
+      <code style="background: #f8f9fa; padding: 4px 8px; border-radius: 3px; font-family: monospace; font-size: 11px;">npm install express cors node-fetch<br>node server.js</code>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #004085;"><strong>L'aplicació detectarà automàticament el servidor proxy i mostrarà trens 100% reals!</strong></p>
+    </div>
+
+    <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <h5 style="margin-top: 0; color: #155724;">✅ Solució Manual: Utilitza les Dades RENFE Directament!</h5>
+      <p style="margin: 8px 0; font-size: 13px;">Ja que pots accedir manualment a les dades RENFE, aquí tens una solució directa:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0;">
+        <button onclick="openRenfeJson()" style="background: #28a745; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>🔗 PAS 1: Obrir Dades RENFE</strong><br><small>Obre l'API RENFE en una nova pestanya</small></button>
+        <button onclick="showManualDataEntry()" style="background: #007bff; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>📝 PAS 2: Introduir Dades Manualment</strong><br><small>Copia i enganxa les dades JSON aquí</small></button>
+      </div>
+
+      <div id="manual-data-entry" style="display: none; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
+        <h5 style="margin-top: 0; color: #495057;">📋 Com Copiar i Enganxar les Dades RENFE:</h5>
+        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+          <button onclick="copyRenfeUrl()" style="background: #28a745; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🔗 Copiar URL RENFE</strong></button>
+          <button onclick="copyJsonInstructions()" style="background: #17a2b8; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📋 Copiar Instruccions</strong></button>
+          <button onclick="clearTextarea()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🗑️ Netejar</strong></button>
+          <button onclick="shareMapUrl()" style="background: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📤 Compartir Mapa</strong></button>
+        </div>
+
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px; padding: 10px; margin: 10px 0; font-size: 12px;">
+          <strong>🔢 PASSOS FÀCILS:</strong><br>
+          1. Ves a la pestanya RENFE que s'ha obert<br>
+          2. Prem <strong>Ctrl+A</strong> (seleccionar tot)<br>
+          3. Prem <strong>Ctrl+C</strong> (copiar)<br>
+          4. Torna aquí i prem <strong>Ctrl+V</strong> (enganxar)<br>
+          5. Clica <strong>"Processar Dades Reals"</strong>
+        </div>
+
+        <textarea id="manual-json-data" placeholder="Enganxa aquí les dades JSON de RENFE (prem Ctrl+V)..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onclick="processManualJsonData()" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; flex: 1;"><strong>⚡ Processar Dades Reals</strong><br><small>Mostrar trens RENFE reals al mapa</small></button>
+          <button onclick="testSampleData()" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;"><strong>🧪 Provar amb Dades d'Exemple</strong><br><small>Omple amb JSON de mostra</small></button>
+        </div>
+
+        <div id="json-status" style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-size: 12px; color: #495057;">Status: Preparat per enganxar dades JSON</div>
+
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #155724;"><strong>Aquesta és la solució perfecta: utilitza les dades RENFE directament sense servidors!</strong></p>
+      <p style="margin: 8px 0; font-size: 12px; color: #155724;"><strong>URL de les dades: <code>https://gtfsrt.renfe.com/vehicle_positions.json</code></strong></p>
+    </div>
+
+    <p style="font-size: 12px; color: #666; margin-top: 10px;">Llicència: <a href="https://data.renfe.com/dataset/ubicacion-vehiculos" target="_blank">CC-BY-4.0</a> | Última actualització: 2025-12-27</p>
+  </div>
+
+<!-- Mobility Database Auth UI -->
+<div style="margin-bottom: 12px; padding: 10px; border: 1px dashed #ccc; border-radius:4px; background:#fbfbfb;">
+	<label style="display:block; font-weight:600; margin-bottom:6px;">Mobility Database Refresh Token</label>
+	<input id="mobility-refresh-token" type="password" placeholder="Paste your refresh token here" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:8px;">
+	<div style="display:flex; gap:8px;">
+		<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, true); document.getElementById('mobility-auth-status').textContent='Refresh token saved (in localStorage).'; })()" style="background:#007acc; color:white; padding:6px 10px; border:none; border-radius:3px;">Save token</button>
+		<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, false); document.getElementById('mobility-auth-status').textContent='Refresh token set for session only.'; })()" style="background:#2a2a2a; color:white; padding:6px 10px; border:none; border-radius:3px;">Use for session</button>
+		<button onclick="(function(){ clearStoredRefreshToken(); document.getElementById('mobility-auth-status').textContent='Refresh token cleared.'; })()" style="background:#aa0000; color:white; padding:6px 10px; border:none; border-radius:3px;">Clear</button>
+		<button onclick="(function(){ document.getElementById('mobility-auth-status').textContent='Requesting access token...'; getValidAccessToken().then(function(tok){ document.getElementById('mobility-auth-status').textContent='Access token obtained.'; }).catch(function(err){ document.getElementById('mobility-auth-status').textContent='Token error: '+err.message; }); })()" style="background:#228822; color:white; padding:6px 10px; border:none; border-radius:3px;">Get Access Token</button>
+	</div>
+	<div id="mobility-auth-status" style="margin-top:8px; color:#444; font-size:13px;">No refresh token configured.</div>
+	<div style="margin-top:8px; font-size:12px; color:#666;">If you don't have a refresh token, sign in at <a href="https://mobilitydatabase.org/account" target="_blank">mobilitydatabase.org/account</a>. See API docs at <a href="https://mobilitydata.github.io/mobility-feed-api/SwaggerUI/index.html#/" target="_blank">Mobility Feed API (Swagger)</a>.</div>
+</div>
+
+  <!-- GTFS Search and Selection -->
 	  <div style="margin-bottom: 15px;">
 	    <h4 data-i18n="gtfs_search_title">Buscar conjunts de dades GTFS:</h4>
 	    <input type="text" id="gtfs-search" placeholder="Buscar per ciutat, país o operador..." style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
@@ -313,20 +413,6 @@
 	      <i class="fa fa-list"></i> Mostrar tots
 	    </button>
 	  </div>
-
-	<!-- Mobility Database Auth UI -->
-	<div style="margin-bottom: 12px; padding: 10px; border: 1px dashed #ccc; border-radius:4px; background:#fbfbfb;">
-		<label style="display:block; font-weight:600; margin-bottom:6px;">Mobility Database Refresh Token</label>
-		<input id="mobility-refresh-token" type="password" placeholder="Paste your refresh token here" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:8px;">
-		<div style="display:flex; gap:8px;">
-			<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, true); document.getElementById('mobility-auth-status').textContent='Refresh token saved (in localStorage).'; })()" style="background:#007acc; color:white; padding:6px 10px; border:none; border-radius:3px;">Save token</button>
-			<button onclick="(function(){ var t=document.getElementById('mobility-refresh-token').value; setRefreshToken(t, false); document.getElementById('mobility-auth-status').textContent='Refresh token set for session only.'; })()" style="background:#2a2a2a; color:white; padding:6px 10px; border:none; border-radius:3px;">Use for session</button>
-			<button onclick="(function(){ clearStoredRefreshToken(); document.getElementById('mobility-auth-status').textContent='Refresh token cleared.'; })()" style="background:#aa0000; color:white; padding:6px 10px; border:none; border-radius:3px;">Clear</button>
-			<button onclick="(function(){ document.getElementById('mobility-auth-status').textContent='Requesting access token...'; getValidAccessToken().then(function(tok){ document.getElementById('mobility-auth-status').textContent='Access token obtained.'; }).catch(function(err){ document.getElementById('mobility-auth-status').textContent='Token error: '+err.message; }); })()" style="background:#228822; color:white; padding:6px 10px; border:none; border-radius:3px;">Get Access Token</button>
-		</div>
-		<div id="mobility-auth-status" style="margin-top:8px; color:#444; font-size:13px;">No refresh token configured.</div>
-		<div style="margin-top:8px; font-size:12px; color:#666;">If you don't have a refresh token, sign in at <a href="https://mobilitydatabase.org/account" target="_blank">mobilitydatabase.org/account</a>. See API docs at <a href="https://mobilitydata.github.io/mobility-feed-api/SwaggerUI/index.html#/" target="_blank">Mobility Feed API (Swagger)</a>.</div>
-	</div>
 
 	  <!-- GTFS Results -->
 	  <div id="gtfs-results" style="display: none; margin-top: 15px;">

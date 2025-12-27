@@ -968,64 +968,7 @@ function displayGtfsRoutesInfo(feed) {
     html += '<li><a href="https://github.com/google/transit" target="_blank">GTFS libraries</a> - Eines de processament</li>';
     html += '</ul>';
 
-    // Add GTFS-RT Real-Time Train Display
-    html += '<div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #c8e6c9;">';
-    html += '<h4 style="margin-top: 0; color: #2e7d32;">🚂 Visualització en Temps Real de Trens</h4>';
-    html += '<p>Mostra la posició actual dels trens RENFE al mapa en temps real:</p>';
 
-    html += '<div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">';
-    html += '<button onclick="startRealtimeTrains()" id="start-realtime-btn" style="background: #4caf50; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Iniciar Visualització de Trens</strong><br><small>Mostra trens al mapa cada 30 segons</small></button>';
-    html += '<button onclick="stopRealtimeTrains()" id="stop-realtime-btn" style="background: #f44336; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Aturar Visualització</strong><br><small>Oculta els trens del mapa</small></button>';
-    html += '<div id="realtime-status" style="font-size: 12px; color: #666; padding: 8px; background: #f8f9fa; border-radius: 3px;">Status: Inactiu</div>';
-    html += '</div>';
-
-    html += '<div style="background: #e8f4f8; border: 1px solid #b8daff; border-radius: 5px; padding: 12px; margin: 15px 0;">';
-    html += '<h5 style="margin-top: 0; color: #004085;">🚀 Per Obtenir Dades Reals de Trens</h5>';
-    html += '<p style="margin: 8px 0; font-size: 13px;"><strong>Per què RENFE fa una API si no es pot usar directament?</strong></p>';
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #004085;">Les APIs GTFS-RT estan dissenyades per a <strong>aplicacions mòbils i servidors</strong>, no per navegadors web directes. El CORS protegeix la seguretat, però requereix un servidor intermediari.</p>';
-
-    html += '<p style="margin: 8px 0; font-size: 13px;"><strong>Executa aquest servidor Node.js per obtenir dades reals:</strong></p>';
-
-    html += '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 11px;">';
-    html += 'const express = require(\'express\');<br>';
-    html += 'const cors = require(\'cors\');<br>';
-    html += 'const fetch = require(\'node-fetch\');<br><br>';
-    html += 'const app = express();<br>';
-    html += 'app.use(cors());<br><br>';
-    html += 'app.get(\'/api/renfe-trains\', async (req, res) => {<br>';
-    html += '&nbsp;&nbsp;try {<br>';
-    html += '&nbsp;&nbsp;&nbsp;&nbsp;const response = await fetch(\'https://gtfsrt.renfe.com/vehicle_positions.pb\');<br>';
-    html += '&nbsp;&nbsp;&nbsp;&nbsp;const buffer = await response.arrayBuffer();<br>';
-    html += '&nbsp;&nbsp;&nbsp;&nbsp;res.send(Buffer.from(buffer));<br>';
-    html += '&nbsp;&nbsp;} catch (error) {<br>';
-    html += '&nbsp;&nbsp;&nbsp;&nbsp;res.status(500).json({error: \'Failed to fetch RENFE data\'});<br>';
-    html += '&nbsp;&nbsp;}<br>';
-    html += '});<br><br>';
-    html += 'app.listen(3001, () => console.log(\'Proxy server running on port 3001\'));<br>';
-    html += '</div>';
-
-    html += '<p style="margin: 8px 0; font-size: 12px;"><strong>Comandes per executar:</strong></p>';
-    html += '<code style="background: #f8f9fa; padding: 4px 8px; border-radius: 3px; font-family: monospace; font-size: 11px;">npm install express cors node-fetch<br>node server.js</code>';
-
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #004085;"><strong>L\'aplicació detectarà automàticament el servidor proxy i mostrarà trens 100% reals!</strong></p>';
-    html += '</div>';
-
-    html += '<div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 12px; margin: 15px 0;">';
-    html += '<h5 style="margin-top: 0; color: #155724;">✅ Status Actual: Dades Reals de RENFE Disponibles!</h5>';
-    html += '<p style="margin: 8px 0; font-size: 13px;">L\'aplicació ara pot accedir a dades reals de trens RENFE:</p>';
-    html += '<ul style="margin: 8px 0; padding-left: 20px; font-size: 12px; color: #155724;">';
-    html += '<li>✅ JSON API funciona correctament (comprovat amb Firefox)</li>';
-    html += '<li>✅ Dades inclouen posicions GPS reals, IDs de tren, rutes, etc.</li>';
-    html += '<li>✅ Actualitzacions cada 30 segons amb informació en temps real</li>';
-    html += '<li>✅ Marcadors interactius amb detalls complets de cada tren</li>';
-    html += '</ul>';
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #155724;"><strong>Els trens que veus ara són vehicles RENFE reals circulant per Espanya!</strong></p>';
-    html += '<p style="margin: 8px 0; font-size: 12px; color: #155724;"><strong>API JSON descoberta: <code>https://gtfsrt.renfe.com/vehicle_positions.json</code></strong></p>';
-    html += '</div>';
-
-    html += '<p style="font-size: 12px; color: #666;">Llicència: <a href="https://data.renfe.com/dataset/ubicacion-vehiculos" target="_blank">CC-BY-4.0</a> | Última actualització: 2025-12-27</p>';
-    html += '</div>';
-    html += '</div>';
 
     html += '<p style="margin-top: 20px;"><strong>Proveïdor seleccionat:</strong> ' + (feed.provider_name || 'Desconegut') + '</p>';
     html += '<p><strong>Dataset:</strong> ' + (feed.name || 'Sense nom') + ' (ID: ' + feed.id + ')</p>';
@@ -1289,18 +1232,67 @@ function decodeRenfeJsonData(jsonData) {
                 var vehicle = entity.vehicle;
                 var position = entity.vehicle.position;
 
-                // Convert coordinates from E7 format (divide by 1e7)
-                var lat = position.latitude ? position.latitude / 10000000 : 0;
-                var lng = position.longitude ? position.longitude / 10000000 : 0;
+                // RENFE coordinates are already in decimal degrees format, not E7
+                var lat = position.latitude || 0;
+                var lng = position.longitude || 0;
 
-                trains.push({
-                    id: vehicle.vehicle ? vehicle.vehicle.id : entity.id,
-                    lat: lat,
-                    lng: lng,
-                    speed: position.speed ? position.speed / 100 : 0, // Convert from cm/s to km/h
-                    bearing: position.bearing || 0,
-                    route: vehicle.trip ? vehicle.trip.route_id : 'Unknown'
-                });
+                // Ensure coordinates are valid numbers
+                if (typeof lat === 'number' && typeof lng === 'number' &&
+                    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+
+                    // Extract route information with better handling
+                    var routeId = 'Unknown';
+                    if (vehicle.trip && vehicle.trip.route_id) {
+                        routeId = vehicle.trip.route_id;
+                        console.log('Found route_id:', routeId, 'for train:', entity.id);
+                    } else {
+                        // Try to extract route from vehicle label
+                        var label = vehicle.vehicle ? vehicle.vehicle.label : null;
+                        if (label) {
+                            // Try to extract route code from label (e.g., "C2-23055-PLATF.(1)" -> "C2")
+                            var routeMatch = label.match(/^([A-Z]+[-\s]?\d+|[A-Z]\d*)/);
+                            if (routeMatch) {
+                                routeId = routeMatch[1].replace(/\s/g, ''); // Remove spaces
+                                console.log('Extracted route from label:', routeId, 'for train:', entity.id, 'label:', label);
+                            } else {
+                                console.log('No route pattern found in label for train:', entity.id, 'label:', label);
+                            }
+                        } else {
+                            console.log('No route_id or label found for train:', entity.id, 'trip:', vehicle.trip);
+                        }
+                    }
+
+                    trains.push({
+                        // Basic train identification
+                        id: vehicle.vehicle ? vehicle.vehicle.id : entity.id,
+                        label: vehicle.vehicle ? vehicle.vehicle.label : null,
+
+                        // Geographic position (GPS coordinates)
+                        lat: lat,
+                        lng: lng,
+
+                        // Movement data
+                        speed: position.speed ? position.speed / 100 : 0, // Convert from cm/s to km/h
+                        bearing: position.bearing || 0, // Direction in degrees (0-360)
+
+                        // Route and trip information
+                        route: routeId,
+                        tripId: vehicle.trip ? vehicle.trip.tripId : null,
+                        startTime: vehicle.trip ? vehicle.trip.startTime : null,
+                        startDate: vehicle.trip ? vehicle.trip.startDate : null,
+
+                        // Operational status
+                        status: vehicle.currentStatus || 'Unknown',
+                        stopId: vehicle.stopId || null,
+
+                        // Metadata
+                        timestamp: vehicle.timestamp || null,
+                        congestionLevel: position.congestionLevel || null,
+                        occupancyStatus: position.occupancyStatus || null
+                    });
+                } else {
+                    console.warn('Invalid coordinates for train:', entity.id, lat, lng);
+                }
             }
         });
 
@@ -1313,34 +1305,56 @@ function decodeRenfeJsonData(jsonData) {
 
 // Fetch real-time train positions
 function fetchRealtimeTrains() {
-    // Try RENFE's JSON endpoint first (no CORS issues!)
+    // Try multiple CORS proxy services to bypass browser restrictions
+    var corsProxies = [
+        'https://cors-anywhere.herokuapp.com/',
+        'https://api.codetabs.com/v1/proxy?quest=',
+        'https://corsproxy.org/?',
+        'https://thingproxy.freeboard.io/fetch/'
+    ];
+
     var renfeJsonUrl = 'https://gtfsrt.renfe.com/vehicle_positions.json';
 
-    console.log('🚂 Fetching real RENFE train data from JSON API...');
+    // Try each proxy in sequence until one works
+    function tryNextProxy(proxyIndex) {
+        if (proxyIndex >= corsProxies.length) {
+            console.warn('All CORS proxies failed - no mock data available');
+            // Return empty array instead of mock data
+            alert('🚂 Unable to load real RENFE train data due to CORS restrictions.\n\nPlease use the manual data entry option below to paste train data directly.');
+            return Promise.resolve([]);
+        }
 
-    return fetch(renfeJsonUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('RENFE JSON API failed: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(jsonData => {
-            console.log('✅ Successfully fetched real RENFE train data!');
-            var decodedTrains = decodeRenfeJsonData(jsonData);
-            if (decodedTrains && decodedTrains.length > 0) {
-                console.log('🚂 Displaying', decodedTrains.length, 'REAL RENFE trains!');
-                return decodedTrains;
-            } else {
-                console.warn('No train data found in JSON response');
-                return generateMockTrainPositions();
-            }
-        })
-        .catch(error => {
-            console.warn('❌ Could not fetch real RENFE data:', error.message);
-            console.log('📡 Using demonstration data instead');
-            return generateMockTrainPositions();
-        });
+        var proxy = corsProxies[proxyIndex];
+        var fullUrl = proxy + renfeJsonUrl;
+
+        console.log('🔄 Trying CORS proxy:', proxy);
+
+        return fetch(fullUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Proxy failed: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(jsonData => {
+                console.log('✅ CORS proxy', proxy, 'succeeded! Processing real RENFE data...');
+                var decodedTrains = decodeRenfeJsonData(jsonData);
+                if (decodedTrains && decodedTrains.length > 0) {
+                    console.log('🚂 SUCCESS: Displaying', decodedTrains.length, 'REAL RENFE trains automatically!');
+                    return decodedTrains;
+                } else {
+                    console.warn('Proxy returned data but no trains found');
+                    return tryNextProxy(proxyIndex + 1);
+                }
+            })
+            .catch(error => {
+                console.warn('❌ CORS proxy', proxy, 'failed:', error.message);
+                return tryNextProxy(proxyIndex + 1);
+            });
+    }
+
+    console.log('🚂 Attempting automatic RENFE data fetch with CORS proxies...');
+    return tryNextProxy(0);
 }
 
 // Decode GTFS-RT Protocol Buffer data
@@ -1427,45 +1441,264 @@ function tryRealRenfeData() {
     return generateMockTrainPositions();
 }
 
-// Display train positions on map
+info // Display train positions on map with colored route visualization
 function displayRealtimeTrains(trains) {
-    // Clear existing train markers
+    console.log('🚂 DISPLAYING', trains.length, 'TRAINS ON MAP...');
+
+    // Clear existing markers and layers
     realtimeTrainMarkers.forEach(function(marker) {
-        if (map.hasLayer(marker)) {
+        try {
             map.removeLayer(marker);
-        }
+        } catch (e) {}
     });
     realtimeTrainMarkers = [];
 
-    // Create new markers for each train
+    // Group trains by route for better visualization
+    var trainsByRoute = {};
     trains.forEach(function(train) {
-        // Create a custom icon with emoji
-        var trainIcon = L.divIcon({
-            html: '<div style="font-size: 24px; text-align: center; line-height: 24px;">🚂</div>',
-            className: 'train-marker',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            popupAnchor: [0, -12]
-        });
-
-        var marker = L.marker([train.lat, train.lng], {
-            icon: trainIcon
-        });
-
-        var popupContent = '<div style="font-family: Arial, sans-serif; font-size: 12px;">';
-        popupContent += '<strong>🚂 Tren ' + train.id + '</strong><br>';
-        popupContent += '<strong>Ruta:</strong> ' + (train.route || 'Desconeguda') + '<br>';
-        popupContent += '<strong>Velocitat:</strong> ' + (train.speed || 0) + ' km/h<br>';
-        popupContent += '<strong>Direcció:</strong> ' + (train.bearing || 0) + '°<br>';
-        popupContent += '<strong>Coordenades:</strong> ' + train.lat.toFixed(4) + ', ' + train.lng.toFixed(4);
-        popupContent += '</div>';
-
-        marker.bindPopup(popupContent);
-        marker.addTo(map);
-        realtimeTrainMarkers.push(marker);
+        if (train.route && train.route !== 'Unknown') {
+            if (!trainsByRoute[train.route]) {
+                trainsByRoute[train.route] = [];
+            }
+            trainsByRoute[train.route].push(train);
+        } else {
+            // Put unknown routes in a separate group
+            if (!trainsByRoute['Unknown']) {
+                trainsByRoute['Unknown'] = [];
+            }
+            trainsByRoute['Unknown'].push(train);
+        }
     });
 
-    updateRealtimeStatus('Mostrant ' + trains.length + ' trens al mapa');
+// Define colors and names for different RENFE routes - using official RENFE colors from Wikipedia/OSM
+    var routeInfo = {
+        // Cercanías Madrid (Official colors)
+        'C1': {name: 'C-1', color: '#E4007C'},   // Pink/Magenta
+        'C2': {name: 'C-2', color: '#009EE3'},   // Blue
+        'C3': {name: 'C-3', color: '#F8B80E'},   // Yellow
+        'C4': {name: 'C-4', color: '#8BC53F'},   // Green
+        'C5': {name: 'C-5', color: '#9B59B6'},   // Purple
+        'C7': {name: 'C-7', color: '#FF6B35'},   // Orange/Red
+        'C8': {name: 'C-8', color: '#00A0E9'},   // Light Blue
+        'C9': {name: 'C-9', color: '#8BC53F'},   // Green
+        'C10': {name: 'C-10', color: '#E4007C'}, // Pink/Magenta
+
+        // Cercanías with hyphens
+        'C-1': {name: 'C-1', color: '#E4007C'},   // Pink/Magenta
+        'C-2': {name: 'C-2', color: '#009EE3'},   // Blue
+        'C-3': {name: 'C-3', color: '#F8B80E'},   // Yellow
+        'C-4': {name: 'C-4', color: '#8BC53F'},   // Green
+        'C-5': {name: 'C-5', color: '#9B59B6'},   // Purple
+        'C-7': {name: 'C-7', color: '#FF6B35'},   // Orange/Red
+        'C-8': {name: 'C-8', color: '#00A0E9'},   // Light Blue
+        'C-9': {name: 'C-9', color: '#8BC53F'},   // Green
+        'C-10': {name: 'C-10', color: '#E4007C'}, // Pink/Magenta
+
+        // AVE (High-Speed) - Official RENFE red
+        'AVE': {name: 'AVE', color: '#E4007C'}, // RENFE Red
+        'AVANT': {name: 'Avant', color: '#009EE3'}, // Blue
+        'ALVIA': {name: 'Alvia', color: '#8BC53F'}, // Green
+        'AV City': {name: 'AVE', color: '#E4007C'}, // RENFE Red
+
+        // Media Distancia (Medium Distance)
+        'MD': {name: 'MD', color: '#F8B80E'}, // Yellow
+        'Regional': {name: 'Regional', color: '#009EE3'}, // Blue
+        'MD-LD': {name: 'MD', color: '#F8B80E'}, // Yellow
+
+        // Rodalies Barcelona - Official colors from Wikipedia (ca.wikipedia.org/wiki/Rodalies_de_Catalunya)
+        'R1': {name: 'R1', color: '#0066CC'}, // Blue
+        'R2': {name: 'R2', color: '#CC0000'}, // Red
+        'R2S': {name: 'R2 Sud', color: '#CC0000'}, // Red
+        'R2N': {name: 'R2 Nord', color: '#CC0000'}, // Red
+        'R3': {name: 'R3', color: '#009933'}, // Green
+        'R4': {name: 'R4', color: '#FFCC00'}, // Yellow
+        'R5': {name: 'R5', color: '#660099'}, // Purple
+        'R6': {name: 'R6', color: '#0099CC'}, // Light Blue
+        'R7': {name: 'R7', color: '#FF6600'}, // Orange
+        'R8': {name: 'R8', color: '#666666'}, // Gray
+        'R9': {name: 'R9', color: '#CC0000'}, // Red
+        'R10': {name: 'R10', color: '#660099'}, // Purple
+        'R11': {name: 'R11', color: '#0066CC'}, // Blue
+        'R12': {name: 'R12', color: '#009933'}, // Green
+        'R13': {name: 'R13', color: '#FFCC00'}, // Yellow
+        'R14': {name: 'R14', color: '#FF6600'}, // Orange
+        'R15': {name: 'R15', color: '#0099CC'}, // Light Blue
+        'R16': {name: 'R16', color: '#660099'}, // Purple
+        'R17': {name: 'R17', color: '#666666'}, // Gray
+
+        // Other regional routes
+        'FEVE': {name: 'FEVE', color: '#8BC53F'}, // Green
+
+        // Additional patterns that might appear in real data
+        '1': {name: 'Línia 1', color: '#FF6B6B'}, // Red
+        '2': {name: 'Línia 2', color: '#4ECDC4'}, // Teal
+        '3': {name: 'Línia 3', color: '#45B7D1'}, // Blue
+        '4': {name: 'Línia 4', color: '#FFA07A'}, // Light Salmon
+        '5': {name: 'Línia 5', color: '#98D8C8'}, // Mint
+        '6': {name: 'Línia 6', color: '#F7DC6F'}, // Yellow
+        '7': {name: 'Línia 7', color: '#BB8FCE'}, // Purple
+        '8': {name: 'Línia 8', color: '#85C1E9'}, // Light Blue
+        '9': {name: 'Línia 9', color: '#F8C471'}, // Orange
+        '10': {name: 'Línia 10', color: '#95A5A6'}, // Gray
+
+        'Unknown': {name: 'Línia desconeguda', color: '#95A5A6'} // Gray
+    };
+
+    var totalTrains = 0;
+
+    // Create markers for each train, grouped by route
+    Object.keys(trainsByRoute).forEach(function(routeId) {
+        var routeTrains = trainsByRoute[routeId];
+        var routeData = routeInfo[routeId] || routeInfo['Unknown'];
+        var routeColor = routeData.color;
+        var routeName = routeData.name;
+
+        routeTrains.forEach(function(train) {
+            if (train.lat && train.lng && !isNaN(train.lat) && !isNaN(train.lng)) {
+                // Create modern train icon with colored route label
+                var marker = L.marker([train.lat, train.lng], {
+                    icon: L.divIcon({
+                        html: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.7));">' +
+                              '<path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z" fill="#666"/>' +
+                              '<rect x="7" y="16" width="10" height="4" rx="1" fill="#333"/>' +
+                              '<circle cx="9" cy="20" r="1.5" fill="#666"/>' +
+                              '<circle cx="15" cy="20" r="1.5" fill="#666"/>' +
+                              '<rect x="9" y="18" width="6" height="2" rx="0.5" fill="#999"/>' +
+                              '</svg>' +
+                              '<div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); ' +
+                              'background: ' + routeColor + '; color: white; font-size: 9px; font-weight: bold; ' +
+                              'padding: 1px 3px; border-radius: 2px; border: 1px solid #333; white-space: nowrap;">' +
+                              routeName + '</div>',
+                        className: 'train-marker',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 20]
+                    })
+                });
+
+                // Enhanced popup with route information and color coding
+                var statusText = '';
+                switch(train.status) {
+                    case 'IN_TRANSIT_TO': statusText = '🟢 En ruta'; break;
+                    case 'STOPPED_AT': statusText = '🟡 Aturat'; break;
+                    case 'INCOMING_AT': statusText = '🟠 Arribant'; break;
+                    default: statusText = '⚪ ' + (train.status || 'Desconegut');
+                }
+
+                marker.bindPopup(
+                    '<div style="font-family: Arial, sans-serif; min-width: 220px;">' +
+                    '<h4 style="margin: 0 0 8px 0; color: ' + routeColor + '; border-bottom: 2px solid ' + routeColor + '; padding-bottom: 4px;">' +
+                    '🚆 Tren ' + (train.id || 'Desconegut') + '</h4>' +
+                    '<div style="background: ' + routeColor + '15; border: 1px solid ' + routeColor + '; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                    '<strong>Línia:</strong> <span style="color: ' + routeColor + '; font-weight: bold;">' + routeName + '</span><br>' +
+                    '<strong>Codi ruta:</strong> ' + routeId + '<br>' +
+                    '<strong>Estat:</strong> ' + statusText + '<br>' +
+                    '<strong>Velocitat:</strong> ' + (train.speed ? train.speed.toFixed(1) + ' km/h' : 'N/A') + '<br>' +
+                    '<strong>Direcció:</strong> ' + (train.bearing ? train.bearing + '°' : 'N/A') + '<br>' +
+                    '<strong>Posició:</strong> ' + train.lat.toFixed(4) + ', ' + train.lng.toFixed(4) +
+                    '</div>' +
+                    '<div style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">' +
+                    '🕒 Actualitzat: ' + new Date().toLocaleTimeString('ca-ES') +
+                    '</div>' +
+                    '</div>'
+                );
+
+                // Add marker to map
+                marker.addTo(map);
+                realtimeTrainMarkers.push(marker);
+                totalTrains++;
+
+                console.log('✅ ADDED TRAIN MARKER:', routeName, train.id, 'at', train.lat, train.lng);
+            } else {
+                console.warn('❌ INVALID COORDS for train:', train.id, train.lat, train.lng);
+            }
+        });
+    });
+
+    console.log('🎯 TOTAL TRAIN MARKERS CREATED:', totalTrains);
+
+    // Create a legend for the routes
+    if (totalTrains > 0) {
+        createTrainLegend(trainsByRoute, routeInfo);
+    }
+
+    // Update status without zooming
+    updateRealtimeStatus('🚂 Mostrant ' + totalTrains + ' trens RENFE (' + Object.keys(trainsByRoute).length + ' línies)');
+
+    console.log('🎉 TRAIN DISPLAY COMPLETED SUCCESSFULLY!');
+}
+
+// Create a legend showing train routes and their colors
+function createTrainLegend(trainsByRoute, routeColors) {
+    // Remove existing legend if any
+    var existingLegend = document.getElementById('train-legend');
+    if (existingLegend) {
+        existingLegend.remove();
+    }
+
+    // Create legend container
+    var legend = document.createElement('div');
+    legend.id = 'train-legend';
+    legend.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        border: 2px solid #333;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        max-width: 200px;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        z-index: 1000;
+    `;
+
+    legend.innerHTML = '<div style="font-weight: bold; margin-bottom: 8px; color: #333;">🚂 Línies RENFE Actives</div>';
+
+    Object.keys(trainsByRoute).forEach(function(routeId) {
+        var count = trainsByRoute[routeId].length;
+        var routeData = routeColors[routeId] || routeColors['Unknown'];
+        var routeName = routeData.name;
+        var color = routeData.color;
+
+        var routeDiv = document.createElement('div');
+        routeDiv.style.cssText = `
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            padding: 2px;
+            border-radius: 3px;
+        `;
+
+        routeDiv.innerHTML = `
+            <div style="width: 12px; height: 12px; background: ${color}; border: 1px solid #333; border-radius: 2px; margin-right: 6px;"></div>
+            <span style="font-weight: bold; color: ${color}; font-size: 11px;">${routeName}</span>
+            <span style="margin-left: auto; color: #666; font-size: 10px;">(${count})</span>
+        `;
+
+        legend.appendChild(routeDiv);
+    });
+
+    // Add close button
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        color: #666;
+    `;
+    closeBtn.onclick = function() {
+        legend.remove();
+    };
+    legend.appendChild(closeBtn);
+
+    // Add to map container
+    document.getElementById('map').appendChild(legend);
 }
 
 // Start real-time train visualization
@@ -1479,7 +1712,7 @@ function startRealtimeTrains() {
         displayRealtimeTrains(trains);
     });
 
-    // Set up periodic updates every 30 seconds
+    // Set up periodic updates every 30 seconds (RENFE data refresh rate)
     realtimeTrainInterval = setInterval(function() {
         fetchRealtimeTrains().then(function(trains) {
             displayRealtimeTrains(trains);
@@ -1521,9 +1754,263 @@ function updateRealtimeStatus(status) {
     }
 }
 
-// Make real-time functions globally accessible
+// Manual RENFE data entry functions
+function openRenfeJson() {
+    window.open('https://gtfsrt.renfe.com/vehicle_positions.json', '_blank');
+}
+
+function showManualDataEntry() {
+    var entryDiv = document.getElementById('manual-data-entry');
+    if (entryDiv) {
+        entryDiv.style.display = entryDiv.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function processManualJsonData() {
+    var jsonTextarea = document.getElementById('manual-json-data');
+    if (!jsonTextarea || !jsonTextarea.value.trim()) {
+        alert('Si us plau, enganxa les dades JSON de RENFE primer.');
+        return;
+    }
+
+    try {
+        var jsonData = JSON.parse(jsonTextarea.value.trim());
+        console.log('Processing manual RENFE JSON data...');
+
+        var decodedTrains = decodeRenfeJsonData(jsonData);
+        if (decodedTrains && decodedTrains.length > 0) {
+            console.log('✅ Successfully processed', decodedTrains.length, 'REAL RENFE trains from manual data!');
+            displayRealtimeTrains(decodedTrains);
+
+            // Clear the textarea
+            jsonTextarea.value = '';
+
+            // Hide the manual entry form
+            showManualDataEntry();
+
+            alert('Dades processades! Veus ' + decodedTrains.length + ' trens RENFE reals al mapa.');
+        } else {
+            alert('No s\'han trobat dades de trens vàlides en el JSON. Comprova que has copiat les dades correctes.');
+        }
+    } catch (error) {
+        console.error('Error processing manual JSON data:', error);
+        alert('Error processant les dades JSON. Comprova que el format és correcte.');
+    }
+}
+
+// Helper functions for manual data entry
+function copyRenfeUrl() {
+    var renfeUrl = 'https://gtfsrt.renfe.com/vehicle_positions.json';
+    console.log('Copying RENFE URL:', renfeUrl);
+
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(renfeUrl).then(function() {
+            console.log('✅ URL copied using modern clipboard API');
+            alert('✅ URL de RENFE copiada al porta-retalls!\n\n' + renfeUrl);
+        }).catch(function(err) {
+            console.warn('Modern clipboard API failed, trying fallback:', err);
+            fallbackCopy(renfeUrl, 'URL de RENFE');
+        });
+    } else {
+        console.log('Modern clipboard API not available, using fallback');
+        fallbackCopy(renfeUrl, 'URL de RENFE');
+    }
+}
+
+function fallbackCopy(text, description) {
+    try {
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        tempTextarea.style.position = 'fixed';
+        tempTextarea.style.left = '-999999px';
+        tempTextarea.style.top = '-999999px';
+        document.body.appendChild(tempTextarea);
+        tempTextarea.focus();
+        tempTextarea.select();
+
+        var successful = document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+
+        if (successful) {
+            console.log('✅ ' + description + ' copied using fallback method');
+            alert('✅ ' + description + ' copiada al porta-retalls!\n\n' + text);
+        } else {
+            console.error('❌ Fallback copy method failed');
+            alert('❌ Error copiant al porta-retalls. Copia manualment:\n\n' + text);
+        }
+    } catch (err) {
+        console.error('❌ Fallback copy method error:', err);
+        alert('❌ Error copiant al porta-retalls. Copia manualment:\n\n' + text);
+    }
+}
+
+function shareMapUrl() {
+    var mapUrl = window.location.href;
+
+    // Try to copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(mapUrl).then(function() {
+            alert('URL del mapa copiada al porta-retalls!');
+        }).catch(function() {
+            // Fallback
+            var tempTextarea = document.createElement('textarea');
+            tempTextarea.value = mapUrl;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            alert('URL del mapa copiada al porta-retalls!');
+        });
+    } else {
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = mapUrl;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+        alert('URL del mapa copiada al porta-retalls!');
+    }
+}
+
+function copyJsonInstructions() {
+    var instructions = "PASSOS PER COPIAR LES DADES RENFE:\n\n";
+    instructions += "1. Ves a la pestanya RENFE que s'ha obert\n";
+    instructions += "2. Prem Ctrl+A (seleccionar tot)\n";
+    instructions += "3. Prem Ctrl+C (copiar)\n";
+    instructions += "4. Torna aquí i prem Ctrl+V (enganxar)\n";
+    instructions += "5. Clica 'Processar Dades Reals'\n\n";
+    instructions += "URL: https://gtfsrt.renfe.com/vehicle_positions.json";
+
+    // Try to copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(instructions).then(function() {
+            alert('Instruccions copiades al porta-retalls!');
+        }).catch(function() {
+            // Fallback: show in textarea for manual copy
+            var tempTextarea = document.createElement('textarea');
+            tempTextarea.value = instructions;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            alert('Instruccions copiades al porta-retalls!');
+        });
+    } else {
+        // Fallback for older browsers
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = instructions;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+        alert('Instruccions copiades al porta-retalls!');
+    }
+}
+
+function clearTextarea() {
+    var jsonTextarea = document.getElementById('manual-json-data');
+    if (jsonTextarea) {
+        jsonTextarea.value = '';
+        updateJsonStatus('Textarea netejat. Preparat per enganxar dades.');
+    }
+}
+
+function testSampleData() {
+    // Sample RENFE JSON data for testing
+    var sampleData = {
+        "header": {
+            "gtfsRealtimeVersion": "2.0",
+            "timestamp": "1766825736"
+        },
+        "entity": [
+            {
+                "id": "VP_C2-23055",
+                "vehicle": {
+                    "trip": {
+                        "tripId": "3091S35315C2",
+                        "startTime": "12:00:00",
+                        "startDate": "20231227",
+                        "routeId": "C2"
+                    },
+                    "position": {
+                        "latitude": 37.434105,
+                        "longitude": -5.9807305,
+                        "bearing": 45.0,
+                        "speed": 25.0
+                    },
+                    "currentStatus": "INCOMING_AT",
+                    "timestamp": 1766825734,
+                    "stopId": "43000",
+                    "vehicle": {
+                        "id": "23055",
+                        "label": "C2-23055-PLATF.(1)"
+                    }
+                }
+            },
+            {
+                "id": "VP_C4-23617",
+                "vehicle": {
+                    "trip": {
+                        "tripId": "3091S23617C4",
+                        "startTime": "12:15:00",
+                        "startDate": "20231227",
+                        "routeId": "C4"
+                    },
+                    "position": {
+                        "latitude": 37.392242,
+                        "longitude": -5.974642,
+                        "bearing": 90.0,
+                        "speed": 30.0
+                    },
+                    "currentStatus": "IN_TRANSIT_TO",
+                    "timestamp": 1766825734,
+                    "stopId": "51003",
+                    "vehicle": {
+                        "id": "23617",
+                        "label": "C4-23617-PLATF.(8)"
+                    }
+                }
+            }
+        ]
+    };
+
+    var jsonTextarea = document.getElementById('manual-json-data');
+    if (jsonTextarea) {
+        jsonTextarea.value = JSON.stringify(sampleData, null, 2);
+        updateJsonStatus('Dades d\'exemple carregades. Clica "Processar Dades Reals" per veure trens.');
+    }
+}
+
+function updateJsonStatus(status) {
+    var statusElement = document.getElementById('json-status');
+    if (statusElement) {
+        statusElement.textContent = 'Status: ' + status;
+    }
+}
+
+// Attempt automated copy-paste from RENFE tab (won't work due to security)
+function tryAutomatedCopyPaste() {
+    console.log('Attempting automated copy-paste...');
+
+    // This cannot work due to browser security:
+    // 1. Cannot access content from other tabs/windows
+    // 2. Cannot automatically copy from clipboard without user permission
+    // 3. Cannot read content from cross-origin iframes
+    // 4. Cannot automate browser interactions across tabs
+
+    console.warn('Automated copy-paste is impossible due to browser security restrictions');
+    console.log('Manual copy-paste is the only viable solution for browser-based applications');
+
+    return false;
+}
+
+// Make all functions globally accessible
 window.startRealtimeTrains = startRealtimeTrains;
 window.stopRealtimeTrains = stopRealtimeTrains;
+window.openRenfeJson = openRenfeJson;
+window.showManualDataEntry = showManualDataEntry;
+window.processManualJsonData = processManualJsonData;
 
 // Define global mdb object for Mobility Database API functions
 window.mdb = {
