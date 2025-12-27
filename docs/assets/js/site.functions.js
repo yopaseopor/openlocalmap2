@@ -1323,7 +1323,21 @@ function decodeRenfeJsonData(jsonData) {
 
 // Fetch real-time train positions
 function fetchRealtimeTrains() {
-    // Use local proxy server to avoid CORS issues
+    // Detect if we're running on GitHub Pages (static hosting)
+    var isGitHubPages = window.location.hostname.includes('github.io');
+
+    if (isGitHubPages) {
+        // On GitHub Pages, we can't use server-side proxies
+        console.log('🚂 Running on GitHub Pages - using manual data entry mode');
+
+        // Show a user-friendly message and direct to manual entry
+        alert('🚂 For live RENFE train data on GitHub Pages:\n\n1. Open this URL in a new tab: https://gtfsrt.renfe.com/vehicle_positions.json\n2. Copy all the JSON data (Ctrl+A, Ctrl+C)\n3. Return here and click "📝 Introduir Dades Manualment"\n4. Paste the data (Ctrl+V) and click "Processar Dades Reals"\n\nThis gives you 100% real RENFE train positions!');
+
+        // Return empty array to trigger manual mode
+        return Promise.resolve([]);
+    }
+
+    // Use local proxy server for local development
     var localProxyUrl = '/api/renfe-trains';
 
     console.log('🚂 Fetching RENFE data via local proxy server...');
@@ -1355,7 +1369,7 @@ function fetchRealtimeTrains() {
         .catch(error => {
             console.error('❌ Local proxy failed:', error.message);
 
-            // Fallback: Try direct CORS proxies as backup
+            // Fallback: Try direct CORS proxies as backup (only for local development)
             console.log('🔄 Falling back to external CORS proxies...');
             return fetchRealtimeTrainsFallback();
         });
