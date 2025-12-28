@@ -3039,8 +3039,10 @@ var tmbRouteInfo = {}; // Global variable for TMB route information
 
 // Start TMB real-time bus visualization
 function startRealtimeTMBBuses() {
+    // If already running, stop it instead of starting again
     if (tmbRealtimeBusInterval) {
-        clearInterval(tmbRealtimeBusInterval);
+        stopRealtimeTMBBuses();
+        return;
     }
 
     // Initial load
