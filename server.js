@@ -1,38 +1,6 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const https = require('https');
-const { URL } = require('url');
-
-// Helper to perform HTTPS GET and return { status, data }
-function makeRequest(url, headers) {
-  return new Promise((resolve, reject) => {
-    try {
-      const u = new URL(url);
-      const options = {
-        hostname: u.hostname,
-        path: u.pathname + (u.search || ''),
-        method: 'GET',
-        headers: headers || {},
-        timeout: 30000
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => resolve({ status: res.statusCode, data }));
-      });
-
-      req.on('error', (err) => reject(err));
-      req.on('timeout', () => {
-        req.destroy(new Error('Request timed out'));
-      });
-      req.end();
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
 
 // Helper to set CORS headers on any response
 function setCorsHeaders(res) {
@@ -69,30 +37,26 @@ app.get('/api/renfe-trains', async (req, res) => {
     // RENFE GTFS-RT JSON endpoint
     const renfeUrl = 'https://gtfsrt.renfe.com/vehicle_positions.json';
 
-    const resp = await makeRequest(renfeUrl, {
-      'User-Agent': 'OpenLocalMap-Proxy/1.0',
-      'Accept': 'application/json'
+    const response = await fetch(renfeUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout for Vercel
     });
 
-    if (resp.status !== 200) {
-      console.warn(`⚠️ RENFE API returned ${resp.status}`);
+    if (!response.ok) {
+      console.warn(`⚠️ RENFE API returned ${response.status}: ${response.statusText}`);
       setCorsHeaders(res);
-      return res.status(resp.status).json({
+      return res.status(response.status).json({
         error: 'RENFE API error',
-        status: resp.status,
-        message: resp.data,
+        status: response.status,
+        message: response.statusText,
         timestamp: new Date().toISOString()
       });
     }
 
-    let data;
-    try {
-      data = JSON.parse(resp.data);
-    } catch (e) {
-      console.error('❌ Error parsing RENFE response:', e.message);
-      setCorsHeaders(res);
-      return res.status(500).json({ error: 'Invalid RENFE JSON', message: e.message });
-    }
+    const data = await response.json();
     console.log('✅ Successfully fetched RENFE data:', data.entity ? data.entity.length : 0, 'trains');
     
     setCorsHeaders(res);
@@ -118,30 +82,26 @@ app.get('/api/fgc-trains', async (req, res) => {
     // FGC Open Data API endpoint
     const fgcUrl = 'https://dadesobertes.fgc.cat/api/explore/v2.1/catalog/datasets/posicionament-dels-trens/records?limit=100';
 
-    const resp = await makeRequest(fgcUrl, {
-      'User-Agent': 'OpenLocalMap-Proxy/1.0',
-      'Accept': 'application/json'
+    const response = await fetch(fgcUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout for Vercel
     });
 
-    if (resp.status !== 200) {
-      console.warn(`⚠️ FGC API returned ${resp.status}`);
+    if (!response.ok) {
+      console.warn(`⚠️ FGC API returned ${response.status}: ${response.statusText}`);
       setCorsHeaders(res);
-      return res.status(resp.status).json({
+      return res.status(response.status).json({
         error: 'FGC API error',
-        status: resp.status,
-        message: resp.data,
+        status: response.status,
+        message: response.statusText,
         timestamp: new Date().toISOString()
       });
     }
 
-    let data;
-    try {
-      data = JSON.parse(resp.data);
-    } catch (e) {
-      console.error('❌ Error parsing FGC response:', e.message);
-      setCorsHeaders(res);
-      return res.status(500).json({ error: 'Invalid FGC JSON', message: e.message });
-    }
+    const data = await response.json();
     console.log('✅ Successfully fetched FGC data:', data.results ? data.results.length : 0, 'trains');
 
     setCorsHeaders(res);
@@ -167,30 +127,26 @@ app.get('/api/tmb-buses', async (req, res) => {
     // TMB iTransit API endpoint - same proxy structure as RENFE/FGC
     const tmbUrl = 'https://api.tmb.cat/v1/itransit/bus/parades/108?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1';
 
-    const resp = await makeRequest(tmbUrl, {
-      'User-Agent': 'OpenLocalMap-Proxy/1.0',
-      'Accept': 'application/json'
+    const response = await fetch(tmbUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout for Vercel
     });
 
-    if (resp.status !== 200) {
-      console.warn(`⚠️ TMB API returned ${resp.status}`);
+    if (!response.ok) {
+      console.warn(`⚠️ TMB API returned ${response.status}: ${response.statusText}`);
       setCorsHeaders(res);
-      return res.status(resp.status).json({
+      return res.status(response.status).json({
         error: 'TMB API error',
-        status: resp.status,
-        message: resp.data,
+        status: response.status,
+        message: response.statusText,
         timestamp: new Date().toISOString()
       });
     }
 
-    let data;
-    try {
-      data = JSON.parse(resp.data);
-    } catch (e) {
-      console.error('❌ Error parsing TMB response:', e.message);
-      setCorsHeaders(res);
-      return res.status(500).json({ error: 'Invalid TMB JSON', message: e.message });
-    }
+    const data = await response.json();
     console.log('✅ Successfully fetched TMB data for bus stop 108');
 
     setCorsHeaders(res);
@@ -229,14 +185,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
-    console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
-    console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
-    console.log(`🚍 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
-  });
-} else {
-  // Export the Express app for serverless environments (Vercel)
-  module.exports = app;
-}
+app.listen(PORT, () => {
+  console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
+  console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
+  console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
+  console.log(`🚍 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
+});
