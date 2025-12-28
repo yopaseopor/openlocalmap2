@@ -1394,8 +1394,8 @@ function fetchRealtimeTrainsFallback() {
     var corsProxies = [
         'https://cors-anywhere.herokuapp.com/',
         'https://api.codetabs.com/v1/proxy?quest=',
-        'https://corsproxy.org/?',
-        'https://thingproxy.freeboard.io/fetch/'
+        'https://proxy.cors.sh/',
+        'https://corsproxy.io/?'
     ];
 
     var renfeJsonUrl = 'https://gtfsrt.renfe.com/vehicle_positions.json';
