@@ -3971,9 +3971,10 @@ function fetchRealtimeBicing() {
         apiUrl = '/api/bicing';
         console.log('🚴 Fetching Bicing data via Vercel API...');
     } else if (isGitHubPages) {
-        // On GitHub Pages, use our Vercel deployment as proxy
-        apiUrl = 'https://openlocalmap2.vercel.app/api/bicing';
-        console.log('🚴 Fetching Bicing data via openlocalmap2.vercel.app proxy from GitHub Pages...');
+        // On GitHub Pages, show message and use CORS proxy fallback
+        console.log('🚴 GitHub Pages detected - no server proxy available, will use CORS proxies or manual entry');
+        alert('🚴 GitHub Pages: No server proxy available. The Bicing API requires server-side proxy due to CORS restrictions.\n\nPlease use the "📝 Introduir Dades Manualment" option:\n1. Click "🔗 PAS 1: Obrir Dades Bicing"\n2. Copy the JSON data\n3. Click "📝 PAS 2: Introduir Dades Manualment"\n4. Paste and click "⚡ Processar Dades Reals"');
+        throw new Error('GitHub Pages deployment - no server proxy available');
     } else {
         // Local development
         apiUrl = '/api/bicing';
