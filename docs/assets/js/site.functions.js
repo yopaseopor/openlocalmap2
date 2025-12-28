@@ -3107,15 +3107,15 @@ function fetchRealtimeTMBBuses() {
         apiUrl = '/api/tmb-buses';
         console.log('🚌 Fetching TMB bus data via Vercel API...');
     } else if (isGitHubPages) {
-        // On GitHub Pages, use Vercel API proxy
-        var vercelUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app';
-        apiUrl = vercelUrl + '/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
-    } else {
-        // Local development
-        apiUrl = '/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via local proxy server...');
-    }
+    // On GitHub Pages, use Vercel API proxy
+    var vercelUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app';
+    apiUrl = vercelUrl + '/api/tmb-buses';
+    console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
+} else {
+    // Local development
+    apiUrl = '/api/tmb-buses';
+    console.log('🚌 Fetching TMB bus data via local proxy server...');
+}
 
     return fetch(apiUrl)
         .then(response => {
@@ -3197,20 +3197,19 @@ function fetchRealtimeTMBBuses() {
         .catch(error => {
             console.error('❌ TMB API proxy failed:', error.message);
 
-            // Fallback options
+            // Fallback options - same CORS proxy system as RENFE and FGC
             if (isGitHubPages) {
-                // On GitHub Pages, direct to manual entry if Vercel proxy fails
-                alert('🚌 API proxy unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy JSON data (Ctrl+A, Ctrl+C)\n3. Click "📝 Introduir Dades Manualment"\n4. Paste and click "Processar Dades Reals"');
-                return Promise.resolve([]);
+                // On GitHub Pages, try external CORS proxies first
+                console.log('🔄 Falling back to external CORS proxies for TMB...');
+                return fetchRealtimeTMBBusesFallback();
             } else if (isVercel) {
                 // On Vercel, show manual fallback option
                 alert('🚌 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy JSON data\n3. Use "📝 Introduir Dades Manualment"');
                 return Promise.resolve([]);
             } else {
-                // Local development fallback
-                console.log('🔄 Local development - API proxy failed, using manual fallback');
-                alert('🚌 Error connectant amb l\'API proxy de TMB. Utilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
-                return Promise.resolve([]);
+                // Local development - try CORS proxies
+                console.log('🔄 Local development - API proxy failed, trying CORS proxies...');
+                return fetchRealtimeTMBBusesFallback();
             }
         });
 }
@@ -3795,6 +3794,97 @@ function toggleTMBBusLegend() {
             legendBtn.textContent = '🎨 Mostrar Llegenda';
         }
     }
+}
+
+// Fallback function using external CORS proxies (same as RENFE and FGC)
+function fetchRealtimeTMBBusesFallback() {
+    var corsProxies = [
+        'https://cors-anywhere.herokuapp.com/',
+        'https://api.codetabs.com/v1/proxy?quest=',
+        'https://corsproxy.org/?',
+        'https://thingproxy.freeboard.io/fetch/'
+    ];
+
+    var tmbUrl = 'https://api.tmb.cat/v1/itransit/bus/parades/108?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1';
+
+    function tryNextProxy(proxyIndex) {
+        if (proxyIndex >= corsProxies.length) {
+            console.warn('All CORS proxies failed for TMB - using manual fallback');
+            alert('🚌 Unable to load real TMB bus data.\n\nLocal proxy server may not be running, and all external CORS proxies failed.\n\nPlease:\n1. Ensure the Node.js server is running (npm start)\n2. Or use the manual data entry option below.');
+            return Promise.resolve([]);
+        }
+
+        var proxy = corsProxies[proxyIndex];
+        var fullUrl = proxy + tmbUrl;
+
+        console.log('🔄 Trying CORS proxy', proxyIndex + 1, 'of', corsProxies.length, 'for TMB:', proxy);
+
+        return fetch(fullUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Proxy failed: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(jsonData => {
+                console.log('✅ CORS proxy', proxy, 'succeeded! Processing real TMB data...');
+
+                var buses = [];
+
+                // Process TMB iBus API response (same as main function)
+                if (jsonData && jsonData.data && jsonData.data.nearstops) {
+                    jsonData.data.nearstops.forEach(function(stop) {
+                        if (stop.buses && Array.isArray(stop.buses)) {
+                            stop.buses.forEach(function(bus, index) {
+                                try {
+                                    var lat = stop.lat;
+                                    var lng = stop.lon;
+                                    var routeId = bus.line || 'Unknown';
+                                    var busId = bus.bus || index.toString();
+                                    var destination = bus.destination || '';
+                                    var timeArrival = bus['t-in-min'] || bus['t-in-s'] || 0;
+
+                                    if (typeof lat === 'number' && typeof lng === 'number' &&
+                                        lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                        lat !== 0 && lng !== 0) {
+
+                                        buses.push({
+                                            id: busId + '-' + stop.code,
+                                            label: routeId + ' → ' + destination,
+                                            lat: lat,
+                                            lng: lng,
+                                            route: routeId,
+                                            destination: destination,
+                                            stopName: stop.street_name || '',
+                                            stopCode: stop.code || '',
+                                            timeToArrival: timeArrival,
+                                            status: 'At stop',
+                                            timestamp: new Date().getTime()
+                                        });
+                                    }
+                                } catch (error) {
+                                    console.warn('Error processing TMB bus at stop', stop.code, ':', error, bus);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (buses.length > 0) {
+                    console.log('🚌 SUCCESS: Displaying', buses.length, 'REAL TMB buses via CORS proxy!');
+                    return buses;
+                } else {
+                    console.warn('Proxy returned data but no buses found');
+                    return tryNextProxy(proxyIndex + 1);
+                }
+            })
+            .catch(error => {
+                console.warn('❌ CORS proxy', proxy, 'failed:', error.message);
+                return tryNextProxy(proxyIndex + 1);
+            });
+    }
+
+    return tryNextProxy(0);
 }
 
 // Make TMB functions globally accessible
