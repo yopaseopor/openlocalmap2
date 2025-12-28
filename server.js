@@ -189,5 +189,5 @@ app.listen(PORT, () => {
   console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
   console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
   console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
-  console.log(`� TMB API proxy: http://localhost:${PORT}/api/tmb-trains`);
+  console.log(`🚍 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
 });

@@ -3108,7 +3108,7 @@ function fetchRealtimeTMBBuses() {
         console.log('🚌 Fetching TMB bus data via Vercel API...');
     } else if (isGitHubPages) {
         // On GitHub Pages, use primary Vercel API proxy
-        apiUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app/api/renfe-trains';
+        apiUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app/api/tmb-buses';
         console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
     } else {
         // Local development
