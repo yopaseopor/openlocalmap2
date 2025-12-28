@@ -1336,9 +1336,9 @@ function fetchRealtimeTrains() {
         console.log('🚂 Fetching RENFE data via Vercel API...');
     } else if (isGitHubPages) {
         // On GitHub Pages, use our Vercel deployment as proxy
-        var vercelUrl = 'https://openlocalmap2.vercel.app';
+        var vercelUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app';
         apiUrl = vercelUrl + '/api/renfe-trains';
-        console.log('🚂 Fetching RENFE data via openlocalmap2.vercel.app proxy from GitHub Pages...');
+        console.log('🚂 Fetching RENFE data via Vercel proxy from GitHub Pages...');
     } else {
         // Local development
         apiUrl = '/api/renfe-trains';
