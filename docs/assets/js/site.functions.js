@@ -3107,10 +3107,155 @@ function fetchRealtimeTMBBuses() {
         apiUrl = '/api/tmb-buses';
         console.log('🚌 Fetching TMB bus data via Vercel API...');
     } else if (isGitHubPages) {
-    // On GitHub Pages, use Vercel API proxy
-    var vercelUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app';
-    apiUrl = vercelUrl + '/api/tmb-buses';
-    console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
+    // On GitHub Pages, try multiple Vercel API proxies
+    var vercelUrls = [
+        'https://openlocalmap2-dlen.vercel.app/',
+        'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app'
+    ];
+
+    // Try the first Vercel URL
+    apiUrl = vercelUrls[0] + '/api/tmb-buses';
+    console.log('🚌 Fetching TMB bus data via primary Vercel proxy from GitHub Pages...');
+
+    // If the first fails, we'll try the fallback in the catch block
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Primary Vercel proxy failed: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            console.log('✅ Primary Vercel proxy succeeded! Processing TMB bus data...');
+            // Check if the response contains an error
+            if (jsonData.error) {
+                throw new Error('TMB API Error: ' + jsonData.message);
+            }
+            var buses = [];
+            // Process TMB iBus API response
+            if (jsonData && jsonData.data && jsonData.data.nearstops) {
+                jsonData.data.nearstops.forEach(function(stop) {
+                    if (stop.buses && Array.isArray(stop.buses)) {
+                        stop.buses.forEach(function(bus, index) {
+                            try {
+                                var lat = stop.lat;
+                                var lng = stop.lon;
+                                var routeId = bus.line || 'Unknown';
+                                var busId = bus.bus || index.toString();
+                                var destination = bus.destination || '';
+                                var timeArrival = bus['t-in-min'] || bus['t-in-s'] || 0;
+
+                                if (typeof lat === 'number' && typeof lng === 'number' &&
+                                    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                    lat !== 0 && lng !== 0) {
+
+                                    buses.push({
+                                        id: busId + '-' + stop.code,
+                                        label: routeId + ' → ' + destination,
+                                        lat: lat,
+                                        lng: lng,
+                                        route: routeId,
+                                        destination: destination,
+                                        stopName: stop.street_name || '',
+                                        stopCode: stop.code || '',
+                                        timeToArrival: timeArrival,
+                                        status: 'At stop',
+                                        timestamp: new Date().getTime()
+                                    });
+                                }
+                            } catch (error) {
+                                console.warn('Error processing TMB bus at stop', stop.code, ':', error, bus);
+                            }
+                        });
+                    }
+                });
+            }
+            if (buses.length > 0) {
+                console.log('🚌 SUCCESS: Extracted', buses.length, 'TMB buses from primary Vercel proxy!');
+                return buses;
+            } else {
+                throw new Error('No bus data available from primary Vercel proxy');
+            }
+        })
+        .catch(error => {
+            console.log('❌ Primary Vercel proxy failed:', error.message, '- trying secondary Vercel proxy...');
+            // Try the secondary Vercel URL
+            apiUrl = vercelUrls[1] + '/api/tmb-buses';
+            return fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Secondary Vercel proxy failed: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(jsonData => {
+                    console.log('✅ Secondary Vercel proxy succeeded! Processing TMB bus data...');
+                    // Check if the response contains an error
+                    if (jsonData.error) {
+                        throw new Error('TMB API Error: ' + jsonData.message);
+                    }
+                    var buses = [];
+                    // Process TMB iBus API response (same as above)
+                    if (jsonData && jsonData.data && jsonData.data.nearstops) {
+                        jsonData.data.nearstops.forEach(function(stop) {
+                            if (stop.buses && Array.isArray(stop.buses)) {
+                                stop.buses.forEach(function(bus, index) {
+                                    try {
+                                        var lat = stop.lat;
+                                        var lng = stop.lon;
+                                        var routeId = bus.line || 'Unknown';
+                                        var busId = bus.bus || index.toString();
+                                        var destination = bus.destination || '';
+                                        var timeArrival = bus['t-in-min'] || bus['t-in-s'] || 0;
+
+                                        if (typeof lat === 'number' && typeof lng === 'number' &&
+                                            lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                            lat !== 0 && lng !== 0) {
+
+                                            buses.push({
+                                                id: busId + '-' + stop.code,
+                                                label: routeId + ' → ' + destination,
+                                                lat: lat,
+                                                lng: lng,
+                                                route: routeId,
+                                                destination: destination,
+                                                stopName: stop.street_name || '',
+                                                stopCode: stop.code || '',
+                                                timeToArrival: timeArrival,
+                                                status: 'At stop',
+                                                timestamp: new Date().getTime()
+                                            });
+                                        }
+                                    } catch (error) {
+                                        console.warn('Error processing TMB bus at stop', stop.code, ':', error, bus);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    if (buses.length > 0) {
+                        console.log('🚌 SUCCESS: Extracted', buses.length, 'TMB buses from secondary Vercel proxy!');
+                        return buses;
+                    } else {
+                        throw new Error('No bus data available from secondary Vercel proxy');
+                    }
+                });
+        })
+        .catch(error => {
+            console.error('❌ Both Vercel proxies failed for TMB:', error.message);
+            throw error; // Re-throw to trigger the main catch block
+        })
+        .then(buses => {
+            displayTMBRealtimeBuses(buses);
+        })
+        .catch(error => {
+            console.error('❌ TMB Vercel proxies failed:', error.message);
+            // Continue to CORS proxy fallback
+            return fetchRealtimeTMBBusesFallback();
+        });
+
+    // Return early since we're handling the promise chain above
+    return;
 } else {
     // Local development
     apiUrl = '/api/tmb-buses';
@@ -3801,8 +3946,8 @@ function fetchRealtimeTMBBusesFallback() {
     var corsProxies = [
         'https://cors-anywhere.herokuapp.com/',
         'https://api.codetabs.com/v1/proxy?quest=',
-        'https://corsproxy.org/?',
-        'https://thingproxy.freeboard.io/fetch/'
+        'https://proxy.cors.sh/',
+        'https://corsproxy.io/?'
     ];
 
     var tmbUrl = 'https://api.tmb.cat/v1/itransit/bus/parades/108?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1';
