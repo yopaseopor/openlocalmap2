@@ -4788,103 +4788,37 @@ function updateBicingGBFSRealtimeStatus(status) {
 
 // Fetch real-time Bicing GBFS station data
 function fetchRealtimeBicingGBFS() {
-    // Use the GBFS API URL provided by the user
-    var bicingGBFSUrl = 'https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_status';
+    // GBFS API endpoints
+    var stationInfoUrl = 'https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_information';
+    var stationStatusUrl = 'https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_status';
 
-    console.log('🚴 Fetching Bicing GBFS data from:', bicingGBFSUrl);
+    console.log('🚴 Fetching Bicing GBFS data from station_information and station_status endpoints...');
 
-    return fetch(bicingGBFSUrl)
+    // First, fetch station information (static data: names, addresses, coordinates)
+    return fetch(stationInfoUrl)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Bicing GBFS API failed: ' + response.status + ' ' + response.statusText);
+                throw new Error('Bicing GBFS station_information API failed: ' + response.status + ' ' + response.statusText);
             }
             return response.json();
         })
-        .then(jsonData => {
-            console.log('✅ Bicing GBFS API succeeded! Processing station data...');
+        .then(stationInfoData => {
+            console.log('✅ Station information fetched successfully');
 
-            // Check if the response contains an error
-            if (jsonData.error) {
-                throw new Error('Bicing GBFS API Error: ' + jsonData.message);
-            }
-
-            var stations = [];
-
-            // Process Bicing GBFS API response - station_status endpoint
-            if (jsonData && jsonData.data && jsonData.data.stations) {
-                // GBFS station_status provides real-time availability data
-                // We need station information (names, coordinates) from station_information endpoint
-                var stationStatusData = jsonData.data.stations;
-
-                // For GBFS, we need to fetch station_information for complete data
-                // For now, we'll create stations with available data and note we need coordinates
-                stationStatusData.forEach(function(station) {
-                    try {
-                        console.log('🔍 Processing Bicing GBFS station', station.station_id, ':', station);
-
-                        var stationId = station.station_id;
-                        var bikes = station.num_bikes_available || 0;
-                        var docks = station.num_docks_available || 0;
-                        var capacity = station.capacity || (bikes + docks);
-                        var isInstalled = station.is_installed === 1 || station.is_installed === true;
-                        var isRenting = station.is_renting === 1 || station.is_renting === true;
-                        var isReturning = station.is_returning === 1 || station.is_returning === true;
-                        var lastReported = station.last_reported;
-
-                        // Determine station status
-                        var status = 'UNKNOWN';
-                        if (isInstalled && isRenting && isReturning) {
-                            status = 'IN_SERVICE';
-                        } else if (!isInstalled) {
-                            status = 'NOT_INSTALLED';
-                        } else if (!isRenting && !isReturning) {
-                            status = 'MAINTENANCE';
-                        }
-
-                        // For GBFS, coordinates come from station_information endpoint
-                        // For demonstration, we'll use placeholder coordinates (Barcelona center)
-                        // In production, you'd fetch: https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_information
-                        var lat = 41.3851 + (Math.random() - 0.5) * 0.02; // Random around Barcelona center
-                        var lng = 2.1734 + (Math.random() - 0.5) * 0.02;
-
-                        // Create station with GBFS data
-                        stations.push({
-                            id: stationId,
-                            code: stationId,
-                            name: 'Estació ' + stationId, // Would come from station_information
-                            address: 'Barcelona', // Would come from station_information
-                            lat: lat,
-                            lng: lng,
-                            capacity: capacity,
-                            bikes: bikes,
-                            slots: docks,
-                            mechanical: station.num_bikes_available_types?.mechanical || bikes, // GBFS separates mechanical/electric
-                            electric: station.num_bikes_available_types?.ebike || 0,
-                            status: status,
-                            lastReported: lastReported,
-                            timestamp: new Date().getTime()
-                        });
-
-                        console.log('✅ Processed Bicing GBFS station:', stationId, 'bikes:', bikes, 'docks:', docks);
-                    } catch (error) {
-                        console.warn('Error processing Bicing GBFS station:', station.station_id, ':', error, station);
+            // Then fetch station status (real-time availability data)
+            return fetch(stationStatusUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Bicing GBFS station_status API failed: ' + response.status + ' ' + response.statusText);
                     }
+                    return response.json();
+                })
+                .then(stationStatusData => {
+                    console.log('✅ Station status fetched successfully');
+
+                    // Combine the data from both endpoints
+                    return combineGBFSData(stationInfoData, stationStatusData);
                 });
-
-                // Note: In production, fetch station_information endpoint for real coordinates and names
-                console.log('📍 Note: Using placeholder coordinates. GBFS requires station_information for real coordinates.');
-            } else {
-                console.warn('❌ Bicing GBFS API response format unexpected:', jsonData);
-            }
-
-            if (stations.length > 0) {
-                console.log('🚴 SUCCESS: Extracted', stations.length, 'Bicing GBFS stations from API!');
-                return stations;
-            } else {
-                console.warn('GBFS API returned data but no stations found');
-                alert('🚴 No s\'han trobat estacions Bicing GBFS a les dades. L\'API pot estar temporalment indisponible.\n\nUtilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
-                return [];
-            }
         })
         .catch(error => {
             console.error('❌ Bicing GBFS API failed:', error.message);
@@ -4893,6 +4827,125 @@ function fetchRealtimeBicingGBFS() {
             console.log('🔄 Falling back to CORS proxies for Bicing GBFS...');
             return fetchRealtimeBicingGBFSFallback();
         });
+}
+
+// Combine data from station_information and station_status GBFS endpoints
+function combineGBFSData(stationInfoData, stationStatusData) {
+    var stations = [];
+
+    // Check if both responses have valid data
+    if (!stationInfoData || !stationInfoData.data || !stationInfoData.data.stations) {
+        throw new Error('Invalid station information data');
+    }
+
+    if (!stationStatusData || !stationStatusData.data || !stationStatusData.data.stations) {
+        throw new Error('Invalid station status data');
+    }
+
+    // Create maps for efficient lookup
+    var statusMap = {};
+    stationStatusData.data.stations.forEach(function(statusStation) {
+        statusMap[statusStation.station_id] = statusStation;
+    });
+
+    console.log('🔄 Combining data from', stationInfoData.data.stations.length, 'stations info and', stationStatusData.data.stations.length, 'status records...');
+
+    // Process each station from the information endpoint
+    stationInfoData.data.stations.forEach(function(infoStation) {
+        try {
+            var stationId = infoStation.station_id;
+            var statusStation = statusMap[stationId];
+
+            console.log('🔍 Processing Bicing GBFS station', stationId, '- has status:', !!statusStation);
+
+            // Extract static information
+            var lat = infoStation.lat;
+            var lng = infoStation.lon;
+            var name = infoStation.name || ('Estació ' + stationId);
+            var address = infoStation.address || '';
+            var capacity = infoStation.capacity || 0;
+
+            // Extract real-time status information (if available)
+            var bikes = 0;
+            var docks = 0;
+            var mechanical = 0;
+            var electric = 0;
+            var status = 'UNKNOWN';
+            var lastReported = null;
+
+            if (statusStation) {
+                bikes = statusStation.num_bikes_available || 0;
+                docks = statusStation.num_docks_available || 0;
+                capacity = statusStation.capacity || capacity || (bikes + docks);
+
+                // Handle bike types
+                if (statusStation.num_bikes_available_types) {
+                    mechanical = statusStation.num_bikes_available_types.mechanical || 0;
+                    electric = statusStation.num_bikes_available_types.ebike || 0;
+                } else {
+                    mechanical = bikes; // Fallback: assume all are mechanical if not specified
+                }
+
+                // Determine station operational status
+                var isInstalled = statusStation.is_installed === 1 || statusStation.is_installed === true;
+                var isRenting = statusStation.is_renting === 1 || statusStation.is_renting === true;
+                var isReturning = statusStation.is_returning === 1 || statusStation.is_returning === true;
+
+                if (isInstalled && isRenting && isReturning) {
+                    status = 'IN_SERVICE';
+                } else if (!isInstalled) {
+                    status = 'NOT_INSTALLED';
+                } else if (!isRenting && !isReturning) {
+                    status = 'MAINTENANCE';
+                }
+
+                lastReported = statusStation.last_reported;
+            } else {
+                console.warn('No status data available for station', stationId);
+            }
+
+            // Validate coordinates
+            if (typeof lat === 'number' && typeof lng === 'number' &&
+                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                lat !== 0 && lng !== 0) {
+
+                // Create complete station object with combined data
+                stations.push({
+                    id: stationId,
+                    code: stationId,
+                    name: name,
+                    address: address,
+                    lat: lat,
+                    lng: lng,
+                    capacity: capacity,
+                    bikes: bikes,
+                    slots: docks,
+                    mechanical: mechanical,
+                    electric: electric,
+                    status: status,
+                    lastReported: lastReported,
+                    timestamp: new Date().getTime(),
+                    // Additional metadata
+                    hasRealtimeData: !!statusStation,
+                    source: 'GBFS_combined'
+                });
+
+                console.log('✅ Processed Bicing GBFS station:', stationId, name, 'at', lat, lng, '- bikes:', bikes, 'capacity:', capacity);
+            } else {
+                console.warn('❌ Invalid coordinates for Bicing GBFS station:', stationId, '- lat:', lat, 'lng:', lng);
+            }
+        } catch (error) {
+            console.warn('Error processing Bicing GBFS station:', infoStation.station_id, ':', error, infoStation);
+        }
+    });
+
+    if (stations.length > 0) {
+        console.log('🚴 SUCCESS: Combined', stations.length, 'Bicing GBFS stations with complete information!');
+        return stations;
+    } else {
+        console.warn('No valid stations found after combining GBFS data');
+        return [];
+    }
 }
 
 // Display Bicing GBFS stations on map with colored status visualization
@@ -5166,41 +5219,66 @@ function processBicingGBFSManualJsonData() {
         var jsonData = JSON.parse(jsonTextarea.value.trim());
         console.log('Processing manual Bicing GBFS JSON data...');
 
-        // Process Bicing GBFS API format (same as fetchRealtimeBicingGBFS)
         var stations = [];
 
-        if (jsonData && jsonData.data && jsonData.data.stations) {
-            jsonData.data.stations.forEach(function(station) {
-                var stationId = station.station_id;
-                var bikes = station.num_bikes_available || 0;
-                var docks = station.num_docks_available || 0;
-                var capacity = station.capacity || (bikes + docks);
+        // Check if this is combined data from both endpoints
+        if (jsonData.stationInfo && jsonData.stationStatus) {
+            // User provided data from both endpoints
+            console.log('Detected combined GBFS data from both endpoints');
+            stations = combineGBFSData(jsonData.stationInfo, jsonData.stationStatus);
+        } else if (jsonData.data && jsonData.data.stations && jsonData.data.stations[0] && jsonData.data.stations[0].name) {
+            // This looks like station_information data
+            console.log('Detected station_information data');
+            var mockStatusData = {data: {stations: []}};
+            stations = combineGBFSData(jsonData, mockStatusData);
+        } else if (jsonData.data && jsonData.data.stations && jsonData.data.stations[0] && jsonData.data.stations[0].num_bikes_available !== undefined) {
+            // This looks like station_status data
+            console.log('Detected station_status data');
+            var mockInfoData = {data: {stations: []}};
+            stations = combineGBFSData(mockInfoData, jsonData);
+        } else {
+            // Fallback: try to process as combined data or single endpoint
+            console.log('Attempting fallback processing');
+            if (jsonData && jsonData.data && jsonData.data.stations) {
+                jsonData.data.stations.forEach(function(station) {
+                    var stationId = station.station_id || station.id;
+                    var bikes = station.num_bikes_available || station.bikes || 0;
+                    var docks = station.num_docks_available || station.slots || 0;
+                    var capacity = station.capacity || (bikes + docks);
 
-                // For manual data entry, we'll use placeholder coordinates
-                var lat = 41.3851 + (Math.random() - 0.5) * 0.02;
-                var lng = 2.1734 + (Math.random() - 0.5) * 0.02;
+                    // Try to get coordinates from station data
+                    var lat = station.lat || station.latitude;
+                    var lng = station.lon || station.longitude;
 
-                if (typeof lat === 'number' && typeof lng === 'number' &&
-                    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                    // If no coordinates, use placeholder
+                    if (!lat || !lng) {
+                        lat = 41.3851 + (Math.random() - 0.5) * 0.02;
+                        lng = 2.1734 + (Math.random() - 0.5) * 0.02;
+                    }
 
-                    stations.push({
-                        id: stationId,
-                        code: stationId,
-                        name: 'Estació ' + stationId,
-                        address: 'Barcelona',
-                        lat: lat,
-                        lng: lng,
-                        capacity: capacity,
-                        bikes: bikes,
-                        slots: docks,
-                        mechanical: station.num_bikes_available_types?.mechanical || bikes,
-                        electric: station.num_bikes_available_types?.ebike || 0,
-                        status: station.is_installed && station.is_renting && station.is_returning ? 'IN_SERVICE' : 'UNKNOWN',
-                        lastReported: station.last_reported || null,
-                        timestamp: new Date().getTime()
-                    });
-                }
-            });
+                    if (typeof lat === 'number' && typeof lng === 'number' &&
+                        lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+
+                        stations.push({
+                            id: stationId,
+                            code: stationId,
+                            name: station.name || ('Estació ' + stationId),
+                            address: station.address || 'Barcelona',
+                            lat: lat,
+                            lng: lng,
+                            capacity: capacity,
+                            bikes: bikes,
+                            slots: docks,
+                            mechanical: station.num_bikes_available_types?.mechanical || station.mechanical || bikes,
+                            electric: station.num_bikes_available_types?.ebike || station.electric || 0,
+                            status: station.status || (station.is_installed && station.is_renting && station.is_returning ? 'IN_SERVICE' : 'UNKNOWN'),
+                            lastReported: station.last_reported || station.lastReported || null,
+                            timestamp: new Date().getTime(),
+                            source: 'manual'
+                        });
+                    }
+                });
+            }
         }
 
         if (stations.length > 0) {
@@ -5215,11 +5293,11 @@ function processBicingGBFSManualJsonData() {
 
             alert('Dades processades! Veus ' + stations.length + ' estacions Bicing GBFS reals al mapa.');
         } else {
-            alert('No s\'han trobat dades d\'estacions vàlides en el JSON. Comprova que has copiat les dades correctes.');
+            alert('No s\'han trobat dades d\'estacions vàlides en el JSON. Comprova que has copiat les dades correctes.\n\nFormat esperat:\n- Dades de station_status\n- Dades de station_information\n- O objecte combinat: {stationInfo: {...}, stationStatus: {...}}');
         }
     } catch (error) {
         console.error('Error processing manual Bicing GBFS JSON data:', error);
-        alert('Error processant les dades JSON. Comprova que el format és correcte.');
+        alert('Error processant les dades JSON. Comprova que el format és correcte.\n\nDetalls: ' + error.message);
     }
 }
 
