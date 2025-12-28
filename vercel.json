@@ -5,9 +5,7 @@
       "src": "api/renfe-trains.js",
       "use": "@vercel/node"
     },
-    {
-      "src": "api/tmb-buses.js",
-      "use": "@vercel/node"
+      
     },
     {
       "src": "server.js",
@@ -24,12 +22,11 @@
       "dest": "/api/tmb-buses.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
+      
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "/docs/index.html"
     }
   ],
   "headers": [
