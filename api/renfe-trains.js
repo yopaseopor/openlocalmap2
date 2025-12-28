@@ -1,17 +1,5 @@
 // Vercel serverless function to proxy RENFE GTFS-RT JSON endpoint
 
-const https = require('https');
-
-const makeRequest = (url) => {
-  return new Promise((resolve, reject) => {
-    https.get(url, { timeout: 10000 }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, data }));
-    }).on('error', reject);
-  });
-};
-
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -26,18 +14,24 @@ module.exports = async (req, res) => {
 
     console.log('🚂 RENFE proxy request to:', renfeUrl);
 
-    const response = await makeRequest(renfeUrl);
+    const response = await fetch(renfeUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Vercel-Proxy/1.0',
+        'Accept': 'application/json'
+      }
+    });
 
-    if (response.status !== 200) {
-      console.error('RENFE API error:', response.status, response.data);
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error('RENFE API error:', response.status, text);
       return res.status(response.status).json({
         error: 'RENFE API error',
         status: response.status,
-        message: response.data
+        message: text
       });
     }
 
-    const data = JSON.parse(response.data);
+    const data = await response.json();
     res.status(200).json(data);
   } catch (err) {
     console.error('❌ RENFE proxy error:', err.message);
