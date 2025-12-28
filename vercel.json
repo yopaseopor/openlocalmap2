@@ -2,27 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/renfe-trains.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/tmb-buses.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/api/renfe-trains",
-      "dest": "/api/renfe-trains.js"
-    },
-    {
-      "src": "/api/tmb-buses",
-      "dest": "/api/tmb-buses.js"
-    },
     {
       "src": "/api/(.*)",
       "dest": "/server.js"
