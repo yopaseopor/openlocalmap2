@@ -2,6 +2,14 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+// Helper to set CORS headers on any response
+function setCorsHeaders(res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400');
+}
+
 // Enable CORS for all routes (must run before all other middleware)
 app.use((req, res, next) => {
   // IMPORTANT: Set CORS headers immediately on every request
@@ -12,6 +20,7 @@ app.use((req, res, next) => {
   
   // Respond to preflight requests
   if (req.method === 'OPTIONS') {
+    setCorsHeaders(res);
     return res.sendStatus(204);
   }
   next();
@@ -38,6 +47,7 @@ app.get('/api/renfe-trains', async (req, res) => {
 
     if (!response.ok) {
       console.warn(`⚠️ RENFE API returned ${response.status}: ${response.statusText}`);
+      setCorsHeaders(res);
       return res.status(response.status).json({
         error: 'RENFE API error',
         status: response.status,
@@ -49,11 +59,13 @@ app.get('/api/renfe-trains', async (req, res) => {
     const data = await response.json();
     console.log('✅ Successfully fetched RENFE data:', data.entity ? data.entity.length : 0, 'trains');
     
+    setCorsHeaders(res);
     res.json(data);
   } catch (error) {
     console.error('❌ Error fetching RENFE data:', error.message);
     
     // Return error response with explicit CORS headers
+    setCorsHeaders(res);
     res.status(500).json({
       error: 'Failed to fetch RENFE data',
       message: error.message,
@@ -80,6 +92,7 @@ app.get('/api/fgc-trains', async (req, res) => {
 
     if (!response.ok) {
       console.warn(`⚠️ FGC API returned ${response.status}: ${response.statusText}`);
+      setCorsHeaders(res);
       return res.status(response.status).json({
         error: 'FGC API error',
         status: response.status,
@@ -91,11 +104,13 @@ app.get('/api/fgc-trains', async (req, res) => {
     const data = await response.json();
     console.log('✅ Successfully fetched FGC data:', data.results ? data.results.length : 0, 'trains');
     
+    setCorsHeaders(res);
     res.json(data);
   } catch (error) {
     console.error('❌ Error fetching FGC data:', error.message);
 
     // Return error response with explicit CORS headers
+    setCorsHeaders(res);
     res.status(500).json({
       error: 'Failed to fetch FGC data',
       message: error.message,
@@ -108,6 +123,7 @@ app.get('/api/fgc-trains', async (req, res) => {
 app.get('*', (req, res) => {
   // Skip API routes
   if (req.path.startsWith('/api/')) {
+    setCorsHeaders(res);
     return res.status(404).json({error: 'API endpoint not found'});
   }
   res.sendFile(path.join(__dirname, 'docs', 'index.html'));
