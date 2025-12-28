@@ -164,6 +164,53 @@ app.get('/api/tmb-buses', async (req, res) => {
   }
 });
 
+// Bicing API proxy endpoint
+app.get('/api/bicing', async (req, res) => {
+  try {
+    console.log('🚴 Fetching Bicing station data from API...');
+
+    // Bicing Open Data Barcelona API endpoint
+    const bicingUrl = 'https://opendata-ajuntament.barcelona.cat/data/dataset/6aa3416d-ce1a-494d-861b-7bd07f069600/resource/1b215493-9e63-4a12-8980-2d7e0fa19f85/download';
+    const token = 'bacb0a6a4a847aa4ef512d28f9599f28e9e135d12ee6dc805fcae008a49844f8';
+
+    const response = await fetch(bicingUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json',
+        'X-Auth-Token': token
+      },
+      timeout: 30000 // 30 second timeout for Vercel
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Bicing API returned ${response.status}: ${response.statusText}`);
+      setCorsHeaders(res);
+      return res.status(response.status).json({
+        error: 'Bicing API error',
+        status: response.status,
+        message: response.statusText,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const data = await response.json();
+    console.log('✅ Successfully fetched Bicing data:', data.data?.stations?.length || 0, 'stations');
+
+    setCorsHeaders(res);
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Error fetching Bicing data:', error.message);
+
+    // Return error response with explicit CORS headers
+    setCorsHeaders(res);
+    res.status(500).json({
+      error: 'Failed to fetch Bicing data',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Handle all routes by serving index.html (for SPA routing)
 // API routes are handled above, so this only handles non-API routes
 app.get('*', (req, res) => {
@@ -190,4 +237,5 @@ app.listen(PORT, () => {
   console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
   console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
   console.log(`🚍 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
+  console.log(`🚴 Bicing API proxy: http://localhost:${PORT}/api/bicing`);
 });
