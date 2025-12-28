@@ -17,11 +17,11 @@
   "routes": [
     {
       "src": "/api/renfe-trains(?:/?|\\?.*)",
-      "dest": "/api/renfe-trains.js"
+      "dest": "/server.js"
     },
     {
       "src": "/api/tmb-buses(?:/?|\\?.*)",
-      "dest": "/api/tmb-buses.js"
+      "dest": "/server.js"
     },
     {
       "src": "/api/(.*)",
