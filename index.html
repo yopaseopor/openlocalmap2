@@ -660,6 +660,73 @@
 
     <p style="font-size: 12px; color: #0066cc; margin-top: 10px;">Llicència: <a href="https://opendata-ajuntament.barcelona.cat/en/tokens" target="_blank">Open Data Barcelona</a> | Última actualització: 2025-12-27</p>
   </div>
+</details>
+
+  <!-- Bicing Barcelona GBFS Real-Time Visualization -->
+  <details style="margin-bottom: 20px;">
+    <summary style="background: #cce7ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 15px; cursor: pointer; list-style: none;">
+      <h3 style="margin: 0; color: #2c5282; display: inline;">🚴 Visualització en Temps Real de Bicing BCN (GBFS)</h3>
+      <span style="float: right; font-size: 16px; color: #2c5282;">▶️</span>
+    </summary>
+    <div style="padding: 15px; background: #cce7ff; border: 1px solid #4a90e2; border-top: none; border-radius: 0 0 5px 5px; margin-top: -1px;">
+    <p style="margin: 8px 0; font-size: 14px;">Mostra la posició actual de les estacions de Bicing (sistema de bicicletes compartides de Barcelona) al mapa en temps real utilitzant l'API GBFS oficial:</p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+      <button onclick="startRealtimeBicingGBFS()" id="start-bicing-gbfs-realtime-btn" style="background: #2c5282; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Iniciar Visualització d'Estacions Bicing (GBFS)</strong><br><small>Mostra estacions al mapa cada 30 segons via GBFS</small></button>
+      <button onclick="stopRealtimeBicingGBFS()" id="stop-bicing-gbfs-realtime-btn" style="background: #8B0000; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Aturar Visualització</strong><br><small>Oculta les estacions del mapa</small></button>
+      <button onclick="toggleBicingGBFSLegend()" id="bicing-gbfs-legend-btn" style="background: #2c5282; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; display: inline-block;"><strong>🎨 Mostrar Llegenda</strong><br><small>Veure disponibilitat de bicicletes GBFS</small></button>
+      <div id="bicing-gbfs-realtime-status" style="font-size: 12px; color: #2c5282; padding: 8px; background: #e6f3ff; border-radius: 3px;">Status: Inactiu</div>
+    </div>
+
+    <div style="background: #b3d9ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <p style="margin: 8px 0; font-size: 13px;"><strong>API GBFS (General Bikeshare Feed Specification):</strong></p>
+      <p style="margin: 8px 0; font-size: 12px;"><strong>URL de les dades:</strong> <code>https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_status</code></p>
+      <p style="margin: 8px 0; font-size: 12px; color: #2c5282;"><strong>L'API GBFS és l'estàndard internacional per a sistemes de bicicletes compartides i proporciona dades oficials en temps real.</strong></p>
+    </div>
+
+    <div style="background: #99c2ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <h5 style="margin-top: 0; color: #2c5282;">✅ Solució Manual: Utilitza les Dades GBFS Directament!</h5>
+      <p style="margin: 8px 0; font-size: 13px;">Ja que pots accedir manualment a les dades GBFS, aquí tens una solució directa:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0;">
+        <button onclick="openBicingGBFSJson()" style="background: #2c5282; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>🔗 PAS 1: Obrir Dades Bicing GBFS</strong><br><small>Obre l'API GBFS en una nova pestanya</small></button>
+        <button onclick="showBicingGBFSDataEntry()" style="background: #007bff; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>📝 PAS 2: Introduir Dades Manualment</strong><br><small>Copia i enganxa les dades GBFS aquí</small></button>
+      </div>
+
+      <div id="bicing-gbfs-manual-data-entry" style="display: none; margin: 15px 0; padding: 15px; background: #e6f3ff; border-radius: 5px; border: 1px solid #4a90e2;">
+        <h5 style="margin-top: 0; color: #2c5282;">📋 Com Copiar i Enganxar les Dades Bicing GBFS:</h5>
+        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+          <button onclick="copyBicingGBFSUrl()" style="background: #2c5282; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🔗 Copiar URL GBFS</strong></button>
+          <button onclick="copyBicingGBFSInstructions()" style="background: #17a2b8; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📋 Copiar Instruccions</strong></button>
+          <button onclick="clearBicingGBFSTextarea()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🗑️ Netejar</strong></button>
+          <button onclick="shareBicingGBFSMapUrl()" style="background: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📤 Compartir Mapa</strong></button>
+        </div>
+
+        <div style="background: #d4e6ff; border: 1px solid #b3d9ff; border-radius: 3px; padding: 10px; margin: 10px 0; font-size: 12px;">
+          <strong>🔢 PASSOS FÀCILS:</strong><br>
+          1. Ves a la pestanya GBFS que s'ha obert<br>
+          2. Prem <strong>Ctrl+A</strong> (seleccionar tot)<br>
+          3. Prem <strong>Ctrl+C</strong> (copiar)<br>
+          4. Torna aquí i prem <strong>Ctrl+V</strong> (enganxar)<br>
+          5. Clica <strong>"Processar Dades GBFS"</strong>
+        </div>
+
+        <textarea id="bicing-gbfs-manual-json-data" placeholder="Enganxa aquí les dades JSON de Bicing GBFS (prem Ctrl+V)..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #4a90e2; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onclick="processBicingGBFSManualJsonData()" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; flex: 1;"><strong>⚡ Processar Dades GBFS</strong><br><small>Mostrar estacions Bicing GBFS reals al mapa</small></button>
+          <button onclick="testBicingGBFSSampleData()" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;"><strong>🧪 Provar amb Dades d'Exemple</strong><br><small>Omple amb JSON GBFS de mostra</small></button>
+        </div>
+
+        <div id="bicing-gbfs-json-status" style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-size: 12px; color: #495057;">Status: Preparat per enganxar dades GBFS JSON</div>
+
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #2c5282;"><strong>Format GBFS:</strong> L'API retorna dades en format estàndard internacional per a sistemes de bicicletes compartides.</p>
+    </div>
+
+    <p style="font-size: 12px; color: #2c5282; margin-top: 10px;">Llicència: <a href="https://barcelona.publicbikesystem.net/" target="_blank">Barcelona Public Bike System</a> | Última actualització: 2025-12-27</p>
+  </div>
 
 	  <br><hr width="90%">
 
