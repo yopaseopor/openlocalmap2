@@ -3962,23 +3962,19 @@ function fetchRealtimeBicing() {
     // Detect deployment environment
     var hostname = window.location.hostname;
     var isGitHubPages = hostname.includes('github.io');
-    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
+    var isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
     // Use appropriate API endpoint based on environment
     var apiUrl;
-    if (isVercel) {
-        // Use Vercel-deployed API
-        apiUrl = '/api/bicing';
-        console.log('🚴 Fetching Bicing data via Vercel API...');
-    } else if (isGitHubPages) {
-        // On GitHub Pages, show message and use CORS proxy fallback
-        console.log('🚴 GitHub Pages detected - no server proxy available, will use CORS proxies or manual entry');
-        alert('🚴 GitHub Pages: No server proxy available. The Bicing API requires server-side proxy due to CORS restrictions.\n\nPlease use the "📝 Introduir Dades Manualment" option:\n1. Click "🔗 PAS 1: Obrir Dades Bicing"\n2. Copy the JSON data\n3. Click "📝 PAS 2: Introduir Dades Manualment"\n4. Paste and click "⚡ Processar Dades Reals"');
-        throw new Error('GitHub Pages deployment - no server proxy available');
-    } else {
-        // Local development
+    if (isLocalhost) {
+        // Local development - use server proxy
         apiUrl = '/api/bicing';
         console.log('🚴 Fetching Bicing data via local proxy server...');
+    } else {
+        // GitHub Pages or other static hosting - no server proxy available
+        console.log('🚴 Static hosting detected - no server proxy available, will use manual entry');
+        alert('🚴 Bicing API requires server-side proxy due to CORS restrictions.\n\nPlease use the "📝 Introduir Dades Manualment" option:\n1. Click "🔗 PAS 1: Obrir Dades Bicing"\n2. Copy the JSON data\n3. Click "📝 PAS 2: Introduir Dades Manualment"\n4. Paste and click "⚡ Processar Dades Reals"');
+        throw new Error('Static hosting deployment - no server proxy available');
     }
 
     return fetch(apiUrl)
