@@ -3971,14 +3971,9 @@ function fetchRealtimeBicing() {
         apiUrl = '/api/bicing';
         console.log('🚴 Fetching Bicing data via local proxy server...');
     } else {
-        // GitHub Pages or other static hosting - no server proxy available
-        console.log('🚴 Static hosting detected - no server proxy available, will use manual entry');
-        alert('🚴 Bicing API requires server-side proxy due to CORS restrictions.\n\nOpening manual data entry form automatically...');
-        // Automatically show the manual data entry form
-        showBicingDataEntry();
-        // Update status to guide user
-        updateBicingRealtimeStatus('Utilitza l\'opció "📝 Introduir Dades Manualment" per carregar estacions Bicing');
-        return Promise.resolve([]);
+        // GitHub Pages - try CORS proxies first, then manual entry
+        console.log('🚴 GitHub Pages detected - trying CORS proxies for Bicing...');
+        return fetchRealtimeBicingFallback();
     }
 
     return fetch(apiUrl)
