@@ -122,9 +122,9 @@ app.get('/api/fgc-trains', async (req, res) => {
 // TMB API proxy endpoint
 app.get('/api/tmb-buses', async (req, res) => {
   try {
-    console.log('🚌 Fetching TMB bus data from API...');
+    console.log('🚇 Fetching TMB metro data from API...');
 
-    // TMB iBus API endpoint with provided credentials
+    // TMB iBus API endpoint - same proxy structure as RENFE/FGC but for bus data
     const tmbUrl = 'https://api.tmb.cat/v1/ibus/stops/nearby?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1&radius=1000';
 
     const response = await fetch(tmbUrl, {
@@ -147,7 +147,7 @@ app.get('/api/tmb-buses', async (req, res) => {
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched TMB data:', data.data && data.data.nearstops ? data.data.nearstops.length : 0, 'stops');
+    console.log('✅ Successfully fetched TMB data:', data.data && data.data.nearstops ? data.data.nearstops.length : 0, 'bus stops');
 
     setCorsHeaders(res);
     res.json(data);
@@ -193,5 +193,5 @@ app.listen(PORT, () => {
   console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
   console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
   console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
-  console.log(`🚌 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
+  console.log(`� TMB API proxy: http://localhost:${PORT}/api/tmb-trains`);
 });
