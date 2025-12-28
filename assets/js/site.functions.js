@@ -3973,8 +3973,12 @@ function fetchRealtimeBicing() {
     } else {
         // GitHub Pages or other static hosting - no server proxy available
         console.log('🚴 Static hosting detected - no server proxy available, will use manual entry');
-        alert('🚴 Bicing API requires server-side proxy due to CORS restrictions.\n\nPlease use the "📝 Introduir Dades Manualment" option:\n1. Click "🔗 PAS 1: Obrir Dades Bicing"\n2. Copy the JSON data\n3. Click "📝 PAS 2: Introduir Dades Manualment"\n4. Paste and click "⚡ Processar Dades Reals"');
-        throw new Error('Static hosting deployment - no server proxy available');
+        alert('🚴 Bicing API requires server-side proxy due to CORS restrictions.\n\nOpening manual data entry form automatically...');
+        // Automatically show the manual data entry form
+        showBicingDataEntry();
+        // Update status to guide user
+        updateBicingRealtimeStatus('Utilitza l\'opció "📝 Introduir Dades Manualment" per carregar estacions Bicing');
+        return Promise.resolve([]);
     }
 
     return fetch(apiUrl)
