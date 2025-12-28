@@ -165,12 +165,8 @@ app.get('/api/tmb-buses', async (req, res) => {
 });
 
 // Handle all routes by serving index.html (for SPA routing)
+// API routes are handled above, so this only handles non-API routes
 app.get('*', (req, res) => {
-  // Skip API routes
-  if (req.path.startsWith('/api/')) {
-    setCorsHeaders(res);
-    return res.status(404).json({error: 'API endpoint not found'});
-  }
   res.sendFile(path.join(__dirname, 'docs', 'index.html'));
 });
 
