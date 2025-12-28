@@ -3094,7 +3094,7 @@ function updateTMBRealtimeStatus(status) {
 }
 
 // Fetch real-time TMB bus positions
-function fetchRealtimeTMBBuses() {
+function fetchRealtimeTMBBuses(stopId) {
     // Detect deployment environment
     var hostname = window.location.hostname;
     var isGitHubPages = hostname.includes('github.io');
@@ -3114,6 +3114,12 @@ function fetchRealtimeTMBBuses() {
         // Local development
         apiUrl = '/api/tmb-buses';
         console.log('🚌 Fetching TMB bus data via local proxy server...');
+    }
+
+    // If caller provided a stopId, request stop predictions (previsioParada)
+    if (stopId) {
+        apiUrl += (apiUrl.indexOf('?') === -1 ? '?' : '&') + 'stopId=' + encodeURIComponent(stopId);
+        console.log('🚌 Fetching TMB stop predictions for stopId', stopId);
     }
 
     return fetch(apiUrl)
