@@ -1,6 +1,8 @@
 // Vercel serverless function to proxy TMB iBus API requests
 // Supports using environment variables TMB_APP_ID and TMB_APP_KEY
 
+const fetch = require('node-fetch');
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
