@@ -1335,10 +1335,10 @@ function fetchRealtimeTrains() {
         apiUrl = '/api/renfe-trains';
         console.log('🚂 Fetching RENFE data via Vercel API...');
     } else if (isGitHubPages) {
-        // On GitHub Pages, use external Vercel API proxy (dlen)
-        var vercelUrl = 'https://openlocalmap2-dlen.vercel.app';
+        // On GitHub Pages, use our Vercel deployment as proxy
+        var vercelUrl = 'https://openlocalmap2.vercel.app';
         apiUrl = vercelUrl + '/api/renfe-trains';
-        console.log('🚂 Fetching RENFE data via Vercel proxy from GitHub Pages...');
+        console.log('🚂 Fetching RENFE data via openlocalmap2.vercel.app proxy from GitHub Pages...');
     } else {
         // Local development
         apiUrl = '/api/renfe-trains';
@@ -3107,9 +3107,9 @@ function fetchRealtimeTMBBuses() {
         apiUrl = '/api/tmb-buses';
         console.log('🚌 Fetching TMB bus data via Vercel API...');
     } else if (isGitHubPages) {
-        // On GitHub Pages, use primary Vercel API proxy (dlen)
-        apiUrl = 'https://openlocalmap2-dlen.vercel.app/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
+        // On GitHub Pages, use our Vercel deployment as proxy
+        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-buses';
+        console.log('🚌 Fetching TMB bus data via openlocalmap2.vercel.app proxy from GitHub Pages...');
     } else {
         // Local development
         apiUrl = '/api/tmb-buses';
