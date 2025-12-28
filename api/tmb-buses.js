@@ -26,10 +26,16 @@ module.exports = async (req, res) => {
     const radius = req.query.radius || '1000';
     const lat = req.query.lat;
     const lon = req.query.lon;
+    const stopId = req.query.stopId || req.query.stop_id || req.query.id;
 
-    // If lat/lon provided, use nearby endpoint; otherwise use a stable parades endpoint
+    // Build TMB URL
     let tmbUrl;
-    if (lat && lon) {
+
+    // If a specific stop id provided, call the stop predictions endpoint (previsioParada)
+    if (stopId) {
+      tmbUrl = `https://api.tmb.cat/v1/ibus/stops/${encodeURIComponent(stopId)}/predictions?app_id=${appId}&app_key=${appKey}`;
+    } else if (lat && lon) {
+      // If lat/lon provided, use nearby endpoint
       tmbUrl = `https://api.tmb.cat/v1/ibus/stops/nearby?app_id=${appId}&app_key=${appKey}&radius=${radius}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
     } else {
       // Default to a known stop endpoint (parades/108) which does not require lat/lon
