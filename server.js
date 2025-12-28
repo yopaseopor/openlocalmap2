@@ -103,7 +103,7 @@ app.get('/api/fgc-trains', async (req, res) => {
 
     const data = await response.json();
     console.log('✅ Successfully fetched FGC data:', data.results ? data.results.length : 0, 'trains');
-    
+
     setCorsHeaders(res);
     res.json(data);
   } catch (error) {
@@ -113,6 +113,51 @@ app.get('/api/fgc-trains', async (req, res) => {
     setCorsHeaders(res);
     res.status(500).json({
       error: 'Failed to fetch FGC data',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// TMB API proxy endpoint
+app.get('/api/tmb-buses', async (req, res) => {
+  try {
+    console.log('🚌 Fetching TMB bus data from API...');
+
+    // TMB iBus API endpoint with provided credentials
+    const tmbUrl = 'https://api.tmb.cat/v1/ibus/stops/nearby?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1&radius=1000';
+
+    const response = await fetch(tmbUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout for Vercel
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ TMB API returned ${response.status}: ${response.statusText}`);
+      setCorsHeaders(res);
+      return res.status(response.status).json({
+        error: 'TMB API error',
+        status: response.status,
+        message: response.statusText,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const data = await response.json();
+    console.log('✅ Successfully fetched TMB data:', data.data && data.data.nearstops ? data.data.nearstops.length : 0, 'stops');
+
+    setCorsHeaders(res);
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Error fetching TMB data:', error.message);
+
+    // Return error response with explicit CORS headers
+    setCorsHeaders(res);
+    res.status(500).json({
+      error: 'Failed to fetch TMB data',
       message: error.message,
       timestamp: new Date().toISOString()
     });
@@ -148,4 +193,5 @@ app.listen(PORT, () => {
   console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
   console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
   console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
+  console.log(`🚌 TMB API proxy: http://localhost:${PORT}/api/tmb-buses`);
 });

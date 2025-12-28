@@ -3030,4 +3030,777 @@ window.showFGCDataEntry = showFGCDataEntry;
 window.processFGCManualJsonData = processFGCManualJsonData;
 window.toggleFGCTrainLegend = toggleFGCTrainLegend;
 
+// TMB Real-Time Bus Visualization
+var tmbRealtimeBusInterval = null;
+var tmbRealtimeBusMarkers = [];
+var tmbRealtimeBusLayer = null;
+var tmbBusesByRoute = {}; // Global variable for TMB legend toggle functionality
+var tmbRouteInfo = {}; // Global variable for TMB route information
+
+// Start TMB real-time bus visualization
+function startRealtimeTMBBuses() {
+    if (tmbRealtimeBusInterval) {
+        clearInterval(tmbRealtimeBusInterval);
+    }
+
+    // Initial load
+    fetchRealtimeTMBBuses().then(function(buses) {
+        displayTMBRealtimeBuses(buses);
+    });
+
+    // Set up periodic updates every 30 seconds (TMB data refresh rate)
+    tmbRealtimeBusInterval = setInterval(function() {
+        fetchRealtimeTMBBuses().then(function(buses) {
+            displayTMBRealtimeBuses(buses);
+        });
+    }, 30000);
+
+    // Update UI
+    document.getElementById('start-tmb-realtime-btn').style.display = 'none';
+    document.getElementById('stop-tmb-realtime-btn').style.display = 'inline-block';
+    document.getElementById('tmb-legend-btn').style.display = 'inline-block';
+    updateTMBRealtimeStatus('Carregant autobusos TMB en temps real...');
+}
+
+// Stop TMB real-time bus visualization
+function stopRealtimeTMBBuses() {
+    if (tmbRealtimeBusInterval) {
+        clearInterval(tmbRealtimeBusInterval);
+        tmbRealtimeBusInterval = null;
+    }
+
+    // Clear all bus markers
+    tmbRealtimeBusMarkers.forEach(function(marker) {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    tmbRealtimeBusMarkers = [];
+
+    // Update UI
+    document.getElementById('start-tmb-realtime-btn').style.display = 'inline-block';
+    document.getElementById('stop-tmb-realtime-btn').style.display = 'none';
+    updateTMBRealtimeStatus('Inactiu');
+}
+
+// Update TMB real-time status display
+function updateTMBRealtimeStatus(status) {
+    var statusElement = document.getElementById('tmb-realtime-status');
+    if (statusElement) {
+        statusElement.textContent = 'Status: ' + status;
+    }
+}
+
+// Fetch real-time TMB bus positions
+function fetchRealtimeTMBBuses() {
+    // Detect deployment environment
+    var hostname = window.location.hostname;
+    var isGitHubPages = hostname.includes('github.io');
+    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
+
+    // Use appropriate API endpoint based on environment
+    var apiUrl;
+    if (isVercel) {
+        // Use Vercel-deployed API
+        apiUrl = '/api/tmb-buses';
+        console.log('🚌 Fetching TMB bus data via Vercel API...');
+    } else if (isGitHubPages) {
+        // On GitHub Pages, use Vercel API proxy
+        var vercelUrl = 'https://openlocalmap2-a2bfnl66b-yopaseopors-projects.vercel.app';
+        apiUrl = vercelUrl + '/api/tmb-buses';
+        console.log('🚌 Fetching TMB bus data via Vercel proxy from GitHub Pages...');
+    } else {
+        // Local development
+        apiUrl = '/api/tmb-buses';
+        console.log('🚌 Fetching TMB bus data via local proxy server...');
+    }
+
+    return fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('TMB API proxy failed: ' + response.status + ' ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            console.log('✅ TMB API proxy succeeded! Processing TMB bus data...');
+
+            // Check if the response contains an error
+            if (jsonData.error) {
+                throw new Error('TMB API Error: ' + jsonData.message);
+            }
+
+            var buses = [];
+
+            // Process TMB iBus API response
+            // TMB API returns data about nearby stops with bus arrivals
+            if (jsonData && jsonData.data && jsonData.data.nearstops) {
+                jsonData.data.nearstops.forEach(function(stop) {
+                    if (stop.buses && Array.isArray(stop.buses)) {
+                        stop.buses.forEach(function(bus, index) {
+                            try {
+                                console.log('🔍 Processing TMB bus', index, 'at stop', stop.street_name, ':', bus);
+
+                                // TMB provides bus line information but not exact GPS positions
+                                // We'll create bus markers at stop locations for visualization
+                                var lat = stop.lat;
+                                var lng = stop.lon;
+                                var routeId = bus.line || 'Unknown';
+                                var busId = bus.bus || index.toString();
+                                var destination = bus.destination || '';
+                                var timeArrival = bus['t-in-min'] || bus['t-in-s'] || 0;
+
+                                // Validate coordinates
+                                if (typeof lat === 'number' && typeof lng === 'number' &&
+                                    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                    lat !== 0 && lng !== 0) {
+
+                                    buses.push({
+                                        id: busId + '-' + stop.code,
+                                        label: routeId + ' → ' + destination,
+                                        lat: lat,
+                                        lng: lng,
+                                        route: routeId,
+                                        destination: destination,
+                                        stopName: stop.street_name || '',
+                                        stopCode: stop.code || '',
+                                        timeToArrival: timeArrival,
+                                        status: 'At stop',
+                                        timestamp: new Date().getTime()
+                                    });
+
+                                    console.log('✅ Processed TMB bus:', busId, routeId, 'at', lat, lng);
+                                } else {
+                                    console.warn('❌ Invalid coordinates for TMB bus at stop:', stop.code, '- lat:', lat, 'lng:', lng);
+                                }
+                            } catch (error) {
+                                console.warn('Error processing TMB bus at stop', stop.code, ':', error, bus);
+                            }
+                        });
+                    }
+                });
+            } else {
+                console.warn('❌ TMB API proxy response format unexpected:', jsonData);
+            }
+
+            if (buses.length > 0) {
+                console.log('🚌 SUCCESS: Extracted', buses.length, 'TMB buses from API proxy!');
+                return buses;
+            } else {
+                console.warn('Proxy returned data but no buses found');
+                alert('🚌 No s\'han trobat autobusos TMB a les parades properes. L\'API pot estar temporalment indisponible o no hi ha parades properes.\n\nUtilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
+                return [];
+            }
+        })
+        .catch(error => {
+            console.error('❌ TMB API proxy failed:', error.message);
+
+            // Fallback options
+            if (isGitHubPages) {
+                // On GitHub Pages, direct to manual entry if Vercel proxy fails
+                alert('🚌 API proxy unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy JSON data (Ctrl+A, Ctrl+C)\n3. Click "📝 Introduir Dades Manualment"\n4. Paste and click "Processar Dades Reals"');
+                return Promise.resolve([]);
+            } else if (isVercel) {
+                // On Vercel, show manual fallback option
+                alert('🚌 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy JSON data\n3. Use "📝 Introduir Dades Manualment"');
+                return Promise.resolve([]);
+            } else {
+                // Local development fallback
+                console.log('🔄 Local development - API proxy failed, using manual fallback');
+                alert('🚌 Error connectant amb l\'API proxy de TMB. Utilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
+                return Promise.resolve([]);
+            }
+        });
+}
+
+// Display TMB bus positions on map with colored route visualization
+function displayTMBRealtimeBuses(buses) {
+    console.log('🚌 DISPLAYING', buses.length, 'TMB BUSES ON MAP...');
+
+    // Clear existing markers and layers
+    tmbRealtimeBusMarkers.forEach(function(marker) {
+        try {
+            map.removeLayer(marker);
+        } catch (e) {}
+    });
+    tmbRealtimeBusMarkers = [];
+
+    // Group buses by route for better visualization
+    var tmbBusesByRoute = {};
+    buses.forEach(function(bus) {
+        if (bus.route && bus.route !== 'Unknown') {
+            if (!tmbBusesByRoute[bus.route]) {
+                tmbBusesByRoute[bus.route] = [];
+            }
+            tmbBusesByRoute[bus.route].push(bus);
+        } else {
+            // Put unknown routes in a separate group
+            if (!tmbBusesByRoute['Unknown']) {
+                tmbBusesByRoute['Unknown'] = [];
+            }
+            tmbBusesByRoute['Unknown'].push(bus);
+        }
+    });
+
+// Define colors and names for different TMB bus routes - official TMB colors from their website
+    var tmbRouteInfo = {
+        // TMB Metro lines (for reference)
+        'L1': {name: 'L1', color: '#FF0000', type: 'Metro'}, // Red
+        'L2': {name: 'L2', color: '#9C5B00', type: 'Metro'}, // Purple
+        'L3': {name: 'L3', color: '#00A000', type: 'Metro'}, // Green
+        'L4': {name: 'L4', color: '#FFD800', type: 'Metro'}, // Yellow
+        'L5': {name: 'L5', color: '#00A0E9', type: 'Metro'}, // Blue
+
+        // TMB Bus lines - common Barcelona bus lines with their colors
+        '1': {name: 'Línia 1', color: '#FF6B6B', type: 'Bus'}, // Red
+        '2': {name: 'Línia 2', color: '#4ECDC4', type: 'Bus'}, // Teal
+        '3': {name: 'Línia 3', color: '#45B7D1', type: 'Bus'}, // Blue
+        '4': {name: 'Línia 4', color: '#FFA07A', type: 'Bus'}, // Light Salmon
+        '5': {name: 'Línia 5', color: '#98D8C8', type: 'Bus'}, // Mint
+        '6': {name: 'Línia 6', color: '#F7DC6F', type: 'Bus'}, // Yellow
+        '7': {name: 'Línia 7', color: '#BB8FCE', type: 'Bus'}, // Purple
+        '8': {name: 'Línia 8', color: '#85C1E9', type: 'Bus'}, // Light Blue
+        '9': {name: 'Línia 9', color: '#F8C471', type: 'Bus'}, // Orange
+        '10': {name: 'Línia 10', color: '#95A5A6', type: 'Bus'}, // Gray
+
+        // More bus lines
+        '11': {name: 'Línia 11', color: '#E74C3C', type: 'Bus'}, // Red
+        '12': {name: 'Línia 12', color: '#3498DB', type: 'Bus'}, // Blue
+        '13': {name: 'Línia 13', color: '#2ECC71', type: 'Bus'}, // Green
+        '14': {name: 'Línia 14', color: '#9B59B6', type: 'Bus'}, // Purple
+        '15': {name: 'Línia 15', color: '#F39C12', type: 'Bus'}, // Orange
+        '16': {name: 'Línia 16', color: '#1ABC9C', type: 'Bus'}, // Turquoise
+        '17': {name: 'Línia 17', color: '#E67E22', type: 'Bus'}, // Carrot
+        '18': {name: 'Línia 18', color: '#34495E', type: 'Bus'}, // Dark Gray
+        '19': {name: 'Línia 19', color: '#16A085', type: 'Bus'}, // Green
+        '20': {name: 'Línia 20', color: '#8E44AD', type: 'Bus'}, // Purple
+
+        // Aerobus lines
+        'A1': {name: 'Aerobus A1', color: '#FF0000', type: 'Aerobus'}, // Red
+        'A2': {name: 'Aerobus A2', color: '#0000FF', type: 'Aerobus'}, // Blue
+
+        // Nitbus (Night bus)
+        'N1': {name: 'Nitbus N1', color: '#FF1493', type: 'Nitbus'}, // Pink
+        'N2': {name: 'Nitbus N2', color: '#00FF00', type: 'Nitbus'}, // Green
+        'N3': {name: 'Nitbus N3', color: '#FFFF00', type: 'Nitbus'}, // Yellow
+
+        'Unknown': {name: 'Línia desconeguda', color: '#95A5A6', type: 'Bus'} // Gray
+    };
+
+    var totalTMBBuses = 0;
+
+    // Create markers for each bus, grouped by route
+    Object.keys(tmbBusesByRoute).forEach(function(routeId) {
+        var routeBuses = tmbBusesByRoute[routeId];
+        var routeData = tmbRouteInfo[routeId];
+        if (!routeData) {
+            // Use the route code directly if not in mapping
+            routeData = {
+                name: routeId,
+                color: '#95A5A6', // Gray for unknown routes
+                type: 'Bus'
+            };
+        }
+        var routeColor = routeData.color;
+        var routeName = routeData.name;
+        var routeType = routeData.type;
+
+        routeBuses.forEach(function(bus) {
+            if (bus.lat && bus.lng && !isNaN(bus.lat) && !isNaN(bus.lng)) {
+                // Create modern bus icon with colored route label
+                var marker = L.marker([bus.lat, bus.lng], {
+                    icon: L.divIcon({
+                        html: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.7));">' +
+                              '<rect x="2" y="4" width="20" height="12" rx="2" fill="#333"/>' +
+                              '<circle cx="6" cy="18" r="2" fill="#666"/>' +
+                              '<circle cx="18" cy="18" r="2" fill="#666"/>' +
+                              '<rect x="4" y="6" width="4" height="6" rx="0.5" fill="#999"/>' +
+                              '<rect x="10" y="6" width="4" height="6" rx="0.5" fill="#999"/>' +
+                              '<rect x="16" y="6" width="4" height="6" rx="0.5" fill="#999"/>' +
+                              '</svg>' +
+                              '<div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); ' +
+                              'background: ' + routeColor + '; color: white; font-size: 9px; font-weight: bold; ' +
+                              'padding: 1px 3px; border-radius: 2px; border: 1px solid #333; white-space: nowrap;">' +
+                              routeName + '</div>',
+                        className: 'tmb-bus-marker',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 20]
+                    })
+                });
+
+                // Enhanced popup with TMB bus information and color coding
+                var arrivalText = '';
+                if (bus.timeToArrival) {
+                    if (typeof bus.timeToArrival === 'number') {
+                        arrivalText = bus.timeToArrival + ' min';
+                    } else {
+                        arrivalText = bus.timeToArrival;
+                    }
+                } else {
+                    arrivalText = 'N/A';
+                }
+
+                marker.bindPopup(
+                    '<div style="font-family: Arial, sans-serif; min-width: 220px;">' +
+                    '<h4 style="margin: 0 0 8px 0; color: ' + routeColor + '; border-bottom: 2px solid ' + routeColor + '; padding-bottom: 4px;">' +
+                    '🚌 Autobús TMB ' + (bus.id || 'Desconegut') + '</h4>' +
+                    '<div style="background: ' + routeColor + '15; border: 1px solid ' + routeColor + '; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                    '<strong>Línia:</strong> <span style="color: ' + routeColor + '; font-weight: bold;">' + routeName + '</span><br>' +
+                    '<strong>Tipus:</strong> ' + routeType + '<br>' +
+                    '<strong>Destí:</strong> ' + (bus.destination || 'Desconegut') + '<br>' +
+                    '<strong>Parada:</strong> ' + (bus.stopName || 'Desconeguda') + ' (' + (bus.stopCode || '') + ')<br>' +
+                    '<strong>Temps d\'arribada:</strong> ' + arrivalText + '<br>' +
+                    '<strong>Estat:</strong> ' + bus.status + '<br>' +
+                    '<strong>Posició:</strong> ' + bus.lat.toFixed(4) + ', ' + bus.lng.toFixed(4) +
+                    '</div>' +
+                    '<div style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">' +
+                    '🕒 Actualitzat: ' + new Date().toLocaleTimeString('ca-ES') +
+                    '</div>' +
+                    '</div>'
+                );
+
+                // Add marker to map
+                marker.addTo(map);
+                tmbRealtimeBusMarkers.push(marker);
+                totalTMBBuses++;
+
+                console.log('✅ ADDED TMB BUS MARKER:', routeName, bus.id, 'at', bus.lat, bus.lng);
+            } else {
+                console.warn('❌ INVALID COORDS for TMB bus:', bus.id, bus.lat, bus.lng);
+            }
+        });
+    });
+
+    console.log('🎯 TOTAL TMB BUS MARKERS CREATED:', totalTMBBuses);
+
+    // Create a legend for the routes
+    if (totalTMBBuses > 0) {
+        createTMBBusLegend(tmbBusesByRoute, tmbRouteInfo);
+    }
+
+    // Update status without zooming
+    updateTMBRealtimeStatus('🚌 Mostrant ' + totalTMBBuses + ' autobusos TMB (' + Object.keys(tmbBusesByRoute).length + ' línies)');
+
+    console.log('🎉 TMB BUS DISPLAY COMPLETED SUCCESSFULLY!');
+}
+
+// Create a legend showing TMB bus routes and their colors, grouped by type
+function createTMBBusLegend(tmbBusesByRoute, tmbRouteColors) {
+    // Remove existing legend if any
+    var existingLegend = document.getElementById('tmb-bus-legend');
+    if (existingLegend) {
+        existingLegend.remove();
+    }
+
+    // Create legend container
+    var legend = document.createElement('div');
+    legend.id = 'tmb-bus-legend';
+    legend.style.cssText = `
+        position: absolute;
+        top: 70px;
+        right: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        border: 2px solid #c41e3a;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        max-width: 280px;
+        max-height: 450px;
+        overflow-y: auto;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        z-index: 1000;
+    `;
+
+    legend.innerHTML = '<div style="font-weight: bold; margin-bottom: 8px; color: #c41e3a;">🚌 Línies TMB per Tipus</div>';
+
+    // Group routes by type - TMB service types
+    var services = {
+        'Metro': [],
+        'Bus': [],
+        'Aerobus': [],
+        'Nitbus': [],
+        'Unknown': []
+    };
+
+    // Group routes by service type
+    Object.keys(tmbBusesByRoute).forEach(function(routeId) {
+        var routeData = tmbRouteColors[routeId];
+        var serviceType = routeData ? routeData.type : 'Unknown';
+        if (!services[serviceType]) {
+            services[serviceType] = [];
+        }
+        services[serviceType].push(routeId);
+    });
+
+    // Display services in order
+    var serviceOrder = ['Metro', 'Bus', 'Aerobus', 'Nitbus', 'Unknown'];
+
+    serviceOrder.forEach(function(serviceName) {
+        var serviceRoutes = services[serviceName];
+        if (!serviceRoutes || serviceRoutes.length === 0) return;
+
+        // Add service header
+        var serviceHeader = document.createElement('div');
+        serviceHeader.style.cssText = `
+            font-weight: bold;
+            margin: 8px 0 4px 0;
+            padding: 4px 8px;
+            background: #fff0f0;
+            border-radius: 3px;
+            color: #c41e3a;
+            font-size: 11px;
+        `;
+        serviceHeader.textContent = serviceName;
+        legend.appendChild(serviceHeader);
+
+        // Add routes for this service
+        serviceRoutes.forEach(function(routeId) {
+            var count = tmbBusesByRoute[routeId].length;
+            var routeData = tmbRouteColors[routeId];
+            if (!routeData) {
+                // Unknown route - show the actual route code
+                routeData = {
+                    name: routeId,
+                    color: '#95A5A6'
+                };
+            }
+            var routeName = routeData.name;
+            var color = routeData.color;
+
+            var routeDiv = document.createElement('div');
+            routeDiv.style.cssText = `
+                display: flex;
+                align-items: center;
+                margin-bottom: 3px;
+                margin-left: 8px;
+                padding: 2px;
+                border-radius: 2px;
+            `;
+
+            routeDiv.innerHTML = `
+                <div style="width: 10px; height: 10px; background: ${color}; border: 1px solid #333; border-radius: 1px; margin-right: 4px;"></div>
+                <span style="font-weight: bold; color: ${color}; font-size: 10px;">${routeName}</span>
+                <span style="margin-left: auto; color: #666; font-size: 9px;">(${count})</span>
+            `;
+
+            legend.appendChild(routeDiv);
+        });
+    });
+
+    // Add close button
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        color: #c41e3a;
+    `;
+    closeBtn.onclick = function() {
+        legend.remove();
+    };
+    legend.appendChild(closeBtn);
+
+    // Add to map container
+    document.getElementById('map').appendChild(legend);
+}
+
+// TMB Manual data entry functions
+function openTMBJson() {
+    // Open TMB iBus API documentation or a sample endpoint
+    window.open('https://developer.tmb.cat/api-docs/v1/ibus', '_blank');
+}
+
+function showTMBDataEntry() {
+    var entryDiv = document.getElementById('tmb-manual-data-entry');
+    if (entryDiv) {
+        entryDiv.style.display = entryDiv.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function processTMBManualJsonData() {
+    var jsonTextarea = document.getElementById('tmb-manual-json-data');
+    if (!jsonTextarea || !jsonTextarea.value.trim()) {
+        alert('Si us plau, enganxa les dades JSON de TMB primer.');
+        return;
+    }
+
+    try {
+        var jsonData = JSON.parse(jsonTextarea.value.trim());
+        console.log('Processing manual TMB JSON data...');
+
+        // Process TMB iBus API format
+        var buses = [];
+
+        if (jsonData && jsonData.data && jsonData.data.nearstops) {
+            jsonData.data.nearstops.forEach(function(stop) {
+                if (stop.buses && Array.isArray(stop.buses)) {
+                    stop.buses.forEach(function(bus, index) {
+                        var lat = stop.lat;
+                        var lng = stop.lon;
+                        var routeId = bus.line || 'Unknown';
+                        var busId = bus.bus || index.toString();
+
+                        if (typeof lat === 'number' && typeof lng === 'number' &&
+                            lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+
+                            buses.push({
+                                id: busId + '-' + stop.code,
+                                label: routeId + ' → ' + (bus.destination || ''),
+                                lat: lat,
+                                lng: lng,
+                                route: routeId,
+                                destination: bus.destination || '',
+                                stopName: stop.street_name || '',
+                                stopCode: stop.code || '',
+                                timeToArrival: bus['t-in-min'] || bus['t-in-s'] || 0,
+                                status: 'At stop',
+                                timestamp: new Date().getTime()
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        if (buses.length > 0) {
+            console.log('✅ Successfully processed', buses.length, 'TMB buses from manual data!');
+            displayTMBRealtimeBuses(buses);
+
+            // Clear the textarea
+            jsonTextarea.value = '';
+
+            // Hide the manual entry form
+            showTMBDataEntry();
+
+            alert('Dades processades! Veus ' + buses.length + ' autobusos TMB reals al mapa.');
+        } else {
+            alert('No s\'han trobat dades d\'autobusos vàlides en el JSON. Comprova que has copiat les dades correctes.');
+        }
+    } catch (error) {
+        console.error('Error processing manual TMB JSON data:', error);
+        alert('Error processant les dades JSON. Comprova que el format és correcte.');
+    }
+}
+
+// Helper functions for TMB manual data entry
+function copyTMBUrl() {
+    var tmbUrl = 'https://api.tmb.cat/v1/ibus/stops/nearby?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1&radius=1000';
+    console.log('Copying TMB URL:', tmbUrl);
+
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tmbUrl).then(function() {
+            console.log('✅ TMB URL copied using modern clipboard API');
+            alert('✅ URL de TMB copiada al porta-retalls!\n\n' + tmbUrl);
+        }).catch(function(err) {
+            console.warn('Modern clipboard API failed, trying fallback:', err);
+            fallbackTMBCopy(tmbUrl, 'URL de TMB');
+        });
+    } else {
+        console.log('Modern clipboard API not available, using fallback');
+        fallbackTMBCopy(tmbUrl, 'URL de TMB');
+    }
+}
+
+function fallbackTMBCopy(text, description) {
+    try {
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        tempTextarea.style.position = 'fixed';
+        tempTextarea.style.left = '-999999px';
+        tempTextarea.style.top = '-999999px';
+        document.body.appendChild(tempTextarea);
+        tempTextarea.focus();
+        tempTextarea.select();
+
+        var successful = document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+
+        if (successful) {
+            console.log('✅ ' + description + ' copied using fallback method');
+            alert('✅ ' + description + ' copiada al porta-retalls!\n\n' + text);
+        } else {
+            console.error('❌ Fallback copy method failed');
+            alert('❌ Error copiant al porta-retalls. Copia manualment:\n\n' + text);
+        }
+    } catch (err) {
+        console.error('❌ Fallback copy method error:', err);
+        alert('❌ Error copiant al porta-retalls. Copia manualment:\n\n' + text);
+    }
+}
+
+function shareTMBMapUrl() {
+    var mapUrl = window.location.href;
+
+    // Try to copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(mapUrl).then(function() {
+            alert('URL del mapa copiada al porta-retalls!');
+        }).catch(function() {
+            // Fallback
+            var tempTextarea = document.createElement('textarea');
+            tempTextarea.value = mapUrl;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            alert('URL del mapa copiada al porta-retalls!');
+        });
+    } else {
+        // Fallback for older browsers
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = mapUrl;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+        alert('URL del mapa copiada al porta-retalls!');
+    }
+}
+
+function copyTMBInstructions() {
+    var instructions = "PASSOS PER COPIAR LES DADES TMB:\n\n";
+    instructions += "1. Ves a la pestanya TMB que s'ha obert\n";
+    instructions += "2. Prem Ctrl+A (seleccionar tot)\n";
+    instructions += "3. Prem Ctrl+C (copiar)\n";
+    instructions += "4. Torna aquí i prem Ctrl+V (enganxar)\n";
+    instructions += "5. Clica 'Processar Dades Reals'\n\n";
+    instructions += "URL: https://api.tmb.cat/v1/ibus/stops/nearby?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1&radius=1000";
+
+    // Try to copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(instructions).then(function() {
+            alert('Instruccions copiades al porta-retalls!');
+        }).catch(function() {
+            // Fallback: show in textarea for manual copy
+            var tempTextarea = document.createElement('textarea');
+            tempTextarea.value = instructions;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            alert('Instruccions copiades al porta-retalls!');
+        });
+    } else {
+        // Fallback for older browsers
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = instructions;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
+        alert('Instruccions copiades al porta-retalls!');
+    }
+}
+
+function clearTMBTextarea() {
+    var jsonTextarea = document.getElementById('tmb-manual-json-data');
+    if (jsonTextarea) {
+        jsonTextarea.value = '';
+        updateTMBJsonStatus('Textarea netejat. Preparat per enganxar dades.');
+    }
+}
+
+function testTMBsampleData() {
+    // Sample TMB iBus API data for testing
+    var sampleData = {
+        "status": "success",
+        "data": {
+            "nearstops": [
+                {
+                    "code": "1234",
+                    "street_name": "Carrer de la Mercè",
+                    "lat": 41.3805,
+                    "lon": 2.1754,
+                    "buses": [
+                        {
+                            "line": "59",
+                            "bus": "1234",
+                            "destination": "Pl. Catalunya",
+                            "t-in-min": 3,
+                            "t-in-s": 180
+                        },
+                        {
+                            "line": "91",
+                            "bus": "5678",
+                            "destination": "Metropolis",
+                            "t-in-min": 7,
+                            "t-in-s": 420
+                        }
+                    ]
+                },
+                {
+                    "code": "5678",
+                    "street_name": "La Rambla",
+                    "lat": 41.3788,
+                    "lon": 2.1734,
+                    "buses": [
+                        {
+                            "line": "14",
+                            "bus": "9012",
+                            "destination": "Pg. Colom",
+                            "t-in-min": 2,
+                            "t-in-s": 120
+                        }
+                    ]
+                }
+            ]
+        }
+    };
+
+    var jsonTextarea = document.getElementById('tmb-manual-json-data');
+    if (jsonTextarea) {
+        jsonTextarea.value = JSON.stringify(sampleData, null, 2);
+        updateTMBJsonStatus('Dades d\'exemple carregades. Clica "Processar Dades Reals" per veure autobusos TMB.');
+    }
+}
+
+function updateTMBJsonStatus(status) {
+    var statusElement = document.getElementById('tmb-json-status');
+    if (statusElement) {
+        statusElement.textContent = 'Status: ' + status;
+    }
+}
+
+// Toggle TMB bus legend visibility
+function toggleTMBBusLegend() {
+    var legend = document.getElementById('tmb-bus-legend');
+    var legendBtn = document.getElementById('tmb-legend-btn');
+
+    if (!legend) {
+        // Legend doesn't exist, create it and show
+        if (tmbRealtimeBusMarkers.length > 0) {
+            createTMBBusLegend(tmbBusesByRoute, tmbRouteInfo);
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            alert('No hi ha autobusos al mapa. Inicia la visualització d\'autobusos TMB primer.');
+            return;
+        }
+    } else {
+        // Legend exists, toggle visibility
+        var currentDisplay = window.getComputedStyle(legend).display;
+        if (currentDisplay === 'none') {
+            legend.style.display = 'block';
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            legend.style.display = 'none';
+            legendBtn.textContent = '🎨 Mostrar Llegenda';
+        }
+    }
+}
+
+// Make TMB functions globally accessible
+window.startRealtimeTMBBuses = startRealtimeTMBBuses;
+window.stopRealtimeTMBBuses = stopRealtimeTMBBuses;
+window.openTMBJson = openTMBJson;
+window.showTMBDataEntry = showTMBDataEntry;
+window.processTMBManualJsonData = processTMBManualJsonData;
+window.toggleTMBBusLegend = toggleTMBBusLegend;
+
 // end of file
