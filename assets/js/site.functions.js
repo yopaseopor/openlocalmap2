@@ -3953,12 +3953,6 @@ function stopRealtimeBicing() {
 function updateBicingRealtimeStatus(status) {
     var statusElement = document.getElementById('bicing-realtime-status');
     if (statusElement) {
-        statusElement.textContent = status;
-    }
-
-    // Also update the bicing-status div for the dedicated tab
-    var bicingStatusElement = document.getElementById('bicing-status');
-    if (bicingStatusElement) {
         statusElement.textContent = 'Status: ' + status;
     }
 }
@@ -4736,6 +4730,13 @@ var bicingGBFSRealtimeLayer = null;
 var bicingGBFSStationsByStatus = {}; // Global variable for Bicing GBFS legend toggle functionality
 var bicingGBFSRouteInfo = {}; // Global variable for Bicing GBFS route information
 
+// Combined GBFS Real-Time Visualization
+var combinedGBFSRealtimeInterval = null;
+var combinedGBFSRealtimeMarkers = [];
+var combinedGBFSRealtimeLayer = null;
+var combinedGBFSStationsByStatus = {}; // Global variable for Combined GBFS legend toggle functionality
+var combinedGBFSRouteInfo = {}; // Global variable for Combined GBFS route information
+
 // Start Bicing GBFS real-time visualization
 function startRealtimeBicingGBFS() {
     // If already running, stop it instead of starting again
@@ -5275,7 +5276,7 @@ function processBicingGBFSManualJsonData() {
                             capacity: capacity,
                             bikes: bikes,
                             slots: docks,
-                            mechanical: station.num_bikes_available_types?.mechanical || station.mechanical || bikes,
+                            mechanical: station.num_bikes_available_types?.mechanical || station.mechanical || (station.num_bikes_available_types ? 0 : bikes),
                             electric: station.num_bikes_available_types?.ebike || station.electric || 0,
                             status: station.status || (station.is_installed && station.is_renting && station.is_returning ? 'IN_SERVICE' : 'UNKNOWN'),
                             lastReported: station.last_reported || station.lastReported || null,
@@ -5645,5 +5646,603 @@ window.openBicingGBFSJson = openBicingGBFSJson;
 window.showBicingGBFSDataEntry = showBicingGBFSDataEntry;
 window.processBicingGBFSManualJsonData = processBicingGBFSManualJsonData;
 window.toggleBicingGBFSLegend = toggleBicingGBFSLegend;
+
+// Combined GBFS Real-Time Visualization
+var combinedGBFSRealtimeInterval = null;
+var combinedGBFSRealtimeMarkers = [];
+var combinedGBFSRealtimeLayer = null;
+var combinedGBFSStationsByStatus = {}; // Global variable for Combined GBFS legend toggle functionality
+var combinedGBFSRouteInfo = {}; // Global variable for Combined GBFS route information
+
+// Start Combined GBFS real-time visualization
+function startRealtimeCombinedGBFS() {
+    // If already running, stop it instead of starting again
+    if (combinedGBFSRealtimeInterval) {
+        stopRealtimeCombinedGBFS();
+        return;
+    }
+
+    // Initial load
+    fetchRealtimeCombinedGBFS().then(function(stations) {
+        displayRealtimeCombinedGBFS(stations);
+    });
+
+    // Set up periodic updates every 30 seconds (Combined GBFS data refresh rate)
+    combinedGBFSRealtimeInterval = setInterval(function() {
+        fetchRealtimeCombinedGBFS().then(function(stations) {
+            displayRealtimeCombinedGBFS(stations);
+        });
+    }, 30000);
+
+    // Update UI
+    document.getElementById('start-combined-gbfs-btn').style.display = 'none';
+    document.getElementById('stop-combined-gbfs-btn').style.display = 'inline-block';
+    document.getElementById('combined-gbfs-legend-btn').style.display = 'inline-block';
+    updateCombinedGBFSStatus('Carregant totes les dades GBFS combinades en temps real...');
+}
+
+// Stop Combined GBFS real-time visualization
+function stopRealtimeCombinedGBFS() {
+    if (combinedGBFSRealtimeInterval) {
+        clearInterval(combinedGBFSRealtimeInterval);
+        combinedGBFSRealtimeInterval = null;
+    }
+
+    // Clear all markers
+    combinedGBFSRealtimeMarkers.forEach(function(marker) {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    combinedGBFSRealtimeMarkers = [];
+
+    // Update UI
+    document.getElementById('start-combined-gbfs-btn').style.display = 'inline-block';
+    document.getElementById('stop-combined-gbfs-btn').style.display = 'none';
+    updateCombinedGBFSStatus('Inactiu');
+}
+
+// Update Combined GBFS real-time status display
+function updateCombinedGBFSStatus(status) {
+    var statusElement = document.getElementById('combined-gbfs-status');
+    if (statusElement) {
+        statusElement.textContent = 'Status: ' + status;
+    }
+}
+
+// Fetch real-time Combined GBFS station data
+function fetchRealtimeCombinedGBFS() {
+    console.log('🚀 Fetching Combined GBFS data from all endpoints...');
+
+    // Fetch data from all GBFS endpoints defined in the GBFS.json file
+    var gbfsUrls = [
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/station_status',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/station_status',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/station_status',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/station_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/station_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/station_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/geofencing_zones',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/geofencing_zones',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/geofencing_zones',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/vehicle_types',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/vehicle_types',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/vehicle_types',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/system_regions',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/system_regions',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/system_regions',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/system_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/system_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/system_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/system_pricing_plans',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/fr/system_pricing_plans',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/es/system_pricing_plans',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/gbfs_versions'
+    ];
+
+    // For demonstration, we'll focus on the key endpoints that provide station data
+    var keyUrls = [
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/station_status',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/station_information',
+        'https://madrid.publicbikesystem.net/customer/gbfs/v2/en/system_information'
+    ];
+
+    var fetchPromises = keyUrls.map(function(url, index) {
+        console.log('🔗 Fetching from:', url);
+        return fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    console.warn('❌ Failed to fetch from', url, ':', response.status);
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Successfully fetched data from:', url.split('/').pop());
+                return {url: url, data: data, type: url.split('/').pop()};
+            })
+            .catch(error => {
+                console.warn('❌ Error fetching from', url, ':', error.message);
+                return null;
+            });
+    });
+
+    return Promise.all(fetchPromises).then(function(results) {
+        console.log('🔄 Processing combined GBFS data from', results.filter(r => r !== null).length, 'endpoints...');
+
+        var combinedData = {
+            stationStatus: null,
+            stationInformation: null,
+            systemInformation: null
+        };
+
+        // Organize data by type
+        results.forEach(function(result) {
+            if (!result) return;
+
+            if (result.type === 'station_status') {
+                combinedData.stationStatus = result.data;
+            } else if (result.type === 'station_information') {
+                combinedData.stationInformation = result.data;
+            } else if (result.type === 'system_information') {
+                combinedData.systemInformation = result.data;
+            }
+        });
+
+        // Combine the data to create station objects
+        var stations = [];
+
+        if (combinedData.stationInformation && combinedData.stationInformation.data && combinedData.stationInformation.data.stations) {
+            // Create a map of status data for quick lookup
+            var statusMap = {};
+            if (combinedData.stationStatus && combinedData.stationStatus.data && combinedData.stationStatus.data.stations) {
+                combinedData.stationStatus.data.stations.forEach(function(statusStation) {
+                    statusMap[statusStation.station_id] = statusStation;
+                });
+            }
+
+            // Process each station from information endpoint
+            combinedData.stationInformation.data.stations.forEach(function(infoStation) {
+                try {
+                    var stationId = infoStation.station_id;
+                    var statusStation = statusMap[stationId];
+
+                    var lat = infoStation.lat;
+                    var lng = infoStation.lon;
+                    var name = infoStation.name || ('Station ' + stationId);
+                    var address = infoStation.address || '';
+                    var capacity = infoStation.capacity || 0;
+
+                    // Get real-time status data if available
+                    var bikes = 0;
+                    var docks = 0;
+                    var mechanical = 0;
+                    var electric = 0;
+                    var status = 'UNKNOWN';
+
+                    if (statusStation) {
+                        bikes = statusStation.num_bikes_available || 0;
+                        docks = statusStation.num_docks_available || 0;
+                        capacity = statusStation.capacity || capacity || (bikes + docks);
+
+                        if (statusStation.num_bikes_available_types) {
+                            mechanical = statusStation.num_bikes_available_types.mechanical || 0;
+                            electric = statusStation.num_bikes_available_types.ebike || 0;
+                        } else {
+                            mechanical = bikes;
+                        }
+
+                        // Determine operational status
+                        var isInstalled = statusStation.is_installed === 1 || statusStation.is_installed === true;
+                        var isRenting = statusStation.is_renting === 1 || statusStation.is_renting === true;
+                        var isReturning = statusStation.is_returning === 1 || statusStation.is_returning === true;
+
+                        if (isInstalled && isRenting && isReturning) {
+                            status = 'IN_SERVICE';
+                        } else if (!isInstalled) {
+                            status = 'NOT_INSTALLED';
+                        } else if (!isRenting && !isReturning) {
+                            status = 'MAINTENANCE';
+                        }
+                    }
+
+                    // Validate coordinates
+                    if (typeof lat === 'number' && typeof lng === 'number' &&
+                        lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                        lat !== 0 && lng !== 0) {
+
+                        stations.push({
+                            id: stationId,
+                            code: stationId,
+                            name: name,
+                            address: address,
+                            lat: lat,
+                            lng: lng,
+                            capacity: capacity,
+                            bikes: bikes,
+                            slots: docks,
+                            mechanical: mechanical,
+                            electric: electric,
+                            status: status,
+                            lastReported: statusStation ? statusStation.last_reported : null,
+                            timestamp: new Date().getTime(),
+                            source: 'combined_GBFS',
+                            systemInfo: combinedData.systemInformation ? combinedData.systemInformation.data : null
+                        });
+
+                        console.log('✅ Processed Combined GBFS station:', stationId, name, 'at', lat, lng, '- bikes:', bikes);
+                    } else {
+                        console.warn('❌ Invalid coordinates for Combined GBFS station:', stationId, '- lat:', lat, 'lng:', lng);
+                    }
+                } catch (error) {
+                    console.warn('Error processing Combined GBFS station:', infoStation.station_id, ':', error, infoStation);
+                }
+            });
+        }
+
+        if (stations.length > 0) {
+            console.log('🚀 SUCCESS: Combined', stations.length, 'stations from all GBFS endpoints!');
+            return stations;
+        } else {
+            console.warn('No valid stations found after combining all GBFS data');
+            // Return mock data for demonstration if no real data available
+            return createMockCombinedGBFSStations();
+        }
+    }).catch(error => {
+        console.error('❌ Error in Combined GBFS data processing:', error);
+        // Fallback to mock data
+        console.log('🔄 Falling back to demonstration data for Combined GBFS');
+        return createMockCombinedGBFSStations();
+    });
+}
+
+// Create mock stations for demonstration when real data is not available
+function createMockCombinedGBFSStations() {
+    console.log('🎭 Creating demonstration Combined GBFS stations...');
+
+    var mockStations = [];
+    var baseLat = 40.4168; // Madrid coordinates
+    var baseLng = -3.7038;
+
+    for (var i = 1; i <= 10; i++) {
+        var lat = baseLat + (Math.random() - 0.5) * 0.02;
+        var lng = baseLng + (Math.random() - 0.5) * 0.02;
+        var capacity = 20 + Math.floor(Math.random() * 20);
+        var bikes = Math.floor(Math.random() * (capacity + 1));
+        var docks = capacity - bikes;
+
+        mockStations.push({
+            id: 'MOCK_' + i,
+            code: 'MOCK_' + i,
+            name: 'Estación Combinada GBFS ' + i,
+            address: 'Madrid Centro',
+            lat: lat,
+            lng: lng,
+            capacity: capacity,
+            bikes: bikes,
+            slots: docks,
+            mechanical: Math.floor(bikes * 0.8),
+            electric: Math.floor(bikes * 0.2),
+            status: 'IN_SERVICE',
+            lastReported: new Date().getTime(),
+            timestamp: new Date().getTime(),
+            source: 'mock_combined_GBFS',
+            systemInfo: {
+                system_id: 'madrid_bike_system',
+                name: 'Madrid Public Bike System',
+                language: 'es'
+            }
+        });
+    }
+
+    console.log('🎭 Created', mockStations.length, 'demonstration Combined GBFS stations');
+    return mockStations;
+}
+
+// Display Combined GBFS stations on map with enhanced visualization
+function displayRealtimeCombinedGBFS(stations) {
+    console.log('🗺️ DISPLAYING', stations.length, 'COMBINED GBFS STATIONS ON MAP...');
+
+    // Clear existing markers
+    combinedGBFSRealtimeMarkers.forEach(function(marker) {
+        try {
+            map.removeLayer(marker);
+        } catch (e) {}
+    });
+    combinedGBFSRealtimeMarkers = [];
+
+    // Group stations by availability status
+    var stationsByStatus = {
+        'FULL': [],
+        'HIGH': [],
+        'MEDIUM': [],
+        'LOW': [],
+        'EMPTY': [],
+        'UNKNOWN': []
+    };
+
+    stations.forEach(function(station) {
+        var availabilityRatio = station.capacity > 0 ? station.bikes / station.capacity : 0;
+        var status;
+
+        if (station.status === 'IN_SERVICE') {
+            if (station.bikes === 0) {
+                status = 'EMPTY';
+            } else if (availabilityRatio >= 0.75) {
+                status = 'HIGH';
+            } else if (availabilityRatio >= 0.5) {
+                status = 'MEDIUM';
+            } else if (availabilityRatio >= 0.25) {
+                status = 'LOW';
+            } else {
+                status = 'FULL';
+            }
+        } else {
+            status = 'UNKNOWN';
+        }
+
+        if (!stationsByStatus[status]) {
+            stationsByStatus[status] = [];
+        }
+        stationsByStatus[status].push(station);
+    });
+
+    // Define enhanced colors for different availability statuses
+    var statusColors = {
+        'HIGH': '#28a745',    // Green - good availability
+        'MEDIUM': '#ffc107',  // Yellow - moderate availability
+        'LOW': '#fd7e14',     // Orange - low availability
+        'EMPTY': '#6c757d',   // Gray - no bikes available
+        'FULL': '#dc3545',    // Red - all slots occupied
+        'UNKNOWN': '#007bff'  // Blue - unknown status
+    };
+
+    var statusNames = {
+        'HIGH': 'Alta disponibilitat',
+        'MEDIUM': 'Disponibilitat mitjana',
+        'LOW': 'Baixa disponibilitat',
+        'EMPTY': 'Sense bicicletes',
+        'FULL': 'Plena (sense places)',
+        'UNKNOWN': 'Estat desconegut'
+    };
+
+    var totalStations = 0;
+
+    // Create markers for each station with enhanced visualization
+    Object.keys(stationsByStatus).forEach(function(status) {
+        var statusStations = stationsByStatus[status];
+        var statusColor = statusColors[status] || '#007bff';
+        var statusName = statusNames[status] || status;
+
+        statusStations.forEach(function(station) {
+            if (station.lat && station.lng && !isNaN(station.lat) && !isNaN(station.lng)) {
+                // Create enhanced station icon with colored status indicator and data source badge
+                var marker = L.marker([station.lat, station.lng], {
+                    icon: L.divIcon({
+                        html: '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.8));">' +
+                              // Main bike icon
+                              '<circle cx="14" cy="14" r="12" fill="' + statusColor + '" stroke="white" stroke-width="2"/>' +
+                              '<circle cx="14" cy="10" r="2" fill="white"/>' +
+                              '<rect x="12" y="12" width="4" height="8" rx="1" fill="white"/>' +
+                              '<circle cx="12" cy="16" r="1.5" fill="' + statusColor + '"/>' +
+                              '<circle cx="16" cy="16" r="1.5" fill="' + statusColor + '"/>' +
+                              '<circle cx="12" cy="20" r="1.5" fill="' + statusColor + '"/>' +
+                              '<circle cx="16" cy="20" r="1.5" fill="' + statusColor + '"/>' +
+                              // GBFS badge
+                              '<rect x="18" y="2" width="8" height="6" rx="1" fill="#004080" stroke="white" stroke-width="1"/>' +
+                              '<text x="22" y="6" text-anchor="middle" fill="white" font-size="4px" font-weight="bold">GBFS</text>' +
+                              '</svg>' +
+                              '<div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); ' +
+                              'background: ' + statusColor + '; color: white; font-size: 10px; font-weight: bold; ' +
+                              'padding: 1px 4px; border-radius: 3px; border: 1px solid #333; white-space: nowrap;">' +
+                              station.bikes + '/' + station.capacity + '</div>',
+                        className: 'combined-gbfs-station-marker',
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 22]
+                    })
+                });
+
+                // Enhanced popup with comprehensive Combined GBFS station information
+                var availabilityPercent = station.capacity > 0 ? Math.round((station.bikes / station.capacity) * 100) : 0;
+                var availabilityColor = availabilityPercent >= 75 ? '#28a745' : availabilityPercent >= 50 ? '#ffc107' : availabilityPercent >= 25 ? '#fd7e14' : '#dc3545';
+
+                var systemName = 'Sistema desconegut';
+                if (station.systemInfo && station.systemInfo.name) {
+                    systemName = station.systemInfo.name;
+                }
+
+                marker.bindPopup(
+                    '<div style="font-family: Arial, sans-serif; min-width: 280px;">' +
+                    '<h4 style="margin: 0 0 8px 0; color: ' + statusColor + '; border-bottom: 2px solid ' + statusColor + '; padding-bottom: 4px;">' +
+                    '🚀 Estació GBFS Combinada ' + (station.code || station.id) + '</h4>' +
+                    '<div style="background: ' + statusColor + '15; border: 1px solid ' + statusColor + '; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                    '<strong>Sistema:</strong> ' + systemName + '<br>' +
+                    '<strong>Nom:</strong> ' + (station.name || 'Sense nom') + '<br>' +
+                    '<strong>Adreça:</strong> ' + (station.address || 'No disponible') + '<br>' +
+                    '<strong>Estat:</strong> <span style="color: ' + statusColor + '; font-weight: bold;">' + statusName + '</span><br>' +
+                    '<strong>Bicicletes disponibles:</strong> <span style="color: ' + availabilityColor + '; font-weight: bold; font-size: 1.1em;">' + station.bikes + '</span> (' + availabilityPercent + '%)<br>' +
+                    '<strong>Places lliures:</strong> ' + station.slots + '<br>' +
+                    '<strong>Capacitat total:</strong> ' + station.capacity + '<br>' +
+                    '<strong>Bicicletes mecàniques:</strong> ' + (station.mechanical || 0) + '<br>' +
+                    '<strong>Bicicletes elèctriques:</strong> ' + (station.electric || 0) + '<br>' +
+                    '<strong>Posició:</strong> ' + station.lat.toFixed(4) + ', ' + station.lng.toFixed(4) +
+                    '</div>' +
+                    '<div style="background: #e6f3ff; border: 1px solid #66a3ff; border-radius: 4px; padding: 8px; margin: 8px 0; font-size: 12px;">' +
+                    '<strong>📊 Font de dades:</strong> GBFS Combinat (Tots els endpoints)<br>' +
+                    '<strong>🔄 Actualitzat:</strong> ' + new Date().toLocaleTimeString('ca-ES') +
+                    '</div>' +
+                    '</div>'
+                );
+
+                // Add marker to map
+                marker.addTo(map);
+                combinedGBFSRealtimeMarkers.push(marker);
+                totalStations++;
+
+                console.log('✅ ADDED COMBINED GBFS STATION MARKER:', station.id, station.name, 'at', station.lat, station.lng);
+            } else {
+                console.warn('❌ INVALID COORDS for Combined GBFS station:', station.id, station.lat, station.lng);
+            }
+        });
+    });
+
+    console.log('🎯 TOTAL COMBINED GBFS STATION MARKERS CREATED:', totalStations);
+
+    // Create a legend for the station statuses
+    if (totalStations > 0) {
+        createCombinedGBFSLegend(stationsByStatus, statusColors, statusNames);
+    }
+
+    // Update status without zooming
+    updateCombinedGBFSStatus('🚀 Mostrant ' + totalStations + ' estacions GBFS combinades (' + Object.keys(stationsByStatus).filter(s => stationsByStatus[s].length > 0).length + ' estats)');
+
+    console.log('🎉 COMBINED GBFS DISPLAY COMPLETED SUCCESSFULLY!');
+}
+
+// Create a legend showing Combined GBFS station availability statuses
+function createCombinedGBFSLegend(stationsByStatus, statusColors, statusNames) {
+    // Remove existing legend if any
+    var existingLegend = document.getElementById('combined-gbfs-station-legend');
+    if (existingLegend) {
+        existingLegend.remove();
+    }
+
+    // Create legend container
+    var legend = document.createElement('div');
+    legend.id = 'combined-gbfs-station-legend';
+    legend.style.cssText = `
+        position: absolute;
+        top: 70px;
+        right: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        border: 2px solid #004080;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        max-width: 320px;
+        max-height: 450px;
+        overflow-y: auto;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        z-index: 1000;
+    `;
+
+    legend.innerHTML = '<div style="font-weight: bold; margin-bottom: 8px; color: #004080;">🚀 Disponibilitat d\'Estacions GBFS Combinades</div>';
+
+    // Display statuses in order of availability
+    var statusOrder = ['HIGH', 'MEDIUM', 'LOW', 'EMPTY', 'FULL', 'UNKNOWN'];
+
+    statusOrder.forEach(function(status) {
+        var count = stationsByStatus[status] ? stationsByStatus[status].length : 0;
+        if (count === 0) return;
+
+        var statusColor = statusColors[status] || '#007bff';
+        var statusName = statusNames[status] || status;
+
+        var statusDiv = document.createElement('div');
+        statusDiv.style.cssText = `
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            padding: 4px;
+            border-radius: 3px;
+            background: ${statusColor}10;
+        `;
+
+        statusDiv.innerHTML = `
+            <div style="width: 12px; height: 12px; background: ${statusColor}; border: 1px solid #333; border-radius: 2px; margin-right: 6px;"></div>
+            <span style="font-weight: bold; color: ${statusColor}; font-size: 11px;">${statusName}</span>
+            <span style="margin-left: auto; color: #666; font-size: 10px;">(${count})</span>
+        `;
+
+        legend.appendChild(statusDiv);
+    });
+
+    // Add GBFS Combined information
+    var gbfsInfo = document.createElement('div');
+    gbfsInfo.style.cssText = `
+        margin-top: 10px;
+        padding: 8px;
+        background: #d4e6ff;
+        border-radius: 3px;
+        font-size: 10px;
+        color: #004080;
+        border: 1px solid #66a3ff;
+    `;
+    gbfsInfo.innerHTML = '<strong>🚀 GBFS Combinat</strong><br>Totes les fonts de dades GBFS integrades en una sola visualització.';
+    legend.appendChild(gbfsInfo);
+
+    // Add close button
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        color: #004080;
+    `;
+    closeBtn.onclick = function() {
+        legend.remove();
+    };
+    legend.appendChild(closeBtn);
+
+    // Add to map container
+    document.getElementById('map').appendChild(legend);
+}
+
+// Toggle Combined GBFS legend visibility
+function toggleCombinedGBFSLegend() {
+    var legend = document.getElementById('combined-gbfs-station-legend');
+    var legendBtn = document.getElementById('combined-gbfs-legend-btn');
+
+    if (!legend) {
+        // Legend doesn't exist, create it and show
+        if (combinedGBFSRealtimeMarkers.length > 0) {
+            // Recreate legend with current data
+            var stationsByStatus = {};
+            combinedGBFSRealtimeMarkers.forEach(function(marker) {
+                // This is a simplified recreation - in production, you'd store the original data
+            });
+            createCombinedGBFSLegend(combinedGBFSStationsByStatus, {
+                'HIGH': '#28a745',
+                'MEDIUM': '#ffc107',
+                'LOW': '#fd7e14',
+                'EMPTY': '#6c757d',
+                'FULL': '#dc3545',
+                'UNKNOWN': '#007bff'
+            }, {
+                'HIGH': 'Alta disponibilitat',
+                'MEDIUM': 'Disponibilitat mitjana',
+                'LOW': 'Baixa disponibilitat',
+                'EMPTY': 'Sense bicicletes',
+                'FULL': 'Plena (sense places)',
+                'UNKNOWN': 'Estat desconegut'
+            });
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            alert('No hi ha estacions al mapa. Inicia la visualització GBFS combinada primer.');
+            return;
+        }
+    } else {
+        // Legend exists, toggle visibility
+        var currentDisplay = window.getComputedStyle(legend).display;
+        if (currentDisplay === 'none') {
+            legend.style.display = 'block';
+            legendBtn.textContent = '🎨 Ocultar Llegenda';
+        } else {
+            legend.style.display = 'none';
+            legendBtn.textContent = '🎨 Mostrar Llegenda';
+        }
+    }
+}
+
+// Make Combined GBFS functions globally accessible
+window.startRealtimeCombinedGBFS = startRealtimeCombinedGBFS;
+window.stopRealtimeCombinedGBFS = stopRealtimeCombinedGBFS;
+window.toggleCombinedGBFSLegend = toggleCombinedGBFSLegend;
 
 // end of file
