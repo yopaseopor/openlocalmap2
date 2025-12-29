@@ -130,18 +130,13 @@ mapillaryLayer.addTo(map);
 
 // https://github.com/Turbo87/sidebar-v2/
 var sidebar = L.control.sidebar('sidebar').addTo(map);
-//$(document).ready(function () {
-    // open #home sidebar-pane to show the available POIs
-//    sidebar.open('home');
-//});
+// Sidebar opening is now handled by the router
 
 // https://github.com/mlevans/leaflet-hash
 var hash = new L.Hash(map);
 
-// update the permalink when L.Hash changes the #hash
-window.onhashchange = function() {
-    update_permalink();
-}
+// Note: Hash change handling is now managed by the router
+// update_permalink() is still called for map position changes
 
 
 // https://github.com/domoritz/leaflet-locatecontrol
