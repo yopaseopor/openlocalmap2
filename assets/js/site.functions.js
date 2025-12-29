@@ -3953,6 +3953,12 @@ function stopRealtimeBicing() {
 function updateBicingRealtimeStatus(status) {
     var statusElement = document.getElementById('bicing-realtime-status');
     if (statusElement) {
+        statusElement.textContent = status;
+    }
+
+    // Also update the bicing-status div for the dedicated tab
+    var bicingStatusElement = document.getElementById('bicing-status');
+    if (bicingStatusElement) {
         statusElement.textContent = 'Status: ' + status;
     }
 }
