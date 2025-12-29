@@ -42,6 +42,7 @@
 	<li><a href="#home" role="tab"><i class="fa fa-map-marker"></i></a></li>
 	<li><a href="#routes" role="tab"><i class="fa fa-compass"></i></a></li>
 	<li><a href="#gtfs" role="tab"><i class="fa fa-clock-o"></i></a></li>
+	<li><a href="#bicing" role="tab">🚲</a></li>
 	<li><a href="#wikipedia" role="tab"><i class="fa fa-book"></i></a></li>
 		<!--MODIFICAR AQUÍ-->
 	<li><a href="#comments" role="tab"><i class="fa fa-comments-o"></i></a></li>
@@ -662,6 +663,99 @@
   </div>
 </details>
 
+  <!-- Bicing Barcelona Real-Time Visualization -->
+  <details style="margin-bottom: 20px;">
+    <summary style="background: #e6f3ff; border: 1px solid #99d6ff; border-radius: 5px; padding: 15px; cursor: pointer; list-style: none;">
+      <h3 style="margin: 0; color: #0066cc; display: inline;">🚴 Visualització en Temps Real de Bicing BCN</h3>
+      <span style="float: right; font-size: 16px; color: #0066cc;">▶️</span>
+    </summary>
+    <div style="padding: 15px; background: #e6f3ff; border: 1px solid #99d6ff; border-top: none; border-radius: 0 0 5px 5px; margin-top: -1px;">
+    <p style="margin: 8px 0; font-size: 14px;">Mostra la posició actual de les estacions de Bicing (sistema de bicicletes compartides de Barcelona) al mapa en temps real:</p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+      <button onclick="startRealtimeBicing()" id="start-bicing-realtime-btn" style="background: #0066cc; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Iniciar Visualització d'Estacions Bicing</strong><br><small>Mostra estacions al mapa cada 30 segons</small></button>
+      <button onclick="stopRealtimeBicing()" id="stop-bicing-realtime-btn" style="background: #8B0000; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Aturar Visualització</strong><br><small>Oculta les estacions del mapa</small></button>
+      <button onclick="toggleBicingLegend()" id="bicing-legend-btn" style="background: #0066cc; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; display: inline-block;"><strong>🎨 Mostrar Llegenda</strong><br><small>Veure disponibilitat de bicicletes</small></button>
+      <div id="bicing-realtime-status" style="font-size: 12px; color: #0066cc; padding: 8px; background: #f0f8ff; border-radius: 3px;">Status: Inactiu</div>
+    </div>
+
+    <div style="background: #e0f0ff; border: 1px solid #99d6ff; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <p style="margin: 8px 0; font-size: 13px;"><strong>Executa aquest servidor Node.js per obtenir dades reals:</strong></p>
+
+      <div style="background: #f0f8ff; border: 1px solid #99d6ff; border-radius: 3px; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 11px;">
+        const express = require('express');<br>
+        const cors = require('cors');<br>
+        const fetch = require('node-fetch');<br><br>
+        const app = express();<br>
+        app.use(cors());<br><br>
+        const bicingUrl = 'https://opendata-ajuntament.barcelona.cat/data/dataset/6aa3416d-ce1a-494d-861b-7bd07f069600/resource/1b215493-9e63-4a12-8980-2d7e0fa19f85/download';
+    const token = 'bacb0a6a4a847aa4ef512d28f9599f28e9e135d12ee6dc805fcae008a49844f8';
+        app.get('/api/bicing', async (req, res) => {<br>
+        &nbsp;&nbsp;try {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;const response = await fetch(bicingUrl, {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;headers: { 'X-Auth-Token': token }<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;});<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;const data = await response.json();<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;res.json(data);<br>
+        &nbsp;&nbsp;} catch (error) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;res.status(500).json({error: 'Failed to fetch Bicing data'});<br>
+        &nbsp;&nbsp;}<br>
+        });<br><br>
+        app.listen(3004, () => console.log('Bicing Proxy server running on port 3004'));<br>
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px;"><strong>Comandes per executar:</strong></p>
+      <code style="background: #f0f8ff; padding: 4px 8px; border-radius: 3px; font-family: monospace; font-size: 11px;">npm install express cors node-fetch<br>node bicing-server.js</code>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #0066cc;"><strong>L'aplicació detectarà automàticament el servidor proxy i mostrarà estacions Bicing reals!</strong></p>
+    </div>
+
+    <div style="background: #cce7ff; border: 1px solid #99d6ff; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <h5 style="margin-top: 0; color: #0066cc;">✅ Solució Manual: Utilitza les Dades Bicing Directament!</h5>
+      <p style="margin: 8px 0; font-size: 13px;">Ja que pots accedir manualment a les dades Bicing, aquí tens una solució directa:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0;">
+        <button onclick="openBicingJson()" style="background: #0066cc; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>🔗 PAS 1: Obrir Dades Bicing</strong><br><small>Obre l'API Bicing en una nova pestanya</small></button>
+        <button onclick="showBicingDataEntry()" style="background: #007bff; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>📝 PAS 2: Introduir Dades Manualment</strong><br><small>Copia i enganxa les dades JSON aquí</small></button>
+      </div>
+
+      <div id="bicing-manual-data-entry" style="display: none; margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; border: 1px solid #99d6ff;">
+        <h5 style="margin-top: 0; color: #0066cc;">📋 Com Copiar i Enganxar les Dades Bicing:</h5>
+        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+          <button onclick="copyBicingUrl()" style="background: #0066cc; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🔗 Copiar URL Bicing</strong></button>
+          <button onclick="copyBicingInstructions()" style="background: #17a2b8; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📋 Copiar Instruccions</strong></button>
+          <button onclick="clearBicingTextarea()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🗑️ Netejar</strong></button>
+          <button onclick="shareBicingMapUrl()" style="background: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📤 Compartir Mapa</strong></button>
+        </div>
+
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px; padding: 10px; margin: 10px 0; font-size: 12px;">
+          <strong>🔢 PASSOS FÀCILS:</strong><br>
+          1. Ves a la pestanya Bicing que s'ha obert<br>
+          2. Prem <strong>Ctrl+A</strong> (seleccionar tot)<br>
+          3. Prem <strong>Ctrl+C</strong> (copiar)<br>
+          4. Torna aquí i prem <strong>Ctrl+V</strong> (enganxar)<br>
+          5. Clica <strong>"Processar Dades Reals"</strong>
+        </div>
+
+        <textarea id="bicing-manual-json-data" placeholder="Enganxa aquí les dades JSON de Bicing (prem Ctrl+V)..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #99d6ff; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onclick="processBicingManualJsonData()" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; flex: 1;"><strong>⚡ Processar Dades Reals</strong><br><small>Mostrar estacions Bicing reals al mapa</small></button>
+          <button onclick="testBicingSampleData()" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;"><strong>🧪 Provar amb Dades d'Exemple</strong><br><small>Omple amb JSON de mostra</small></button>
+        </div>
+
+        <div id="bicing-json-status" style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-size: 12px; color: #495057;">Status: Preparat per enganxar dades JSON</div>
+
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #0066cc;"><strong>URL de les dades: <code>https://opendata-ajuntament.barcelona.cat/data/dataset/6aa3416d-ce1a-494d-861b-7bd07f069600/resource/1b215493-9e63-4a12-8980-2d7e0fa19f85/download</code></strong></p>
+      <p style="margin: 8px 0; font-size: 12px; color: #666;"><strong>Token d'autenticació:</strong> bacb0a6a4a847aa4ef512d28f9599f28e9e135d12ee6dc805fcae008a49844f8</p>
+    </div>
+
+    <p style="font-size: 12px; color: #0066cc; margin-top: 10px;">Llicència: <a href="https://opendata-ajuntament.barcelona.cat/en/tokens" target="_blank">Open Data Barcelona</a> | Última actualització: 2025-12-27</p>
+  </div>
+</details>
+
   <!-- Bicing Barcelona GBFS Real-Time Visualization -->
   <details style="margin-bottom: 20px;">
     <summary style="background: #cce7ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 15px; cursor: pointer; list-style: none;">
@@ -727,6 +821,7 @@
 
     <p style="font-size: 12px; color: #2c5282; margin-top: 10px;">Llicència: <a href="https://barcelona.publicbikesystem.net/" target="_blank">Barcelona Public Bike System</a> | Última actualització: 2025-12-27</p>
   </div>
+</details>
 
 	  <br><hr width="90%">
 
@@ -746,6 +841,117 @@
           onClick="location.href='#gtfs_init'" data-i18n="gtfs_help_back"> Inici</button></center>
 	</div>
 
+	<!--BICING-->
+	<div class="sidebar-pane" id="bicing">
+	  <div class="close-button"><span class="fa fa-close" onclick="javascript: sidebar.close()"></span>
+	  </div>
+	  <h1>🚲 Bicing Barcelona</h1>
+	  <p style="text-align:justify; margin-right:5px;">Sistema de bicicletes compartides de Barcelona. Mostra les estacions Bicing al mapa amb informació en temps real sobre disponibilitat de bicicletes i places lliures.</p>
+
+	  <p style="text-align:justify; margin-right:5px;">Les estacions es mostren amb colors diferents segons la seva disponibilitat:</p>
+	  <ul>
+	    <li><span style="color: #28a745;">🟢 Verd</span>: Moltes bicicletes disponibles</li>
+	    <li><span style="color: #ffc107;">🟡 Groc</span>: Algunes bicicletes disponibles</li>
+	    <li><span style="color: #fd7e14;">🟠 Taronja</span>: Poces bicicletes disponibles</li>
+	    <li><span style="color: #dc3545;">🔴 Vermell</span>: Totes les places ocupades</li>
+	    <li><span style="color: #6c757d;">⚫ Gris</span>: Sense bicicletes disponibles</li>
+	  </ul>
+
+	  <center>
+	    <button onclick="startRealtimeBicing()" id="start-bicing-btn" style="background:#0066cc; color:white; padding:12px 15px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">
+	      <strong>▶️ Iniciar Visualització Bicing</strong><br><small>Mostra estacions al mapa</small>
+	    </button>
+	    <button onclick="stopRealtimeBicing()" id="stop-bicing-btn" style="background:#8B0000; color:white; padding:12px 15px; border:none; border-radius:5px; cursor:pointer; font-size:14px; display:none;">
+	      <strong>⏹️ Aturar Visualització</strong><br><small>Oculta les estacions</small>
+	    </button>
+	    <br><br>
+	    <button onclick="toggleBicingLegend()" id="bicing-legend-toggle" style="background:#2a2a2a; color:white; padding:8px 12px; border:none; border-radius:3px; cursor:pointer;">
+	      🎨 Mostrar/Ocultar Llegenda
+	    </button>
+	  </center>
+
+	  <div id="bicing-status" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; font-size: 12px; color: #666;">
+	    Status: Inactiu - Prem el botó per començar
+	  </div>
+
+	  <!-- Bicing Barcelona GBFS Real-Time Visualization -->
+	  <details style="margin-bottom: 20px;">
+	    <summary style="background: #cce7ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 15px; cursor: pointer; list-style: none;">
+	      <h3 style="margin: 0; color: #2c5282; display: inline;">🚴 Visualització en Temps Real de Bicing BCN (GBFS)</h3>
+	      <span style="float: right; font-size: 16px; color: #2c5282;">▶️</span>
+	    </summary>
+	    <div style="padding: 15px; background: #cce7ff; border: 1px solid #4a90e2; border-top: none; border-radius: 0 0 5px 5px; margin-top: -1px;">
+	    <p style="margin: 8px 0; font-size: 14px;">Mostra la posició actual de les estacions de Bicing (sistema de bicicletes compartides de Barcelona) al mapa en temps real utilitzant l'API GBFS oficial:</p>
+
+	    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+	      <button onclick="startRealtimeBicingGBFS()" id="start-bicing-gbfs-realtime-btn" style="background: #2c5282; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Iniciar Visualització d'Estacions Bicing (GBFS)</strong><br><small>Mostra estacions al mapa cada 30 segons via GBFS</small></button>
+	      <button onclick="stopRealtimeBicingGBFS()" id="stop-bicing-gbfs-realtime-btn" style="background: #8B0000; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Aturar Visualització</strong><br><small>Oculta les estacions del mapa</small></button>
+	      <button onclick="toggleBicingGBFSLegend()" id="bicing-gbfs-legend-btn" style="background: #2c5282; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; display: inline-block;"><strong>🎨 Mostrar Llegenda</strong><br><small>Veure disponibilitat de bicicletes GBFS</small></button>
+	      <div id="bicing-gbfs-realtime-status" style="font-size: 12px; color: #2c5282; padding: 8px; background: #e6f3ff; border-radius: 3px;">Status: Inactiu</div>
+	    </div>
+
+	    <div style="background: #b3d9ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 12px; margin: 15px 0;">
+	      <p style="margin: 8px 0; font-size: 13px;"><strong>API GBFS (General Bikeshare Feed Specification):</strong></p>
+	      <p style="margin: 8px 0; font-size: 12px;"><strong>URL de les dades:</strong> <code>https://barcelona.publicbikesystem.net/customer/gbfs/v2/en/station_status</code></p>
+	      <p style="margin: 8px 0; font-size: 12px; color: #2c5282;"><strong>L'API GBFS és l'estàndard internacional per a sistemes de bicicletes compartides i proporciona dades oficials en temps real.</strong></p>
+	    </div>
+
+	    <div style="background: #99c2ff; border: 1px solid #4a90e2; border-radius: 5px; padding: 12px; margin: 15px 0;">
+	      <h5 style="margin-top: 0; color: #2c5282;">✅ Solució Manual: Utilitza les Dades GBFS Directament!</h5>
+	      <p style="margin: 8px 0; font-size: 13px;">Ja que pots accedir manualment a les dades GBFS, aquí tens una solució directa:</p>
+
+	      <div style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0;">
+	        <button onclick="openBicingGBFSJson()" style="background: #2c5282; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>🔗 PAS 1: Obrir Dades Bicing GBFS</strong><br><small>Obre l'API GBFS en una nova pestanya</small></button>
+	        <button onclick="showBicingGBFSDataEntry()" style="background: #007bff; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>📝 PAS 2: Introduir Dades Manualment</strong><br><small>Copia i enganxa les dades GBFS aquí</small></button>
+	      </div>
+
+	      <div id="bicing-gbfs-manual-data-entry" style="display: none; margin: 15px 0; padding: 15px; background: #e6f3ff; border-radius: 5px; border: 1px solid #4a90e2;">
+	        <h5 style="margin-top: 0; color: #2c5282;">📋 Com Copiar i Enganxar les Dades Bicing GBFS:</h5>
+	        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+	          <button onclick="copyBicingGBFSUrl()" style="background: #2c5282; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🔗 Copiar URL GBFS</strong></button>
+	          <button onclick="copyBicingGBFSInstructions()" style="background: #17a2b8; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📋 Copiar Instruccions</strong></button>
+	          <button onclick="clearBicingGBFSTextarea()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🗑️ Netejar</strong></button>
+	          <button onclick="shareBicingGBFSMapUrl()" style="background: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📤 Compartir Mapa</strong></button>
+	        </div>
+
+	        <div style="background: #d4e6ff; border: 1px solid #b3d9ff; border-radius: 3px; padding: 10px; margin: 10px 0; font-size: 12px;">
+	          <strong>🔢 PASSOS FÀCILS:</strong><br>
+	          1. Ves a la pestanya GBFS que s'ha obert<br>
+	          2. Prem <strong>Ctrl+A</strong> (seleccionar tot)<br>
+	          3. Prem <strong>Ctrl+C</strong> (copiar)<br>
+	          4. Torna aquí i prem <strong>Ctrl+V</strong> (enganxar)<br>
+	          5. Clica <strong>"Processar Dades GBFS"</strong>
+	        </div>
+
+	        <textarea id="bicing-gbfs-manual-json-data" placeholder="Enganxa aquí les dades JSON de Bicing GBFS (prem Ctrl+V)..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #4a90e2; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+
+	        <div style="display: flex; gap: 10px; margin-top: 10px;">
+	          <button onclick="processBicingGBFSManualJsonData()" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; flex: 1;"><strong>⚡ Processar Dades GBFS</strong><br><small>Mostrar estacions Bicing GBFS reals al mapa</small></button>
+	          <button onclick="testBicingGBFSSampleData()" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;"><strong>🧪 Provar amb Dades d'Exemple</strong><br><small>Omple amb JSON GBFS de mostra</small></button>
+	        </div>
+
+	        <div id="bicing-gbfs-json-status" style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-size: 12px; color: #495057;">Status: Preparat per enganxar dades GBFS JSON</div>
+
+	      </div>
+
+	      <p style="margin: 8px 0; font-size: 12px; color: #2c5282;"><strong>Format GBFS:</strong> L'API retorna dades en format estàndard internacional per a sistemes de bicicletes compartides.</p>
+	    </div>
+
+	    <p style="font-size: 12px; color: #2c5282; margin-top: 10px;">Llicència: <a href="https://barcelona.publicbikesystem.net/" target="_blank">Barcelona Public Bike System</a> | Última actualització: 2025-12-27</p>
+	  </div>
+	</details>
+
+	  <br><hr width="90%">
+	  <h2>Ajuda</h2>
+	  <p style="text-align:justify; margin-right:5px;">El Bicing és el sistema de bicicletes compartides de Barcelona. Cada estació mostra:</p>
+	  <ul>
+	    <li>Nombre de bicicletes disponibles</li>
+	    <li>Places lliures per aparcar</li>
+	    <li>Estat de funcionament</li>
+	  </ul>
+	  <p style="text-align:justify; margin-right:5px;">Les dades s'actualitzen automàticament cada 30 segons quan la visualització està activa.</p>
+	  <center><button style="background:#2a2a2a; color:white; padding:5px;" onclick="location.href='#bicing'">Torna a l'inici</button></center>
+	</div>
 
 	<!--VIQUIPÈDIA-->
 	<div class="sidebar-pane" id="wikipedia">
