@@ -18,11 +18,19 @@ async function getJson(url) {
 
 // Vercel API endpoint for TMB stops
 export default async function (req, res) {
-  // Set CORS headers first - before any other response
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Set CORS headers IMMEDIATELY - before any other logic
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,OPTIONS,POST,PUT,DELETE',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+  };
+  
+  // Set each header individually to ensure they're applied
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
@@ -38,9 +46,16 @@ export default async function (req, res) {
 
     const result = await getJson(tmbUrl);
     if (result.status && result.status >= 200 && result.status < 300) {
+      // Ensure CORS headers are set again before sending success response
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        res.setHeader(key, value);
+      });
       return res.status(200).json(result.json);
     } else {
-      // Return proper error status with CORS headers
+      // Ensure CORS headers are set again before sending error response
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        res.setHeader(key, value);
+      });
       return res.status(result.status || 500).json({ 
         error: 'TMB stops upstream error', 
         status: result.status, 
@@ -49,7 +64,10 @@ export default async function (req, res) {
     }
   } catch (err) {
     console.error('TMB stops proxy error:', err);
-    // Return proper error status with CORS headers
+    // Ensure CORS headers are set again before sending error response
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
     return res.status(500).json({ 
       error: 'TMB stops proxy failed', 
       message: err.message, 
