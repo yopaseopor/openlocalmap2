@@ -20,6 +20,7 @@ function getJson(url) {
   });
 }
 
+// TMB stops data proxy for Vercel (CommonJS) — provides stops information
 module.exports = async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -29,22 +30,21 @@ module.exports = async function (req, res) {
   try {
     const appId = process.env.TMB_APP_ID || '8029906b';
     const appKey = process.env.TMB_APP_KEY || '73b5ad24d1db9fa24988bf134a1523d1';
-    const radius = req.query.radius || '1000';
-    const lat = req.query.lat;
-    const lon = req.query.lon;
 
-    let tmbUrl = `https://api.tmb.cat/v1/ibus/stops/nearby?app_id=${appId}&app_key=${appKey}&radius=${radius}`;
-    if (lat && lon) tmbUrl += `&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+    // Use TMB transit parades endpoint for stops information
+    const tmbUrl = `https://api.tmb.cat/v1/transit/parades?app_id=${appId}&app_key=${appKey}`;
+
+    console.log('TMB stops API URL:', tmbUrl);
 
     const result = await getJson(tmbUrl);
     if (result.status && result.status >= 200 && result.status < 300) {
       return res.status(200).json(result.json);
     } else {
-      return res.status(result.status || 502).json({ error: 'TMB upstream error', status: result.status });
+      return res.status(result.status || 502).json({ error: 'TMB stops upstream error', status: result.status });
     }
   } catch (err) {
-    console.error('TMB proxy error:', err);
+    console.error('TMB stops proxy error:', err);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(500).json({ error: 'TMB proxy failed', message: err.message });
+    return res.status(500).json({ error: 'TMB stops proxy failed', message: err.message });
   }
 };
