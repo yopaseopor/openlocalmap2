@@ -1,41 +1,17 @@
 // TMB stops data proxy for Vercel — provides stops information
-async function getJson(url) {
+export default async function (req, res) {
   try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'OpenLocalMap-Proxy/1.0', 'Accept': 'application/json' }
-    });
+    // Set CORS headers first
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (!response.ok) {
-      return { status: response.status, json: null };
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
     }
 
-    const json = await response.json();
-    return { status: response.status, json };
-  } catch (err) {
-    throw new Error('Request failed: ' + err.message);
-  }
-}
+    console.log('TMB stops API called successfully');
 
-// Vercel API endpoint for TMB stops
-export default async function (req, res) {
-  // Set CORS headers IMMEDIATELY - before any other logic
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,OPTIONS,POST,PUT,DELETE',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
-  };
-  
-  // Set each header individually to ensure they're applied
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    res.setHeader(key, value);
-  });
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  try {
     const appId = process.env.TMB_APP_ID || '8029906b';
     const appKey = process.env.TMB_APP_KEY || '73b5ad24d1db9fa24988bf134a1523d1';
 
@@ -44,30 +20,33 @@ export default async function (req, res) {
 
     console.log('TMB stops API URL:', tmbUrl);
 
-    const result = await getJson(tmbUrl);
-    if (result.status && result.status >= 200 && result.status < 300) {
-      // Ensure CORS headers are set again before sending success response
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        res.setHeader(key, value);
-      });
-      return res.status(200).json(result.json);
-    } else {
-      // Ensure CORS headers are set again before sending error response
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        res.setHeader(key, value);
-      });
-      return res.status(result.status || 500).json({ 
+    const response = await fetch(tmbUrl, {
+      headers: { 'User-Agent': 'OpenLocalMap-Proxy/1.0', 'Accept': 'application/json' }
+    });
+
+    console.log('TMB API response status:', response.status);
+
+    if (!response.ok) {
+      // Set CORS headers again for error response
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(response.status).json({ 
         error: 'TMB stops upstream error', 
-        status: result.status, 
+        status: response.status, 
         upstreamError: true 
       });
     }
+
+    const jsonData = await response.json();
+    console.log('TMB API response received successfully');
+
+    // Set CORS headers again for success response
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(200).json(jsonData);
+
   } catch (err) {
     console.error('TMB stops proxy error:', err);
-    // Ensure CORS headers are set again before sending error response
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-      res.setHeader(key, value);
-    });
+    // Set CORS headers for error response
+    res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(500).json({ 
       error: 'TMB stops proxy failed', 
       message: err.message, 
