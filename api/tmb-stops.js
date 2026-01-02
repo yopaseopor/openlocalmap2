@@ -1,26 +1,24 @@
-// TMB stops data proxy for Vercel (CommonJS) — provides stops information
-const https = require('https');
-
-function getJson(url) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'OpenLocalMap-Proxy/1.0', 'Accept': 'application/json' } }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          resolve({ status: res.statusCode, json });
-        } catch (err) {
-          reject(new Error('Invalid JSON from upstream: ' + err.message));
-        }
-      });
+// TMB stops data proxy for Vercel — provides stops information
+async function getJson(url) {
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'OpenLocalMap-Proxy/1.0', 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(30000) // 30 second timeout
     });
-    req.on('error', (err) => reject(err));
-    req.setTimeout(30000, () => { req.abort(); reject(new Error('Upstream timeout')); });
-  });
+
+    if (!response.ok) {
+      return { status: response.status, json: null };
+    }
+
+    const json = await response.json();
+    return { status: response.status, json };
+  } catch (err) {
+    throw new Error('Request failed: ' + err.message);
+  }
 }
 
-module.exports = async function (req, res) {
+// Vercel API endpoint for TMB stops
+export default async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

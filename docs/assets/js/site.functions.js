@@ -6657,7 +6657,7 @@ function displayTMBStops(stops) {
                         '<h5 style="margin: 0 0 8px 0; color: #28a745;">🚌 Temps real - Properes arribades</h5>' +
                         '<div style="max-height: 150px; overflow-y: auto;">';
 
-                    stop.realtimeData.slice(0, 8).forEach(function(bus) { // Limit to 8 buses
+                    stop.realtimeData.slice(0, 20).forEach(function(bus) { // Limit to 20 buses
                         var arrivalTime = '';
                         if (bus.timeToArrival !== undefined) {
                             if (bus.timeToArrival === 0) {

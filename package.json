@@ -2,6 +2,7 @@
   "name": "openlocalmap2",
   "version": "1.0.0",
   "description": "Open Local Map 2 - A mapping application",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

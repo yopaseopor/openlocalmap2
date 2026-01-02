@@ -1,0 +1,21 @@
+# Ignore everything except what's needed for Vercel deployment
+!api/
+!vercel.json
+!package.json
+
+# Ignore development files
+.git/
+.github/
+node_modules/
+docs/
+server.js
+README.md
+CHANGELOG.md
+fabfile.py
+LICENSE
+requirements.txt
+*.md
+*.py
+*.txt
+!docs/index.html
+!docs/assets/
