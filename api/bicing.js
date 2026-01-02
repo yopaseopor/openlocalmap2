@@ -1,20 +1,13 @@
 // Bicing proxy for Vercel — ensures CORS headers are always present
 async function getJson(url, token) {
   try {
-    // Create AbortController for timeout (more compatible than AbortSignal.timeout)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'OpenLocalMap-Proxy/1.0',
         'Accept': 'application/json',
         'X-Auth-Token': token
-      },
-      signal: controller.signal
+      }
     });
-
-    clearTimeout(timeoutId); // Clear timeout if request succeeds
 
     if (!response.ok) {
       return { status: response.status, json: null };
@@ -23,9 +16,6 @@ async function getJson(url, token) {
     const json = await response.json();
     return { status: response.status, json };
   } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error('Request timeout after 30 seconds');
-    }
     throw new Error('Request failed: ' + err.message);
   }
 }
