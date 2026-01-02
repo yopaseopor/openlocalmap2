@@ -18,7 +18,7 @@ async function getJson(url) {
 
 // Vercel API endpoint for TMB stops
 export default async function (req, res) {
-  // Set CORS headers first
+  // Set CORS headers first - before any other response
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -40,12 +40,20 @@ export default async function (req, res) {
     if (result.status && result.status >= 200 && result.status < 300) {
       return res.status(200).json(result.json);
     } else {
-      // Return 200 even for upstream errors to avoid CORS issues with error responses
-      return res.status(200).json({ error: 'TMB stops upstream error', status: result.status, upstreamError: true });
+      // Return proper error status with CORS headers
+      return res.status(result.status || 500).json({ 
+        error: 'TMB stops upstream error', 
+        status: result.status, 
+        upstreamError: true 
+      });
     }
   } catch (err) {
     console.error('TMB stops proxy error:', err);
-    // Return 200 even for proxy errors to avoid CORS issues with error responses
-    return res.status(200).json({ error: 'TMB stops proxy failed', message: err.message, proxyError: true });
+    // Return proper error status with CORS headers
+    return res.status(500).json({ 
+      error: 'TMB stops proxy failed', 
+      message: err.message, 
+      proxyError: true 
+    });
   }
 };

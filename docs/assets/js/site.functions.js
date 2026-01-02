@@ -6371,19 +6371,33 @@ function fetchTMBStops() {
 
     return fetch(apiUrl)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('TMB stops API proxy failed: ' + response.status + ' ' + response.statusText);
-            }
-            return response.json();
+            // Always try to parse JSON, even for error responses (CORS headers are now set properly)
+            return response.json().then(jsonData => {
+                if (!response.ok) {
+                    // If it's an error response with JSON, include the error details
+                    if (jsonData.error) {
+                        throw new Error('TMB stops API proxy failed: ' + response.status + ' - ' + (jsonData.message || jsonData.error));
+                    } else {
+                        throw new Error('TMB stops API proxy failed: ' + response.status + ' ' + response.statusText);
+                    }
+                }
+                return jsonData;
+            }).catch(err => {
+                // If JSON parsing fails, fall back to status text
+                if (!response.ok) {
+                    throw new Error('TMB stops API proxy failed: ' + response.status + ' ' + response.statusText);
+                }
+                throw err;
+            });
         })
         .then(jsonData => {
             console.log('✅ TMB stops API proxy succeeded! Processing stops data...', jsonData);
 
-            // Check if the response contains an error (new format with 200 status)
+            // Check if the response contains an error
             if (jsonData.error || jsonData.proxyError || jsonData.upstreamError) {
                 var errorMsg = jsonData.message || jsonData.error || 'Unknown error';
                 console.warn('⚠️ TMB stops API returned error:', errorMsg);
-                // Don't throw error, just log and return empty array to avoid CORS issues
+                // Don't throw error, just log and return empty array
                 return [];
             }
 
