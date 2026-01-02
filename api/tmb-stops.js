@@ -1,5 +1,5 @@
 // TMB stops data proxy for Vercel — provides stops information
-export default async function (req, res) {
+module.exports = async function (req, res) {
   try {
     // Set CORS headers first
     res.setHeader('Access-Control-Allow-Origin', '*');

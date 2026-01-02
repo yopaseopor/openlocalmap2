@@ -1,5 +1,5 @@
 // Simple CORS test endpoint
-export default async function (req, res) {
+module.exports = async function (req, res) {
   // Set CORS headers immediately
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,PUT,DELETE');
