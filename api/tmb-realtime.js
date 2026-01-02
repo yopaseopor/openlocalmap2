@@ -1,10 +1,16 @@
 // TMB real-time bus arrivals proxy for Vercel — provides real-time bus arrival data at stops
 async function getJson(url) {
   try {
+    // Create AbortController for timeout (more compatible than AbortSignal.timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch(url, {
       headers: { 'User-Agent': 'OpenLocalMap-Proxy/1.0', 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(30000) // 30 second timeout
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId); // Clear timeout if request succeeds
 
     if (!response.ok) {
       return { status: response.status, json: null };
@@ -13,16 +19,23 @@ async function getJson(url) {
     const json = await response.json();
     return { status: response.status, json };
   } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout after 30 seconds');
+    }
     throw new Error('Request failed: ' + err.message);
   }
 }
 
 // Vercel API endpoint for TMB real-time bus data
 export default async function (req, res) {
+  // Set CORS headers first
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(204).end();
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
 
   try {
     // Use TMB iTransit API for real-time bus arrivals at stops
@@ -45,7 +58,6 @@ export default async function (req, res) {
     }
   } catch (err) {
     console.error('TMB iTransit proxy error:', err);
-    res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(500).json({ error: 'TMB iTransit proxy failed', message: err.message });
   }
 };
