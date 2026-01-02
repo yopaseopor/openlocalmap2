@@ -6379,9 +6379,12 @@ function fetchTMBStops() {
         .then(jsonData => {
             console.log('✅ TMB stops API proxy succeeded! Processing stops data...', jsonData);
 
-            // Check if the response contains an error
-            if (jsonData.error) {
-                throw new Error('TMB stops API Error: ' + jsonData.message);
+            // Check if the response contains an error (new format with 200 status)
+            if (jsonData.error || jsonData.proxyError || jsonData.upstreamError) {
+                var errorMsg = jsonData.message || jsonData.error || 'Unknown error';
+                console.warn('⚠️ TMB stops API returned error:', errorMsg);
+                // Don't throw error, just log and return empty array to avoid CORS issues
+                return [];
             }
 
             var stops = [];

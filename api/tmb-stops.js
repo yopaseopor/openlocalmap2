@@ -40,10 +40,12 @@ export default async function (req, res) {
     if (result.status && result.status >= 200 && result.status < 300) {
       return res.status(200).json(result.json);
     } else {
-      return res.status(result.status || 502).json({ error: 'TMB stops upstream error', status: result.status });
+      // Return 200 even for upstream errors to avoid CORS issues with error responses
+      return res.status(200).json({ error: 'TMB stops upstream error', status: result.status, upstreamError: true });
     }
   } catch (err) {
     console.error('TMB stops proxy error:', err);
-    return res.status(500).json({ error: 'TMB stops proxy failed', message: err.message });
+    // Return 200 even for proxy errors to avoid CORS issues with error responses
+    return res.status(200).json({ error: 'TMB stops proxy failed', message: err.message, proxyError: true });
   }
 };
