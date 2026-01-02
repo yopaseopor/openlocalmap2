@@ -6812,6 +6812,318 @@ function fetchRealtimeTMBBusesForStop(stopId) {
         });
 }
 
+// TMB Stations Table Management
+var tmbStationsData = [];
+var currentTMBPage = 1;
+var itemsPerTMBPage = 10;
+var filteredTMBStations = [];
+var currentTMBSortColumn = 'id'; // Default sort column
+var currentTMBSortDirection = 'asc'; // 'asc' or 'desc'
+
+// Load TMB stations and populate table
+function loadTMBStationsTable() {
+    var loadingElement = document.getElementById('tmb-loading');
+    var tableElement = document.getElementById('tmb-stations-table');
+    var tbodyElement = document.getElementById('tmb-stations-tbody');
+
+    if (loadingElement) loadingElement.style.display = 'block';
+    if (tableElement) tableElement.style.display = 'none';
+
+    fetchTMBStops().then(function(stations) {
+        tmbStationsData = stations || [];
+        filteredTMBStations = [...tmbStationsData];
+
+        currentTMBPage = 1;
+        displayTMBStationsTable();
+
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (tableElement) tableElement.style.display = 'table';
+    }).catch(function(error) {
+        console.error('Error loading TMB stations:', error);
+        if (loadingElement) loadingElement.style.display = 'none';
+
+        var noResultsElement = document.getElementById('tmb-no-results');
+        if (noResultsElement) {
+            noResultsElement.innerHTML = '<i class="fa fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i><p>Error carregant les parades TMB. Torna-ho a intentar més tard.</p>';
+            noResultsElement.style.display = 'block';
+        }
+    });
+}
+
+// Display TMB stations table with pagination
+function displayTMBStationsTable() {
+    var tbodyElement = document.getElementById('tmb-stations-tbody');
+    var noResultsElement = document.getElementById('tmb-no-results');
+
+    if (!tbodyElement) return;
+
+    var startIndex = (currentTMBPage - 1) * itemsPerTMBPage;
+    var endIndex = startIndex + itemsPerTMBPage;
+    var stationsToShow = filteredTMBStations.slice(startIndex, endIndex);
+
+    tbodyElement.innerHTML = '';
+
+    if (stationsToShow.length === 0) {
+        if (noResultsElement) {
+            noResultsElement.style.display = 'block';
+        }
+        return;
+    }
+
+    if (noResultsElement) {
+        noResultsElement.style.display = 'none';
+    }
+
+    stationsToShow.forEach(function(station) {
+        var row = document.createElement('tr');
+        row.style.borderBottom = '1px solid #eee';
+
+        // ID column
+        var idCell = document.createElement('td');
+        idCell.style.padding = '8px';
+        idCell.textContent = station.id || '';
+        row.appendChild(idCell);
+
+        // Name column
+        var nameCell = document.createElement('td');
+        nameCell.style.padding = '8px';
+        nameCell.textContent = station.name || 'Sense nom';
+        row.appendChild(nameCell);
+
+        // Street column
+        var streetCell = document.createElement('td');
+        streetCell.style.padding = '8px';
+        streetCell.textContent = station.streetName || '';
+        row.appendChild(streetCell);
+
+        // Type column
+        var typeCell = document.createElement('td');
+        typeCell.style.padding = '8px';
+        var typeText = station.type || 'Desconegut';
+        typeCell.textContent = typeText;
+        row.appendChild(typeCell);
+
+        // Action column
+        var actionCell = document.createElement('td');
+        actionCell.style.padding = '8px';
+        actionCell.style.textAlign = 'center';
+
+        var selectButton = document.createElement('button');
+        selectButton.textContent = 'Seleccionar';
+        selectButton.style.background = '#007bff';
+        selectButton.style.color = 'white';
+        selectButton.style.border = 'none';
+        selectButton.style.padding = '4px 8px';
+        selectButton.style.borderRadius = '3px';
+        selectButton.style.cursor = 'pointer';
+        selectButton.style.fontSize = '12px';
+        selectButton.onclick = function() {
+            selectTMBStation(station);
+        };
+
+        actionCell.appendChild(selectButton);
+        row.appendChild(actionCell);
+
+        tbodyElement.appendChild(row);
+    });
+
+    updateTMBPaginationControls();
+}
+
+// Select a TMB station and update the bus visualization
+function selectTMBStation(station) {
+    if (!station || !station.id) return;
+
+    // Store selected station globally for the real-time functions
+    window.selectedTMBStopId = station.id;
+
+    // Zoom to the selected station
+    if (station.lat && station.lng && !isNaN(station.lat) && !isNaN(station.lng)) {
+        map.setView([station.lat, station.lng], 18); // High zoom level to focus on the stop
+        console.log('🗺️ Zoomed to TMB station:', station.id, 'at', station.lat, station.lng);
+    } else {
+        console.warn('❌ Cannot zoom to TMB station - invalid coordinates:', station.id, station.lat, station.lng);
+    }
+
+    // Update the status to show selected station
+    var statusElement = document.getElementById('tmb-realtime-status');
+    if (statusElement) {
+        statusElement.textContent = 'Status: Parada seleccionada - ' + station.id + ' (' + (station.name || 'Sense nom') + ')';
+    }
+
+    // If TMB real-time is running, restart it with the new stop
+    if (tmbRealtimeBusInterval) {
+        stopRealtimeTMBBuses();
+        setTimeout(function() {
+            startRealtimeTMBBuses();
+        }, 500);
+    }
+
+    // Show visual feedback
+    alert('Parada TMB seleccionada: ' + (station.name || 'Sense nom') + ' (ID: ' + station.id + ')\n\nEl mapa s\'ha centrat a la parada. Ara pots iniciar la visualització en temps real per veure els autobusos.');
+}
+
+// Search TMB stations
+function searchTMBStations() {
+    var searchInput = document.getElementById('tmb-search');
+    if (!searchInput) return;
+
+    var searchTerm = searchInput.value.toLowerCase().trim();
+    filteredTMBStations = tmbStationsData.filter(function(station) {
+        var searchableText = [
+            station.id || '',
+            station.name || '',
+            station.streetName || '',
+            station.type || ''
+        ].join(' ').toLowerCase();
+
+        return searchableText.includes(searchTerm);
+    });
+
+    currentTMBPage = 1;
+    displayTMBStationsTable();
+}
+
+// Clear TMB search
+function clearTMBSearch() {
+    var searchInput = document.getElementById('tmb-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    filteredTMBStations = [...tmbStationsData];
+    currentTMBPage = 1;
+    displayTMBStationsTable();
+}
+
+// Update TMB pagination controls
+function updateTMBPaginationControls() {
+    var prevButton = document.getElementById('tmb-prev-page');
+    var nextButton = document.getElementById('tmb-next-page');
+    var pageInfo = document.getElementById('tmb-page-info');
+
+    var totalPages = Math.ceil(filteredTMBStations.length / itemsPerTMBPage);
+
+    if (prevButton) {
+        prevButton.disabled = currentTMBPage <= 1;
+    }
+
+    if (nextButton) {
+        nextButton.disabled = currentTMBPage >= totalPages;
+    }
+
+    if (pageInfo) {
+        pageInfo.textContent = 'Pàgina ' + currentTMBPage + ' de ' + Math.max(1, totalPages);
+    }
+}
+
+// Change TMB page
+function changeTMBPage(direction) {
+    var totalPages = Math.ceil(filteredTMBStations.length / itemsPerTMBPage);
+    currentTMBPage += direction;
+
+    if (currentTMBPage < 1) currentTMBPage = 1;
+    if (currentTMBPage > totalPages) currentTMBPage = totalPages;
+
+    displayTMBStationsTable();
+}
+
+// Sort TMB stations table
+function sortTMBTable(column) {
+    // Toggle sort direction if same column, otherwise default to ascending
+    if (currentTMBSortColumn === column) {
+        currentTMBSortDirection = currentTMBSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentTMBSortColumn = column;
+        currentTMBSortDirection = 'asc';
+    }
+
+    // Sort the filtered stations
+    filteredTMBStations.sort(function(a, b) {
+        var aVal, bVal;
+
+        switch(column) {
+            case 'id':
+                aVal = (a.id || '').toString().toLowerCase();
+                bVal = (b.id || '').toString().toLowerCase();
+                break;
+            case 'name':
+                aVal = (a.name || '').toString().toLowerCase();
+                bVal = (b.name || '').toString().toLowerCase();
+                break;
+            case 'street':
+                aVal = (a.streetName || '').toString().toLowerCase();
+                bVal = (b.streetName || '').toString().toLowerCase();
+                break;
+            case 'type':
+                aVal = (a.type || '').toString().toLowerCase();
+                bVal = (b.type || '').toString().toLowerCase();
+                break;
+            default:
+                return 0;
+        }
+
+        if (currentTMBSortDirection === 'asc') {
+            return aVal.localeCompare(bVal, 'ca', {numeric: true, sensitivity: 'base'});
+        } else {
+            return bVal.localeCompare(aVal, 'ca', {numeric: true, sensitivity: 'base'});
+        }
+    });
+
+    // Reset to first page when sorting
+    currentTMBPage = 1;
+
+    // Update sort indicators
+    updateTMBSortIndicators();
+
+    // Redisplay the table
+    displayTMBStationsTable();
+}
+
+// Update sort indicators in table headers
+function updateTMBSortIndicators() {
+    // Reset all indicators
+    var indicators = ['sort-id', 'sort-name', 'sort-street', 'sort-type'];
+    indicators.forEach(function(id) {
+        var element = document.getElementById(id);
+        if (element) {
+            element.textContent = '↕️';
+        }
+    });
+
+    // Set active indicator
+    var activeId = 'sort-' + currentTMBSortColumn;
+    var activeElement = document.getElementById(activeId);
+    if (activeElement) {
+        activeElement.textContent = currentTMBSortDirection === 'asc' ? '⬆️' : '⬇️';
+    }
+}
+
+// Initialize TMB stations table when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Load TMB stations table when the TMB section becomes visible
+    var tmbSection = document.getElementById('tmb-stations-section');
+    if (tmbSection) {
+        // Use IntersectionObserver to load data when the section becomes visible
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting && tmbStationsData.length === 0) {
+                    loadTMBStationsTable();
+                }
+            });
+        }, { threshold: 0.1 });
+
+        observer.observe(tmbSection);
+    }
+});
+
+// Make TMB stations table functions globally accessible
+window.loadTMBStationsTable = loadTMBStationsTable;
+window.displayTMBStationsTable = displayTMBStationsTable;
+window.selectTMBStation = selectTMBStation;
+window.searchTMBStations = searchTMBStations;
+window.clearTMBSearch = clearTMBSearch;
+window.changeTMBPage = changeTMBPage;
+
 // Make TMB stops functions globally accessible
 window.startTMBStops = startTMBStops;
 window.stopTMBStops = stopTMBStops;
