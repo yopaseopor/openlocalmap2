@@ -3093,7 +3093,7 @@ function updateTMBRealtimeStatus(status) {
     }
 }
 
-// Fetch real-time TMB bus positions
+// Fetch real-time TMB bus arrivals at stops
 function fetchRealtimeTMBBuses() {
     // Detect deployment environment
     var hostname = window.location.hostname;
@@ -3104,27 +3104,33 @@ function fetchRealtimeTMBBuses() {
     var apiUrl;
     if (isVercel) {
         // Use Vercel-deployed API
-        apiUrl = '/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via Vercel API...');
+        apiUrl = '/api/tmb-realtime';
+        console.log('🚌 Fetching TMB real-time bus arrivals via Vercel API...');
     } else if (isGitHubPages) {
         // On GitHub Pages, use our Vercel deployment as proxy
-        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via openlocalmap2.vercel.app proxy from GitHub Pages...');
+        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-realtime';
+        console.log('🚌 Fetching TMB real-time bus arrivals via openlocalmap2.vercel.app proxy from GitHub Pages...');
     } else {
         // Local development
-        apiUrl = '/api/tmb-buses';
-        console.log('🚌 Fetching TMB bus data via local proxy server...');
+        apiUrl = '/api/tmb-realtime';
+        console.log('🚌 Fetching TMB real-time bus arrivals via local proxy server...');
     }
+
+    // Use the selected stop ID from the dropdown, or default to Pl. Catalunya (108)
+    var stopId = window.selectedTMBStopId || '108';
+    apiUrl += '?stopId=' + encodeURIComponent(stopId);
+
+    console.log('🚌 Fetching TMB arrivals for stop ID:', stopId, '(selected:', window.selectedTMBStopId || 'default)');
 
     return fetch(apiUrl)
         .then(response => {
             if (!response.ok) {
-                throw new Error('TMB API proxy failed: ' + response.status + ' ' + response.statusText);
+                throw new Error('TMB real-time API proxy failed: ' + response.status + ' ' + response.statusText);
             }
             return response.json();
         })
         .then(jsonData => {
-            console.log('✅ TMB API proxy succeeded! Processing TMB bus data...');
+            console.log('✅ TMB real-time API proxy succeeded! Processing TMB bus arrival data...', jsonData);
 
             // Check if the response contains an error
             if (jsonData.error) {
@@ -3133,68 +3139,86 @@ function fetchRealtimeTMBBuses() {
 
             var buses = [];
 
-            // Process TMB iBus API response
-            // TMB API returns data about nearby stops with bus arrivals
-            if (jsonData && jsonData.data && jsonData.data.nearstops) {
-                jsonData.data.nearstops.forEach(function(stop) {
-                    if (stop.buses && Array.isArray(stop.buses)) {
-                        stop.buses.forEach(function(bus, index) {
-                            try {
-                                console.log('🔍 Processing TMB bus', index, 'at stop', stop.street_name, ':', bus);
+            // Process TMB iTransit API response - bus arrivals for a specific stop
+            // The response format is: {timestamp, parades: [...]}
+            if (jsonData && jsonData.parades && Array.isArray(jsonData.parades)) {
+                jsonData.parades.forEach(function(parada) {
+                    // Each parada (stop) has bus arrival information
+                    var stopCode = parada.code || stopId;
+                    var stopName = parada.street_name || 'Parada ' + stopCode;
+                    var stopLat = parada.lat || 41.3851;
+                    var stopLng = parada.lon || 2.1734;
 
-                                // TMB provides bus line information but not exact GPS positions
-                                // We'll create bus markers at stop locations for visualization
-                                var lat = stop.lat;
-                                var lng = stop.lon;
-                                var routeId = bus.line || 'Unknown';
-                                var busId = bus.bus || index.toString();
-                                var destination = bus.destination || '';
-                                var timeArrival = bus['t-in-min'] || bus['t-in-s'] || 0;
+                    console.log('🔍 Processing TMB stop:', stopName, 'code:', stopCode);
 
-                                // Validate coordinates
-                                if (typeof lat === 'number' && typeof lng === 'number' &&
-                                    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
-                                    lat !== 0 && lng !== 0) {
+                    // Process buses arriving at this stop
+                    // TMB API structure: parada.linies_trajectes[].propers_busos[]
+                    if (parada.linies_trajectes && Array.isArray(parada.linies_trajectes)) {
+                        parada.linies_trajectes.forEach(function(linia, lineIndex) {
+                            if (linia.propers_busos && Array.isArray(linia.propers_busos)) {
+                                linia.propers_busos.forEach(function(bus, busIndex) {
+                                    try {
+                                        console.log('🔍 Processing TMB bus arrival:', bus, 'from line:', linia.codi_linia);
 
-                                    buses.push({
-                                        id: busId + '-' + stop.code,
-                                        label: routeId + ' → ' + destination,
-                                        lat: lat,
-                                        lng: lng,
-                                        route: routeId,
-                                        destination: destination,
-                                        stopName: stop.street_name || '',
-                                        stopCode: stop.code || '',
-                                        timeToArrival: timeArrival,
-                                        status: 'At stop',
-                                        timestamp: new Date().getTime()
-                                    });
+                                        var routeId = linia.codi_linia || 'Unknown';
+                                        var busId = linia.codi_trajecte || (lineIndex + '-' + busIndex).toString();
+                                        var destination = linia.desti_trajecte || '';
+                                        var timeArrival = bus.temps_arribada || 0;
 
-                                    console.log('✅ Processed TMB bus:', busId, routeId, 'at', lat, lng);
-                                } else {
-                                    console.warn('❌ Invalid coordinates for TMB bus at stop:', stop.code, '- lat:', lat, 'lng:', lng);
-                                }
-                            } catch (error) {
-                                console.warn('Error processing TMB bus at stop', stop.code, ':', error, bus);
+                                        // Convert timestamp to minutes from now if it's a timestamp
+                                        if (typeof timeArrival === 'number' && timeArrival > 1000000000000) { // Unix timestamp in milliseconds
+                                            var now = new Date().getTime();
+                                            var arrivalTime = new Date(timeArrival);
+                                            var diffMs = arrivalTime - now;
+                                            timeArrival = Math.max(0, Math.round(diffMs / (1000 * 60))); // Convert to minutes
+                                        }
+
+                                        // Validate coordinates
+                                        if (typeof stopLat === 'number' && typeof stopLng === 'number' &&
+                                            stopLat >= -90 && stopLat <= 90 && stopLng >= -180 && stopLng <= 180 &&
+                                            stopLat !== 0 && stopLng !== 0) {
+
+                                            buses.push({
+                                                id: busId + '-' + stopCode,
+                                                label: routeId + ' → ' + destination,
+                                                lat: stopLat,
+                                                lng: stopLng,
+                                                route: routeId,
+                                                destination: destination,
+                                                stopName: stopName,
+                                                stopCode: stopCode,
+                                                timeToArrival: timeArrival,
+                                                status: 'Arriving at stop',
+                                                timestamp: new Date().getTime()
+                                            });
+
+                                            console.log('✅ Processed TMB bus arrival:', busId, routeId, 'at stop', stopCode, 'in', timeArrival, 'min');
+                                        } else {
+                                            console.warn('❌ Invalid coordinates for TMB stop:', stopCode, '- lat:', stopLat, 'lng:', stopLng);
+                                        }
+                                    } catch (error) {
+                                        console.warn('Error processing TMB bus at stop', stopCode, ':', error, bus);
+                                    }
+                                });
                             }
                         });
                     }
                 });
             } else {
-                console.warn('❌ TMB API proxy response format unexpected:', jsonData);
+                console.warn('❌ TMB real-time API proxy response format unexpected:', jsonData);
             }
 
             if (buses.length > 0) {
-                console.log('🚌 SUCCESS: Extracted', buses.length, 'TMB buses from API proxy!');
+                console.log('🚌 SUCCESS: Extracted', buses.length, 'TMB real-time bus predictions from API proxy!');
                 return buses;
             } else {
                 console.warn('Proxy returned data but no buses found');
-                alert('🚌 No s\'han trobat autobusos TMB a les parades properes. L\'API pot estar temporalment indisponible o no hi ha parades properes.\n\nUtilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
+                alert('🚌 No s\'han trobat prediccions d\'autobusos TMB per aquesta parada. L\'API pot estar temporalment indisponible o no hi ha autobusos programats.\n\nUtilitza l\'opció "📝 Introduir Dades Manualment" per provar amb dades d\'exemple.');
                 return [];
             }
         })
         .catch(error => {
-            console.error('❌ TMB API proxy failed:', error.message);
+            console.error('❌ TMB real-time API proxy failed:', error.message);
 
             // Fallback options - same CORS proxy system as RENFE and FGC
             if (isGitHubPages) {
@@ -3203,7 +3227,7 @@ function fetchRealtimeTMBBuses() {
                 return fetchRealtimeTMBBusesFallback();
             } else if (isVercel) {
                 // On Vercel, show manual fallback option
-                alert('🚌 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy JSON data\n3. Use "📝 Introduir Dades Manualment"');
+                alert('🚌 API proxy temporarily unavailable. Use manual data entry:\n\n1. Open: https://developer.tmb.cat/api-docs/v1/ibus\n2. Copy previsioParada JSON data\n3. Use "📝 Introduir Dades Manualment"');
                 return Promise.resolve([]);
             } else {
                 // Local development - try CORS proxies
@@ -3886,6 +3910,30 @@ function fetchRealtimeTMBBusesFallback() {
     return tryNextProxy(0);
 }
 
+// Function to update TMB stop selection
+function updateTMBStop() {
+    var selectElement = document.getElementById('tmb-stop-select');
+    if (selectElement) {
+        var selectedStopId = selectElement.value;
+        console.log('🚌 Updating TMB stop to:', selectedStopId);
+
+        // Store the selected stop ID globally for the fetch function to use
+        window.selectedTMBStopId = selectedStopId;
+
+        // If TMB real-time is currently running, restart it with the new stop
+        if (tmbRealtimeBusInterval) {
+            console.log('🚌 TMB real-time is running, restarting with new stop...');
+            stopRealtimeTMBBuses();
+            // Small delay to ensure cleanup
+            setTimeout(function() {
+                startRealtimeTMBBuses();
+            }, 500);
+        } else {
+            console.log('🚌 TMB real-time is not running, stop updated for next start');
+        }
+    }
+}
+
 // Make TMB functions globally accessible
 window.startRealtimeTMBBuses = startRealtimeTMBBuses;
 window.stopRealtimeTMBBuses = stopRealtimeTMBBuses;
@@ -3893,6 +3941,7 @@ window.openTMBJson = openTMBJson;
 window.showTMBDataEntry = showTMBDataEntry;
 window.processTMBManualJsonData = processTMBManualJsonData;
 window.toggleTMBBusLegend = toggleTMBBusLegend;
+window.updateTMBStop = updateTMBStop;
 
 // Bicing Barcelona Real-Time Visualization
 var bicingRealtimeInterval = null;
@@ -6244,5 +6293,512 @@ function toggleCombinedGBFSLegend() {
 window.startRealtimeCombinedGBFS = startRealtimeCombinedGBFS;
 window.stopRealtimeCombinedGBFS = stopRealtimeCombinedGBFS;
 window.toggleCombinedGBFSLegend = toggleCombinedGBFSLegend;
+
+// TMB Stops Visualization
+var tmbStopsMarkers = [];
+var tmbStopsInterval = null;
+
+// Start TMB stops visualization
+function startTMBStops() {
+    if (tmbStopsInterval) {
+        stopTMBStops();
+        return;
+    }
+
+    // Initial load
+    fetchTMBStops().then(function(stops) {
+        displayTMBStops(stops);
+    });
+
+    // Update every 5 minutes for stops data (static data)
+    tmbStopsInterval = setInterval(function() {
+        fetchTMBStops().then(function(stops) {
+            displayTMBStops(stops);
+        });
+    }, 300000); // 5 minutes
+
+    // Update UI
+    var startBtn = document.getElementById('start-tmb-stops-btn');
+    var stopBtn = document.getElementById('stop-tmb-stops-btn');
+    if (startBtn) startBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'inline-block';
+}
+
+// Stop TMB stops visualization
+function stopTMBStops() {
+    if (tmbStopsInterval) {
+        clearInterval(tmbStopsInterval);
+        tmbStopsInterval = null;
+    }
+
+    // Clear all stop markers
+    tmbStopsMarkers.forEach(function(marker) {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    tmbStopsMarkers = [];
+
+    // Update UI
+    var startBtn = document.getElementById('start-tmb-stops-btn');
+    var stopBtn = document.getElementById('stop-tmb-stops-btn');
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (stopBtn) stopBtn.style.display = 'none';
+}
+
+// Fetch TMB stops data
+function fetchTMBStops() {
+    // Detect deployment environment
+    var hostname = window.location.hostname;
+    var isGitHubPages = hostname.includes('github.io');
+    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
+
+    // Use appropriate API endpoint based on environment
+    var apiUrl;
+    if (isVercel) {
+        // Use Vercel-deployed API
+        apiUrl = '/api/tmb-stops';
+        console.log('🚏 Fetching TMB stops data via Vercel API...');
+    } else if (isGitHubPages) {
+        // On GitHub Pages, use our Vercel deployment as proxy
+        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-stops';
+        console.log('🚏 Fetching TMB stops data via openlocalmap2.vercel.app proxy from GitHub Pages...');
+    } else {
+        // Local development
+        apiUrl = '/api/tmb-stops';
+        console.log('🚏 Fetching TMB stops data via local proxy server...');
+    }
+
+    return fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('TMB stops API proxy failed: ' + response.status + ' ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            console.log('✅ TMB stops API proxy succeeded! Processing stops data...', jsonData);
+
+            // Check if the response contains an error
+            if (jsonData.error) {
+                throw new Error('TMB stops API Error: ' + jsonData.message);
+            }
+
+            var stops = [];
+
+            // Process TMB transit/parades API response - GeoJSON format
+            if (jsonData && jsonData.features && Array.isArray(jsonData.features)) {
+                jsonData.features.forEach(function(feature) {
+                    try {
+                        console.log('🔍 Processing TMB stop feature:', feature);
+
+                        if (feature.geometry && feature.geometry.coordinates && feature.properties) {
+                            var coords = feature.geometry.coordinates;
+                            var props = feature.properties;
+
+                            // TMB API returns coordinates as [lng, lat] (GeoJSON standard)
+                            var lng = coords[0];
+                            var lat = coords[1];
+
+                            // Extract stop information from properties
+                            var stopId = props.CODI_PARADA || props.id || feature.id || '';
+                            var stopName = props.NOM_PARADA || props.name || 'Parada ' + stopId;
+                            var streetName = props.NOM_VIA || props.street_name || '';
+                            var stopType = props.TIPUS_PARADA || props.stop_type || 'Unknown';
+
+                            // Validate coordinates
+                            if (typeof lat === 'number' && typeof lng === 'number' &&
+                                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                lat !== 0 && lng !== 0) {
+
+                                stops.push({
+                                    id: stopId,
+                                    name: stopName,
+                                    streetName: streetName,
+                                    type: stopType,
+                                    lat: lat,
+                                    lng: lng,
+                                    properties: props,
+                                    timestamp: new Date().getTime()
+                                });
+
+                                console.log('✅ Processed TMB stop:', stopId, stopName, 'at', lat, lng);
+                            } else {
+                                console.warn('❌ Invalid coordinates for TMB stop:', stopId, '- lat:', lat, 'lng:', lng);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Error processing TMB stop feature:', error, feature);
+                    }
+                });
+            } else if (jsonData && jsonData.parades && Array.isArray(jsonData.parades)) {
+                // Alternative response format
+                jsonData.parades.forEach(function(parada) {
+                    try {
+                        var stopId = parada.code || parada.id || '';
+                        var stopName = parada.street_name || parada.name || 'Parada ' + stopId;
+                        var lat = parada.lat || parada.latitude;
+                        var lng = parada.lon || parada.longitude;
+
+                        if (typeof lat === 'number' && typeof lng === 'number' &&
+                            lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                            lat !== 0 && lng !== 0) {
+
+                            stops.push({
+                                id: stopId,
+                                name: stopName,
+                                streetName: parada.street_name || '',
+                                type: parada.type || 'Unknown',
+                                lat: lat,
+                                lng: lng,
+                                properties: parada,
+                                timestamp: new Date().getTime()
+                            });
+
+                            console.log('✅ Processed TMB stop (alt format):', stopId, stopName, 'at', lat, lng);
+                        }
+                    } catch (error) {
+                        console.warn('Error processing TMB stop (alt format):', error, parada);
+                    }
+                });
+            } else {
+                console.warn('❌ TMB stops API response format unexpected:', jsonData);
+            }
+
+            if (stops.length > 0) {
+                console.log('🚏 SUCCESS: Extracted', stops.length, 'TMB stops from API proxy!');
+                return stops;
+            } else {
+                console.warn('Proxy returned data but no stops found');
+                alert('🚏 No s\'han trobat parades TMB a les dades. L\'API pot estar temporalment indisponible.');
+                return [];
+            }
+        })
+        .catch(error => {
+            console.error('❌ TMB stops API proxy failed:', error.message);
+
+            // Try direct API call as fallback (for local development)
+            if (!isGitHubPages && !isVercel) {
+                console.log('🔄 Trying direct TMB API call for local development...');
+                return fetchTMBStopsDirect();
+            } else {
+                alert('❌ Error obtenint parades TMB: ' + error.message + '\n\nAssegura\'t que el servidor local està executant-se (npm start) o prova des de GitHub Pages.');
+                return [];
+            }
+        });
+}
+
+// Direct API call for local development (bypasses CORS)
+function fetchTMBStopsDirect() {
+    var tmbApiUrl = 'https://api.tmb.cat/v1/transit/parades?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1';
+
+    console.log('🚏 Fetching TMB stops data directly from API (local development)...');
+
+    return fetch(tmbApiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Direct TMB API failed: ' + response.status + ' ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            console.log('✅ Direct TMB API call succeeded! Processing stops data...');
+
+            var stops = [];
+
+            // Process TMB transit/parades API response - GeoJSON format
+            if (jsonData && jsonData.features && Array.isArray(jsonData.features)) {
+                jsonData.features.forEach(function(feature) {
+                    try {
+                        if (feature.geometry && feature.geometry.coordinates && feature.properties) {
+                            var coords = feature.geometry.coordinates;
+                            var props = feature.properties;
+
+                            // TMB API returns coordinates as [lng, lat] (GeoJSON standard)
+                            var lng = coords[0];
+                            var lat = coords[1];
+
+                            // Extract stop information from properties
+                            var stopId = props.CODI_PARADA || props.id || feature.id || '';
+                            var stopName = props.NOM_PARADA || props.name || 'Parada ' + stopId;
+                            var streetName = props.NOM_VIA || props.street_name || '';
+                            var stopType = props.TIPUS_PARADA || props.stop_type || 'Unknown';
+
+                            // Validate coordinates
+                            if (typeof lat === 'number' && typeof lng === 'number' &&
+                                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+                                lat !== 0 && lng !== 0) {
+
+                                stops.push({
+                                    id: stopId,
+                                    name: stopName,
+                                    streetName: streetName,
+                                    type: stopType,
+                                    lat: lat,
+                                    lng: lng,
+                                    properties: props,
+                                    timestamp: new Date().getTime()
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Error processing TMB stop feature:', error, feature);
+                    }
+                });
+            }
+
+            if (stops.length > 0) {
+                console.log('🚏 SUCCESS: Extracted', stops.length, 'TMB stops from direct API call!');
+                return stops;
+            } else {
+                console.warn('Direct API call returned data but no stops found');
+                return [];
+            }
+        })
+        .catch(error => {
+            console.error('❌ Direct TMB API call failed:', error.message);
+            alert('❌ Error obtenint parades TMB: ' + error.message + '\n\nProva executant el servidor local (npm start) o utilitza GitHub Pages.');
+            return [];
+        });
+}
+
+// Display TMB stops on map
+function displayTMBStops(stops) {
+    console.log('🚏 DISPLAYING', stops.length, 'TMB STOPS ON MAP...');
+
+    // Clear existing markers
+    tmbStopsMarkers.forEach(function(marker) {
+        try {
+            map.removeLayer(marker);
+        } catch (e) {}
+    });
+    tmbStopsMarkers = [];
+
+    var totalStops = 0;
+
+    // Process stops and fetch real-time data for each one
+    var stopPromises = stops.map(function(stop) {
+        return new Promise(function(resolve) {
+            if (stop.lat && stop.lng && !isNaN(stop.lat) && !isNaN(stop.lng) && stop.id) {
+                // Fetch real-time data for this stop
+                fetchRealtimeTMBBusesForStop(stop.id).then(function(realtimeData) {
+                    stop.realtimeData = realtimeData || [];
+                    resolve(stop);
+                }).catch(function(error) {
+                    console.warn('Failed to fetch real-time data for stop', stop.id, ':', error);
+                    stop.realtimeData = [];
+                    resolve(stop);
+                });
+            } else {
+                stop.realtimeData = [];
+                resolve(stop);
+            }
+        });
+    });
+
+    // Wait for all real-time data to be fetched
+    Promise.all(stopPromises).then(function(stopsWithRealtime) {
+        stopsWithRealtime.forEach(function(stop) {
+            if (stop.lat && stop.lng && !isNaN(stop.lat) && !isNaN(stop.lng)) {
+                // Count active buses
+                var activeBuses = stop.realtimeData.length;
+                var hasActiveBuses = activeBuses > 0;
+
+                // Create bus stop icon with stop ID number and activity indicator
+                var marker = L.marker([stop.lat, stop.lng], {
+                    icon: L.divIcon({
+                        html: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.7));">' +
+                              '<rect x="2" y="4" width="20" height="12" rx="2" fill="#c41e3a" stroke="white" stroke-width="2"/>' +
+                              '<circle cx="6" cy="18" r="2" fill="#666"/>' +
+                              '<circle cx="18" cy="18" r="2" fill="#666"/>' +
+                              '<rect x="4" y="6" width="4" height="6" rx="0.5" fill="white"/>' +
+                              '<rect x="10" y="6" width="4" height="6" rx="0.5" fill="white"/>' +
+                              '<rect x="16" y="6" width="4" height="6" rx="0.5" fill="white"/>' +
+                              '<text x="12" y="15" text-anchor="middle" fill="#c41e3a" font-size="8px" font-weight="bold">TMB</text>' +
+                              '</svg>' +
+                              '<div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); ' +
+                              'background: #c41e3a; color: white; font-size: 10px; font-weight: bold; ' +
+                              'padding: 1px 4px; border-radius: 3px; border: 1px solid white; white-space: nowrap; min-width: 20px; text-align: center;">' +
+                              (stop.id || '?') + '</div>' +
+                              (hasActiveBuses ? '<div style="position: absolute; top: -18px; right: -8px; ' +
+                              'background: #28a745; color: white; font-size: 8px; font-weight: bold; ' +
+                              'padding: 1px 3px; border-radius: 8px; border: 1px solid white; min-width: 12px; text-align: center;">' +
+                              activeBuses + '</div>' : ''),
+                        className: 'tmb-stop-marker',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 20]
+                    })
+                });
+
+                // Create popup with stop information and real-time data
+                var stopTypeText = '';
+                switch(stop.type) {
+                    case 'BUS': stopTypeText = 'Autobús'; break;
+                    case 'METRO': stopTypeText = 'Metro'; break;
+                    case 'TRAM': stopTypeText = 'Tramvia'; break;
+                    case 'TRAIN': stopTypeText = 'Tren'; break;
+                    default: stopTypeText = stop.type || 'Desconegut';
+                }
+
+                var popupContent = '<div style="font-family: Arial, sans-serif; min-width: 280px;">' +
+                    '<h4 style="margin: 0 0 8px 0; color: #c41e3a; border-bottom: 2px solid #c41e3a; padding-bottom: 4px;">' +
+                    '🚏 Parada TMB ' + (stop.id || 'Desconeguda') + '</h4>' +
+                    '<div style="background: #c41e3a15; border: 1px solid #c41e3a; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                    '<strong>Nom:</strong> ' + (stop.name || 'Sense nom') + '<br>' +
+                    '<strong>Carrer:</strong> ' + (stop.streetName || 'No disponible') + '<br>' +
+                    '<strong>Tipus:</strong> <span style="color: #c41e3a; font-weight: bold;">' + stopTypeText + '</span><br>' +
+                    '<strong>ID:</strong> ' + (stop.id || 'Desconegut') + '<br>' +
+                    '<strong>Posició:</strong> ' + stop.lat.toFixed(4) + ', ' + stop.lng.toFixed(4) +
+                    '</div>';
+
+                // Add real-time bus information
+                if (stop.realtimeData && stop.realtimeData.length > 0) {
+                    popupContent += '<div style="background: #28a74515; border: 1px solid #28a745; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                        '<h5 style="margin: 0 0 8px 0; color: #28a745;">🚌 Temps real - Properes arribades</h5>' +
+                        '<div style="max-height: 150px; overflow-y: auto;">';
+
+                    stop.realtimeData.slice(0, 8).forEach(function(bus) { // Limit to 8 buses
+                        var arrivalTime = '';
+                        if (bus.timeToArrival !== undefined) {
+                            if (bus.timeToArrival === 0) {
+                                arrivalTime = 'Arribant';
+                            } else if (bus.timeToArrival === 1) {
+                                arrivalTime = '1 minut';
+                            } else {
+                                arrivalTime = bus.timeToArrival + ' minuts';
+                            }
+                        } else {
+                            arrivalTime = 'N/A';
+                        }
+
+                        popupContent += '<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee;">' +
+                            '<div><strong style="color: #28a745;">' + (bus.route || 'Línia ?') + '</strong> → ' + (bus.destination || 'Desconegut') + '</div>' +
+                            '<div style="font-weight: bold; color: #28a745;">' + arrivalTime + '</div>' +
+                            '</div>';
+                    });
+
+                    popupContent += '</div></div>';
+                } else {
+                    popupContent += '<div style="background: #ffc10715; border: 1px solid #ffc107; border-radius: 4px; padding: 10px; margin: 8px 0;">' +
+                        '<strong>🕒 Sense informació de temps real</strong><br>' +
+                        'No hi ha autobusos programats o l\'informació no està disponible.' +
+                        '</div>';
+                }
+
+                popupContent += '<div style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">' +
+                    '🕒 Actualitzat: ' + new Date().toLocaleTimeString('ca-ES') +
+                    '</div>' +
+                    '</div>';
+
+                marker.bindPopup(popupContent);
+
+                // Add marker to map
+                marker.addTo(map);
+                tmbStopsMarkers.push(marker);
+                totalStops++;
+
+                console.log('✅ ADDED TMB STOP MARKER:', stop.id, stop.name, 'at', stop.lat, stop.lng, 'with', activeBuses, 'active buses');
+            } else {
+                console.warn('❌ INVALID COORDS for TMB stop:', stop.id, stop.lat, stop.lng);
+            }
+        });
+
+        console.log('🎯 TOTAL TMB STOP MARKERS CREATED:', totalStops);
+
+        // Update status
+        var statusElement = document.getElementById('tmb-stops-status');
+        if (statusElement) {
+            statusElement.textContent = '🚏 Mostrant ' + totalStops + ' parades TMB amb temps real';
+        }
+
+        console.log('🎉 TMB STOPS WITH REAL-TIME DATA DISPLAY COMPLETED SUCCESSFULLY!');
+    });
+}
+
+// Helper function to fetch real-time data for a specific stop
+function fetchRealtimeTMBBusesForStop(stopId) {
+    // Detect deployment environment
+    var hostname = window.location.hostname;
+    var isGitHubPages = hostname.includes('github.io');
+    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
+
+    // Use appropriate API endpoint based on environment
+    var apiUrl;
+    if (isVercel) {
+        // Use Vercel-deployed API
+        apiUrl = '/api/tmb-realtime?stopId=' + encodeURIComponent(stopId);
+        console.log('🚌 Fetching TMB real-time data for stop', stopId, 'via Vercel API...');
+    } else if (isGitHubPages) {
+        // On GitHub Pages, use our Vercel deployment as proxy
+        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-realtime?stopId=' + encodeURIComponent(stopId);
+        console.log('🚌 Fetching TMB real-time data for stop', stopId, 'via Vercel proxy from GitHub Pages...');
+    } else {
+        // Local development
+        apiUrl = '/api/tmb-realtime?stopId=' + encodeURIComponent(stopId);
+        console.log('🚌 Fetching TMB real-time data for stop', stopId, 'via local proxy server...');
+    }
+
+    return fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('TMB real-time API failed: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            if (jsonData.error) {
+                throw new Error('API Error: ' + jsonData.message);
+            }
+
+            var buses = [];
+
+            // Process TMB iTransit API response for this stop
+            if (jsonData && jsonData.parades && Array.isArray(jsonData.parades)) {
+                jsonData.parades.forEach(function(parada) {
+                    if (parada.linies_trajectes && Array.isArray(parada.linies_trajectes)) {
+                        parada.linies_trajectes.forEach(function(linia) {
+                            if (linia.propers_busos && Array.isArray(linia.propers_busos)) {
+                                linia.propers_busos.forEach(function(bus) {
+                                    var routeId = linia.codi_linia || 'Unknown';
+                                    var busId = linia.codi_trajecte || 'Unknown';
+                                    var destination = linia.desti_trajecte || '';
+                                    var timeArrival = bus.temps_arribada || 0;
+
+                                    // Convert timestamp to minutes from now if it's a timestamp
+                                    if (typeof timeArrival === 'number' && timeArrival > 1000000000000) {
+                                        var now = new Date().getTime();
+                                        var arrivalTime = new Date(timeArrival);
+                                        var diffMs = arrivalTime - now;
+                                        timeArrival = Math.max(0, Math.round(diffMs / (1000 * 60)));
+                                    }
+
+                                    buses.push({
+                                        id: busId + '-' + stopId,
+                                        route: routeId,
+                                        destination: destination,
+                                        timeToArrival: timeArrival,
+                                        status: 'Arriving at stop'
+                                    });
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            console.log('🚌 Fetched', buses.length, 'real-time buses for stop', stopId);
+            return buses;
+        })
+        .catch(error => {
+            console.warn('❌ Failed to fetch real-time data for stop', stopId, ':', error.message);
+            return [];
+        });
+}
+
+// Make TMB stops functions globally accessible
+window.startTMBStops = startTMBStops;
+window.stopTMBStops = stopTMBStops;
+window.fetchTMBStops = fetchTMBStops;
+window.displayTMBStops = displayTMBStops;
 
 // end of file

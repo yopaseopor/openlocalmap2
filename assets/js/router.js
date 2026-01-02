@@ -139,18 +139,12 @@ class Router {
     }
 
     initializePage(pageId) {
-        // Page-specific initialization
+        // Page-specific initialization (no automatic queries except real-time and GBFS)
         switch(pageId) {
             case 'home':
                 // Initialize POIs if not already done
                 if (typeof show_pois_checkboxes === 'function') {
                     show_pois_checkboxes();
-                }
-                break;
-            case 'routes':
-                // Initialize routes if location is set
-                if (typeof initializeRoutes === 'function' && typeof baseLocation !== 'undefined' && baseLocation.name) {
-                    initializeRoutes();
                 }
                 break;
             case 'search':
@@ -160,6 +154,7 @@ class Router {
                     setTimeout(() => searchInput.focus(), 100);
                 }
                 break;
+            // No automatic route initialization - user must click buttons manually
             // Add other page-specific initializations as needed
         }
     }
