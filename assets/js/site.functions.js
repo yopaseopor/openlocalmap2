@@ -7095,39 +7095,51 @@ function stopMetroStations() {
     document.getElementById('metro-stations-status').textContent = 'Status: Inactiu';
 }
 
-// Fetch metro station data from TMB API
+// Fetch metro station data from Vercel proxy API
 function fetchMetroStations() {
-    console.log('🚇 Fetching real TMB metro stations data from official API...');
+    console.log('🚇 Fetching TMB metro stations data via Vercel proxy API...');
 
-    // TMB metro lines to fetch (L1-L8, L9S, L9N, FM, L10S, L10N)
-    var metroLines = [1, 2, 3, 4, 5, 6, 7, 8, 9, 91, 94, 99, 101, 104];
-    var appId = '8029906b';
-    var appKey = '73b5ad24d1db9fa24988bf134a1523d1';
+    // Detect deployment environment
+    var hostname = window.location.hostname;
+    var isGitHubPages = hostname.includes('github.io');
+    var isVercel = hostname.includes('vercel.app') || hostname.includes('now.sh');
 
-    // Fetch data for all metro lines concurrently
-    var fetchPromises = metroLines.map(function(lineNumber) {
-        var apiUrl = 'https://api.tmb.cat/v1/transit/linies/metro/' + lineNumber + '/estacions?app_id=' + appId + '&app_key=' + appKey;
-        console.log('🔗 Fetching metro line', lineNumber, 'stations from:', apiUrl);
+    // Use appropriate API endpoint based on environment
+    var apiUrl;
+    if (isVercel) {
+        // Use Vercel-deployed API
+        apiUrl = '/api/tmb-metro';
+        console.log('🚇 Fetching metro stations via Vercel API...');
+    } else if (isGitHubPages) {
+        // On GitHub Pages, use our Vercel deployment as proxy
+        apiUrl = 'https://openlocalmap2.vercel.app/api/tmb-metro';
+        console.log('🚇 Fetching metro stations via Vercel proxy from GitHub Pages...');
+    } else {
+        // Local development
+        apiUrl = '/api/tmb-metro';
+        console.log('🚇 Fetching metro stations via local proxy server...');
+    }
 
-        return fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    console.warn('❌ Failed to fetch line', lineNumber, ':', response.status, response.statusText);
-                    return null;
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data || !data.features) {
-                    console.warn('⚠️ No valid data for line', lineNumber);
-                    return [];
-                }
+    return fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Metro stations API proxy failed: ' + response.status + ' ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(jsonData => {
+            console.log('✅ Metro stations API proxy succeeded! Processing station data...', jsonData);
 
-                console.log('✅ Successfully fetched', data.features.length, 'stations for metro line', lineNumber);
+            // Check if the response contains an error
+            if (jsonData.error) {
+                throw new Error('API Error: ' + jsonData.message);
+            }
 
-                // Process stations for this line
-                var lineStations = [];
-                data.features.forEach(function(feature) {
+            var stations = [];
+
+            // Process the GeoJSON response from our proxy API
+            if (jsonData && jsonData.features && Array.isArray(jsonData.features)) {
+                jsonData.features.forEach(function(feature) {
                     try {
                         if (feature.geometry && feature.geometry.coordinates && feature.properties) {
                             var coords = feature.geometry.coordinates;
@@ -7137,21 +7149,22 @@ function fetchMetroStations() {
                             var lng = coords[0];
                             var lat = coords[1];
 
-                            // Extract station information
+                            // Extract station information from properties
                             var stationId = props.CODI_ESTACIO || feature.id || '';
                             var stationName = props.NOM_ESTACIO || 'Estació sense nom';
-                            var lineCode = 'L' + lineNumber;
-                            var lineName = getMetroLineName(lineNumber);
 
-                            // Use color from API if available, otherwise fallback to hardcoded colors
-                            var lineColor = props.COLOR_LINIA || getMetroLineColor(lineNumber);
+                            // Get line information from the enhanced properties
+                            var lineCode = props.LINE_CODE || 'L' + (props.CODI_LINIA || 'Unknown');
+                            var lineName = props.LINE_NAME || getMetroLineName(props.CODI_LINIA || 'Unknown');
+                            var lineColor = props.LINE_COLOR || getMetroLineColor(props.CODI_LINIA || 'Unknown');
+
                             // Convert hex color if needed (remove # if present)
                             if (lineColor && lineColor.startsWith('#')) {
                                 lineColor = lineColor.substring(1);
                             }
                             // Ensure it's a valid hex color
                             if (!lineColor || !/^([0-9A-F]{3}){1,2}$/i.test(lineColor)) {
-                                lineColor = getMetroLineColor(lineNumber);
+                                lineColor = getMetroLineColor(props.CODI_LINIA || 'Unknown');
                             } else {
                                 lineColor = '#' + lineColor; // Add # back for CSS
                             }
@@ -7160,12 +7173,16 @@ function fetchMetroStations() {
                             var isAccessible = props.ACCESSIBILITAT === '1' || props.ACCESSIBILITAT === 1 ||
                                              props.accessible === true || props.accessible === 'true';
 
+                            // Add real-time data if available
+                            var nextTrains = props.nextTrains || [];
+                            var realtimeTimestamp = props.realtimeTimestamp;
+
                             // Validate coordinates
                             if (typeof lat === 'number' && typeof lng === 'number' &&
                                 lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
                                 lat !== 0 && lng !== 0) {
 
-                                lineStations.push({
+                                stations.push({
                                     id: stationId,
                                     name: stationName,
                                     lat: lat,
@@ -7174,11 +7191,13 @@ function fetchMetroStations() {
                                     lineName: lineName,
                                     lineColor: lineColor,
                                     isAccessible: isAccessible,
+                                    nextTrains: nextTrains,
+                                    realtimeTimestamp: realtimeTimestamp,
                                     properties: props,
                                     timestamp: new Date().getTime()
                                 });
 
-                                console.log('✅ Processed metro station:', stationId, stationName, 'line:', lineCode);
+                                console.log('✅ Processed metro station:', stationId, stationName, 'line:', lineCode, 'trains:', nextTrains.length);
                             } else {
                                 console.warn('❌ Invalid coordinates for metro station:', stationId, '- lat:', lat, 'lng:', lng);
                             }
@@ -7187,39 +7206,26 @@ function fetchMetroStations() {
                         console.warn('Error processing metro station feature:', error, feature);
                     }
                 });
+            } else {
+                console.warn('❌ Metro stations API response format unexpected:', jsonData);
+            }
 
-                return lineStations;
-            })
-            .catch(error => {
-                console.warn('❌ Error fetching metro line', lineNumber, ':', error.message);
+            if (stations.length > 0) {
+                console.log('🚇 SUCCESS: Extracted', stations.length, 'metro stations from API proxy!');
+                return stations;
+            } else {
+                console.warn('Proxy returned data but no stations found');
+                alert('🚇 No s\'han trobat estacions del metro a les dades. L\'API pot estar temporalment indisponible.');
                 return [];
-            });
-    });
+            }
+        })
+        .catch(error => {
+            console.error('❌ Metro stations API proxy failed:', error.message);
 
-    // Wait for all lines to be fetched and combine results
-    return Promise.all(fetchPromises).then(function(lineResults) {
-        var allStations = [];
-
-        lineResults.forEach(function(lineStations) {
-            allStations = allStations.concat(lineStations);
+            // Fallback: create mock data for demonstration
+            console.log('🔄 Creating mock metro station data as fallback...');
+            return createMockMetroStations();
         });
-
-        console.log('🚇 TOTAL: Collected', allStations.length, 'metro stations from all lines');
-
-        if (allStations.length > 0) {
-            console.log('🚇 SUCCESS: Retrieved real TMB metro station data!');
-            return allStations;
-        } else {
-            console.warn('No stations retrieved from any metro line');
-            alert('🚇 No s\'han pogut obtenir dades d\'estacions del metro. Les APIs de TMB poden estar temporalment indisponibles.');
-            return [];
-        }
-    }).catch(error => {
-        console.error('❌ Error in metro stations fetch process:', error);
-        // Fallback: create mock data for demonstration
-        console.log('🔄 Creating mock metro station data as fallback...');
-        return createMockMetroStations();
-    });
 }
 
 // Helper function to get official metro line names
