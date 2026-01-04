@@ -1,11 +1,8 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+const express = require('express');
+const path = require('path');
 const app = express();
+
+// Import API routers
 
 // Helper to set CORS headers on any response
 function setCorsHeaders(res) {
@@ -22,7 +19,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
-  
+
   // Respond to preflight requests
   if (req.method === 'OPTIONS') {
     setCorsHeaders(res);
@@ -63,12 +60,12 @@ app.get('/api/renfe-trains', async (req, res) => {
 
     const data = await response.json();
     console.log('✅ Successfully fetched RENFE data:', data.entity ? data.entity.length : 0, 'trains');
-    
+
     setCorsHeaders(res);
     res.json(data);
   } catch (error) {
     console.error('❌ Error fetching RENFE data:', error.message);
-    
+
     // Return error response with explicit CORS headers
     setCorsHeaders(res);
     res.status(500).json({
@@ -217,6 +214,53 @@ app.get('/api/tmb-buses', async (req, res) => {
   }
 });
 
+// TMB Metro stations proxy endpoint
+app.get('/api/tmb-metro-stations', async (req, res) => {
+  try {
+    console.log('🚇 Fetching TMB Metro stations data from API...');
+
+    // Get line code from query parameter, default to L1
+    const lineCode = req.query.line || '1';
+
+    const tmbUrl = `https://api.tmb.cat/v1/transit/linies/metro/${lineCode}/estacions?app_id=8029906b&app_key=73b5ad24d1db9fa24988bf134a1523d1`;
+
+    const response = await fetch(tmbUrl, {
+      headers: {
+        'User-Agent': 'OpenLocalMap-Proxy/1.0',
+        'Accept': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout for Vercel
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ TMB Metro stations API returned ${response.status}: ${response.statusText}`);
+      setCorsHeaders(res);
+      return res.status(response.status).json({
+        error: 'TMB Metro stations API error',
+        status: response.status,
+        message: response.statusText,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const data = await response.json();
+    console.log('✅ Successfully fetched TMB Metro stations data for line', lineCode);
+
+    setCorsHeaders(res);
+    res.json(data);
+  } catch (error) {
+    console.error('❌ Error fetching TMB Metro stations data:', error.message);
+
+    // Return error response with explicit CORS headers
+    setCorsHeaders(res);
+    res.status(500).json({
+      error: 'Failed to fetch TMB Metro stations data',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // TMB real-time bus arrivals proxy endpoint
 app.get('/api/tmb-realtime', async (req, res) => {
   try {
@@ -270,6 +314,8 @@ app.get('/api/tmb-realtime', async (req, res) => {
     });
   }
 });
+
+
 
 // Bicing API proxy endpoint
 app.get('/api/bicing', async (req, res) => {
@@ -327,7 +373,7 @@ app.use((err, req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
+
   console.error('Unhandled error:', err);
   res.status(500).json({
     error: 'Internal server error',
@@ -339,7 +385,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 OpenLocalMap server running on http://localhost:${PORT}`);
-  console.log(`🔗 RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
+  console.log(`� RENFE API proxy: http://localhost:${PORT}/api/renfe-trains`);
   console.log(`🔗 FGC API proxy: http://localhost:${PORT}/api/fgc-trains`);
   console.log(`🚏 TMB stops API proxy: http://localhost:${PORT}/api/tmb-stops`);
   console.log(`🚌 TMB real-time API proxy: http://localhost:${PORT}/api/tmb-realtime`);

@@ -708,6 +708,79 @@
   </div>
 </details>
 
+  <!-- Metro Barcelona Stations Visualization -->
+  <details style="margin-bottom: 20px;">
+    <summary style="background: #e6e6ff; border: 1px solid #9999ff; border-radius: 5px; padding: 15px; cursor: pointer; list-style: none;">
+      <h3 style="margin: 0; color: #333399; display: inline;">🚇 Estacions del Metro de Barcelona</h3>
+      <span style="float: right; font-size: 16px; color: #333399;">▶️</span>
+    </summary>
+    <div style="padding: 15px; background: #e6e6ff; border: 1px solid #9999ff; border-top: none; border-radius: 0 0 5px 5px; margin-top: -1px;">
+    <p style="margin: 8px 0; font-size: 14px;">Mostra les estacions del Metro de Barcelona al mapa amb informació de les línies disponibles:</p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+      <button id="start-metro-stations-btn" style="background: #333399; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>▶️ Mostrar Estacions del Metro</strong><br><small>Carrega totes les estacions de metro al mapa</small></button>
+      <button onclick="stopMetroStations()" id="stop-metro-stations-btn" style="background: #8B0000; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; display: none;"><strong>⏹️ Ocultar Estacions</strong><br><small>Oculta les estacions de metro del mapa</small></button>
+      <button onclick="toggleMetroStationsLegend()" id="metro-stations-legend-btn" style="background: #333399; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; display: inline-block;"><strong>🎨 Mostrar Llegenda</strong><br><small>Veure colors de les línies de metro</small></button>
+      <div id="metro-stations-status" style="font-size: 12px; color: #333399; padding: 8px; background: #f0f0ff; border-radius: 3px;">Status: Inactiu</div>
+    </div>
+
+    <div style="background: #d4d4ff; border: 1px solid #9999ff; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <p style="margin: 8px 0; font-size: 13px;"><strong>Línies del Metro de Barcelona:</strong></p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 10px 0;">
+        <div style="background: #FF0000; color: white; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold;">L1 - Vermella</div>
+        <div style="background: #9C5B00; color: white; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold;">L2 - Lila</div>
+        <div style="background: #00A000; color: white; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold;">L3 - Verda</div>
+        <div style="background: #FFD800; color: white; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold;">L4 - Groga</div>
+        <div style="background: #00A0E9; color: white; padding: 4px 8px; border-radius: 3px; text-align: center; font-weight: bold;">L5 - Blava</div>
+      </div>
+      <p style="margin: 8px 0; font-size: 12px; color: #333399;"><strong>API TMB iMetro:</strong> Les dades provenen de l'API oficial de Transports Metropolitans de Barcelona (iMetro).</p>
+    </div>
+
+    <div style="background: #c4c4ff; border: 1px solid #9999ff; border-radius: 5px; padding: 12px; margin: 15px 0;">
+      <h5 style="margin-top: 0; color: #333399;">✅ Solució Manual: Utilitza les Dades del Metro BCN Directament!</h5>
+      <p style="margin: 8px 0; font-size: 13px;">Ja que pots accedir manualment a les dades del Metro de Barcelona, aquí tens una solució directa:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0;">
+        <button onclick="openMetroBCNJson()" style="background: #333399; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>🔗 PAS 1: Obrir Dades Metro BCN</strong><br><small>Obre l'API TMB iMetro en una nova pestanya</small></button>
+        <button onclick="showMetroBCNDataEntry()" style="background: #007bff; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;"><strong>📝 PAS 2: Introduir Dades Manualment</strong><br><small>Copia i enganxa les dades JSON aquí</small></button>
+      </div>
+
+      <div id="metro-manual-data-entry" style="display: none; margin: 15px 0; padding: 15px; background: #f0f0ff; border-radius: 5px; border: 1px solid #9999ff;">
+        <h5 style="margin-top: 0; color: #333399;">📋 Com Copiar i Enganxar les Dades del Metro BCN:</h5>
+        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+          <button onclick="copyMetroBCNUrl()" style="background: #333399; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🔗 Copiar URL TMB iMetro</strong></button>
+          <button onclick="copyMetroBCNInstructions()" style="background: #17a2b8; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📋 Copiar Instruccions</strong></button>
+          <button onclick="clearMetroBCNTextarea()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>🗑️ Netejar</strong></button>
+          <button onclick="shareMetroBCNMapUrl()" style="background: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;"><strong>📤 Compartir Mapa</strong></button>
+        </div>
+
+        <div style="background: #e6e6ff; border: 1px solid #ccccff; border-radius: 3px; padding: 10px; margin: 10px 0; font-size: 12px;">
+          <strong>🔢 PASSOS FÀCILS:</strong><br>
+          1. Ves a la pestanya TMB iMetro que s'ha obert<br>
+          2. Prem <strong>Ctrl+A</strong> (seleccionar tot)<br>
+          3. Prem <strong>Ctrl+C</strong> (copiar)<br>
+          4. Torna aquí i prem <strong>Ctrl+V</strong> (enganxar)<br>
+          5. Clica <strong>"Processar Dades del Metro"</strong>
+        </div>
+
+        <textarea id="metro-manual-json-data" placeholder="Enganxa aquí les dades JSON del Metro BCN (prem Ctrl+V)..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #9999ff; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onclick="processMetroBCNManualJsonData()" style="background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; flex: 1;"><strong>⚡ Processar Dades del Metro</strong><br><small>Mostrar trens de metro BCN reals al mapa</small></button>
+          <button onclick="testMetroBCNSampleData()" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;"><strong>🧪 Provar amb Dades d'Exemple</strong><br><small>Omple amb JSON de mostra</small></button>
+        </div>
+
+        <div id="metro-json-status" style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-size: 12px; color: #495057;">Status: Preparat per enganxar dades JSON</div>
+
+      </div>
+
+      <p style="margin: 8px 0; font-size: 12px; color: #333399;"><strong>URL de les dades: <code>https://api.tmb.cat/v1/imetro/previsioEstacio</code></strong></p>
+    </div>
+
+    <p style="font-size: 12px; color: #333399; margin-top: 10px;">Llicència: <a href="https://developer.tmb.cat/" target="_blank">Open Data TMB</a> | Última actualització: 2025-12-27</p>
+  </div>
+</details>
+
 
 
 

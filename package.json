@@ -2,8 +2,7 @@
   "name": "openlocalmap2",
   "version": "1.0.0",
   "description": "Open Local Map 2 - A mapping application",
-  "type": "module",
-  "main": "server.js",
+  "main": "server.cjs",
   "engines": {
     "node": ">=18.0.0"
   },
