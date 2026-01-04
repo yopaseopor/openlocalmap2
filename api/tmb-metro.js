@@ -153,14 +153,40 @@ export default async function (req, res) {
 
           const realtimeResult = await getJson(realtimeUrl);
           if (realtimeResult.status === 200 && realtimeResult.json && realtimeResult.json.linies) {
-            // Extract train data from the linies.estacions structure
-            const liniesData = realtimeResult.json.linies;
+            // Extract train data from the linies array structure
+            const liniesArray = realtimeResult.json.linies;
 
-            // linies is an object, check if it has estacions
             let nextTrains = [];
-            if (liniesData.estacions && Array.isArray(liniesData.estacions)) {
-              nextTrains = liniesData.estacions;
+            if (Array.isArray(liniesArray)) {
+              // Flatten all trains from all lines and directions for this station
+              liniesArray.forEach(linia => {
+                if (linia.estacions && Array.isArray(linia.estacions)) {
+                  linia.estacions.forEach(estacio => {
+                    if (estacio.codi_estacio == stationId && estacio.linies_trajectes) {
+                      // This station matches, collect all its trains
+                      estacio.linies_trajectes.forEach(trajecte => {
+                        if (trajecte.propers_trens && Array.isArray(trajecte.propers_trens)) {
+                          trajecte.propers_trens.forEach(tren => {
+                            nextTrains.push({
+                              codi_servei: tren.codi_servei,
+                              temps_arribada: tren.temps_arribada,
+                              linia: trajecte.codi_linia,
+                              nom_linia: trajecte.nom_linia,
+                              color_linia: trajecte.color_linia,
+                              desti: trajecte.desti_trajecte,
+                              codi_trajecte: trajecte.codi_trajecte
+                            });
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
+              });
             }
+
+            // Sort trains by arrival time
+            nextTrains.sort((a, b) => a.temps_arribada - b.temps_arribada);
 
             // Add real-time data to station properties
             station.properties.nextTrains = nextTrains;
